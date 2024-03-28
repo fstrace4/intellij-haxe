@@ -38,7 +38,7 @@ class Test {
         var t:String = target.fistVar.toLowerCase(); // correct from  SpecifiedStrcuture
 
         var s:String = target.myMethod(<error descr="Type mismatch (Expected: 'String' got: 'Int')">1</error>); // wrong parameter type
-        var t:Int = <error descr="Unable to apply operator * for types T and Int = 2">target.fistVar * 2</error>; // wrong
+        var t:Int = <error descr="Unable to apply operator * for types T:(SpecifiedStrcuture, ISomeInterface<String>) and Int = 2">target.fistVar * 2</error>; // wrong
 
     }
 

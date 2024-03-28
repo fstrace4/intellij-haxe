@@ -158,6 +158,8 @@ public class HaxeGenericResolverUtil {
                     typeParameterType = HaxeTypeUnifier.unify(existingType, typeParameterType);
                   }
                   ResultHolder constraint = methodResolver.resolveConstraint(typeParameterName);
+                  // resolve constraint if type parameter ex. (T:B, B:DisplayObject)
+                  if (constraint != null && constraint.isTypeParameter()) constraint = methodResolver.resolve(constraint);
                   if (constraint == null || constraint.canAssign(typeParameterType)) {
                     methodResolver.add(typeParameterName, typeParameterType, ResolveSource.ARGUMENT_TYPE);
                   }

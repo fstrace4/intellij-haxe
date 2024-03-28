@@ -97,7 +97,9 @@ public class HaxeGenericParamModel {
             return result;
           } else {
             if (HaxeTypeResolver.isTypeParameter(reference)) {
-              return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa);
+              // we dont want to resolve typeParameter constraints as the definition of this type parameter might need to inherit the type
+              return  new ResultHolder(SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(toa.getType().getText(), toa.getType(), true)));
+              //return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa);
             }
           }
         }

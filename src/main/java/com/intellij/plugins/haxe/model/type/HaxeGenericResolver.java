@@ -105,10 +105,32 @@ public class HaxeGenericResolver {
     return specificType;
   }
   public ResultHolder add(@NotNull String name, @NotNull ResultHolder specificType, ResolveSource resolveSource) {
+
     resolvers.removeIf(entry -> entry.name().equals(name) && entry.resolveSource() == resolveSource);
     resolvers.add(new ResolverEntry(name, specificType, resolveSource));
+
+    addForTypeParameterConstraints(name, specificType);
+
     return specificType;
   }
+
+  private void addForTypeParameterConstraints(@NotNull String name, @NotNull ResultHolder specificType) {
+    if(specificType.isTypeParameter()) return;
+    Optional<ResolverEntry> constraint = findConstraint(name);
+    if (constraint.isPresent()) {
+      ResolverEntry entry = constraint.get();
+      if(entry.type().isTypeParameter()) {
+        String typeName = ((SpecificHaxeClassReference)entry.type().getType()).getClassName();
+        add(typeName, specificType, entry.resolveSource());
+      }
+    }
+  }
+
+  @NotNull
+  private Optional<ResolverEntry> findConstraint(@NotNull String name) {
+    return constaints.stream().filter(entry -> entry.name().equals(name)).findFirst();
+  }
+
   public ResultHolder addConstraint(@NotNull String name, @NotNull ResultHolder specificType, ResolveSource resolveSource) {
     constaints.removeIf(entry -> entry.name().equals(name) && entry.resolveSource() == resolveSource);
     constaints.add(new ResolverEntry(name, specificType, resolveSource));
@@ -117,12 +139,20 @@ public class HaxeGenericResolver {
 
   @NotNull
   public HaxeGenericResolver addAll(@Nullable HaxeGenericResolver parentResolver) {
-    if (null != parentResolver) {
-      removeExisting(parentResolver.resolvers, resolvers);
-      removeExisting(parentResolver.constaints, constaints);
+    if (null != parentResolver && parentResolver != this) {
+      // not using "collection.addAll" because there is extra logic in add() that we need to execute
+      for (ResolverEntry resolver : parentResolver.resolvers) {
+        this.add(resolver.name(), resolver.type(), resolver.resolveSource());
+      }
+      for (ResolverEntry entry : parentResolver.constaints) {
+        this.addConstraint(entry.name(), entry.type(), entry.resolveSource());
+      }
 
-      this.resolvers.addAll(parentResolver.resolvers);
-      this.constaints.addAll(parentResolver.constaints);
+      //removeExisting(parentResolver.resolvers, resolvers);
+      //removeExisting(parentResolver.constaints, constaints);
+      //
+      //this.resolvers.addAll(parentResolver.resolvers);
+      //this.constaints.addAll(parentResolver.constaints);
     }
     return this;
   }
