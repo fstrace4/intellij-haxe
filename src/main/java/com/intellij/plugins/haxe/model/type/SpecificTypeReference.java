@@ -620,4 +620,6 @@ public abstract class SpecificTypeReference {
      }
     return false;
   }
+
+  public abstract SpecificTypeReference withElementContext(PsiElement element);
 }

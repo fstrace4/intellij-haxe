@@ -304,5 +304,10 @@ public class SpecificFunctionReference extends SpecificTypeReference {
       return new Argument(this.index, this.optional, this.isRest, newType, this.name);
     }
   }
+
+  @Override
+  public SpecificTypeReference withElementContext(PsiElement element) {
+    return new SpecificFunctionReference( arguments, returnValue, method, element, constantValue) ;
+  }
 }
 

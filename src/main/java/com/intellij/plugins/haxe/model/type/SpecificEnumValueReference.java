@@ -181,4 +181,9 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
     ResultHolder type = HaxeTypeResolver.getTypeFromTypeTag(parameter.getTypeTag(), parameter.getContext());
     return new SpecificFunctionReference.Argument(index, optional, false, type, name);
   }
+
+  @Override
+  public SpecificTypeReference withElementContext(PsiElement element) {
+    return new SpecificEnumValueReference( declaration, element, resolver,  constantValue) ;
+  }
 }

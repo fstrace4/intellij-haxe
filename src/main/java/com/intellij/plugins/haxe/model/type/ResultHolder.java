@@ -186,4 +186,8 @@ public class ResultHolder {
   public boolean isInvalid() {
     return type.isInvalid();
   }
+
+  public void setElementContext(PsiElement element) {
+    type = type.withElementContext(element);
+  }
 }

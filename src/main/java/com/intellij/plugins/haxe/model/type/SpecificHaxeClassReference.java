@@ -832,4 +832,9 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     
     return result;
   }
+
+  @Override
+  public SpecificTypeReference withElementContext(PsiElement element) {
+    return new SpecificHaxeClassReference(classReference, specifics, constantValue, rangeConstraint, element);
+  }
 }
