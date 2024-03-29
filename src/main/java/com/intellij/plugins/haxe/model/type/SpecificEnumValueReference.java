@@ -55,7 +55,7 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
     HaxeClassReference reference = enumModel.getReference();
     this.enumClass = SpecificHaxeClassReference.withGenerics(reference, resolver.getSpecificsFor(reference));
     this.declaration = enumValue;
-    this.resolver = resolver;
+    this.resolver = resolver.withoutAssignHint();
     this.constantValue = constantValue;
   }
 

@@ -497,7 +497,8 @@ public class HaxeTypeResolver {
 
     HaxeReferenceExpression expression = type.getReferenceExpression();
     HaxeClassReference reference;
-    final HaxeClass resolvedHaxeClass = expression.resolveHaxeClass().getHaxeClass();
+    ResultHolder result = HaxeExpressionEvaluator.evaluate(expression, null).result;
+    final HaxeClass resolvedHaxeClass =( result != null  && !result.isUnknown() && result.isClassType()) ? result.getClassType().getHaxeClass() : null;
     if (resolvedHaxeClass == null) {
       boolean isTypeParameter = isTypeParameter(expression);
       reference = new HaxeClassReference(expression.getText(), type, isTypeParameter);
@@ -585,80 +586,7 @@ public class HaxeTypeResolver {
                                                @Nullable PsiElement resolveContext,
                                                HaxeGenericResolver resolver) {
     if (element == resolveContext) return SpecificTypeReference.getInvalid(element).createHolder();
-    if (element instanceof HaxeReferenceExpression expression) {
-      // First, try to resolve it to a class -- this deals with field-level specializations.
-      // This calls the old resolver which doesn't deal with expressions.
-      ResultHolder resultHolder = null;
-      HaxeResolveResult result = expression.resolveHaxeClass();
-      HaxeClass haxeClass = result.getHaxeClass();
-      if (haxeClass instanceof HaxeSpecificFunction specificFunction) {
-        SpecificFunctionReference reference = SpecificFunctionReference.create(specificFunction);
-        SpecificFunctionReference resolveResult = resolver.resolve(reference, true);
-        if (resolveResult != null && !resolveResult.isUnknown()) {
-          return resolveResult.createHolder();
-        }
-        else {
-          return reference.createHolder();
-        }
-      }
-      else if (null != haxeClass) {
-        resultHolder = new ResultHolder(result.getSpecificClassReference(element, result.getGenericResolver()));
-        // if class reference (not chain) wrap as Class<T>
-        // ex: var myTypeVar:Class<MyClass> = MyClass;
-        String className = haxeClass.getName();
-        if (element.getParent() instanceof HaxeVarInit // is init expression
-            && className != null // must have name (filtering out anonymous types)
-            && element.textMatches(className)  // identical classname and elementText
-            && element.getNextSibling() == null) { // not part of a expression chain (MyClass.someMember)
-          resultHolder = HaxeTypeCompatible.wrapType(resultHolder, element, haxeClass.isEnum()).createHolder();
-        }
-      }
-      // If it doesn't resolve to a class, fall back to whatever *does* resolve to. This calls
-      // the newer resolve code (this class), which does deal with expressions properly.
-      PsiElement targetElement = expression.resolve();
-      if (null == resultHolder && targetElement instanceof HaxePsiField psiField) {
-        resultHolder = getTypeFromFieldDeclaration(psiField, element, resolver);
-      }
-
-      if (null != resultHolder) {
-        // If it's a constant, grab the constant value.
-        if (targetElement instanceof HaxePsiField field) {
-          HaxeFieldModel model = (HaxeFieldModel)field.getModel();
-          if (model.isConstant()) {
-            resultHolder = resultHolder.withConstantValue(model.isEnumValue() ? model.getBasePsi() : model.getInitializerExpression());
-          }
-        }
-        if (targetElement instanceof HaxeLocalVarDeclaration varDeclaration) {
-          HaxeLocalVarModel model = new HaxeLocalVarModel(varDeclaration);
-          if (model.isFinal()) {
-            resultHolder.disableMutating();
-          }
-        }
-
-        if (resultHolder != null) return resultHolder;
-      }
-    }
     return getPsiElementType(element, (AnnotationHolder)null, resolver).result;
-  }
-
-  @NotNull
-  private static ResultHolder getTypeFromFieldDeclaration(HaxePsiField element, PsiElement resolveContext, HaxeGenericResolver resolver) {
-    HaxeTypeTag typeTag = element.getTypeTag();
-    if (typeTag != null) {
-      ResultHolder result = getTypeFromTypeTag(typeTag, resolveContext);
-      if (null != resolver) {
-        ResultHolder resolved = resolveParameterizedType(result, resolver);
-        if (null != resolved) {
-          result = resolved;
-        }
-      }
-      return result;
-    }
-    HaxeVarInit varInit = element.getVarInit();
-    if (varInit != null) {
-      return getPsiElementType(varInit.getExpression(), resolveContext, resolver);
-    }
-    return SpecificTypeReference.getUnknown(element).createHolder();
   }
 
   static private void checkMethod(PsiElement element, HaxeExpressionEvaluatorContext context) {

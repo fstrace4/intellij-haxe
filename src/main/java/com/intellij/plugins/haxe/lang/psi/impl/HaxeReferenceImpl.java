@@ -999,7 +999,11 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
   public boolean isPureClassReferenceOf(@NotNull String className) {
     PsiElement resolve = resolve();
-    return getParent() instanceof HaxeExpressionList
+    PsiElement parent = getParent();
+    // to be a pure reference the name must be exact match and
+    // parent can not be of HaxeType or other reference
+    return !(parent instanceof HaxeType)
+           && !(parent instanceof  HaxeReference)
            && resolve instanceof HaxeClass haxeClass
            && className.equalsIgnoreCase(haxeClass.getName());// identical classname and elementText
   }

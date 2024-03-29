@@ -13,7 +13,7 @@ class AssignEnumValue {
 
  		var <error descr="Incompatible type: Enum<MyEnum> should be EnumValue">wrong1:EnumValue = MyEnum</error>;
 		// expression is read it as  x < y, so it thinks its a bool expression (not sure if we want this error or not)
- 		var wrong2:EnumValue = <error descr="Unable to apply operator < for types Enum<unknown> and MyEnum">Enum<MyEnum</error>><error descr="<expression> expected, got ';'">;</error>
+ 		var wrong2:EnumValue = <error descr="Unable to apply operator < for types Class<Enum> and Enum<MyEnum>">Enum<MyEnum</error>><error descr="<expression> expected, got ';'">;</error>
  	}
 
  	public function getEnum():MyEnum {

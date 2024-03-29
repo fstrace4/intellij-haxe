@@ -198,20 +198,10 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
 
   public String toStringWithConstant() {
     String out = toStringWithoutConstant();
-    if (getConstant() != null) {
-      out += CONSTANT_VALUE_DELIMITER + getConstant().toString();
-
-      //switch (out) {
-      //  case SpecificTypeReference.INT:
-      //    out += CONSTANT_VALUE_DELIMITER + (int)HaxeTypeUtils.getDoubleValue(getConstant());
-      //    break;
-      //  case SpecificTypeReference.STRING:
-      //    out += CONSTANT_VALUE_DELIMITER + getConstant();
-      //    break;
-      //  default:
-      //    out += CONSTANT_VALUE_DELIMITER + getConstant();
-      //    break;
-      //}
+    Object constant = getConstant();
+    if (constant != null) {
+      String constAsString = (constant instanceof  String) ? "'" + constant + "'" : constant.toString();
+      out += CONSTANT_VALUE_DELIMITER + constAsString;
     }
     if (getRangeConstraint() != null) {
       out += " [" + getRangeConstraint() + "]";

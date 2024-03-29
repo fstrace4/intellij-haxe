@@ -187,7 +187,9 @@ public class ResultHolder {
     return type.isInvalid();
   }
 
-  public void setElementContext(PsiElement element) {
-    type = type.withElementContext(element);
+  public ResultHolder withElementContext(PsiElement element) {
+    ResultHolder duplicate = duplicate();
+    duplicate.type = duplicate.type.withElementContext(element);
+    return duplicate;
   }
 }
