@@ -1,7 +1,13 @@
 # Changelog
 ## 1.4.47
-* Fixed: Attempt at fixing incorrect sorting of Project roots
+* Fixed: Incorrect sorting of Project roots
 * Fixed: Resolve of super types would fail when type was  import alias
+* Fixed: Issue where cached values where not invalidated correctly (type names)
+* Fixed: Try-catch value expressions was not resolved correctly to type
+* Fixed: loop iterators would not resolve correctly.
+* Fixed: Nested enum extractor expressions did not resolve type.
+* Fixed: Type-from-usage resolver could in some cases prefer unknown type parameters over real ones.  
+* Added: syntax highlighting on reification expressions
 * Improvement: Better type resolve for parameters without type tag in functionLiterals
 
 
