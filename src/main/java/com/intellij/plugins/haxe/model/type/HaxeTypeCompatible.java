@@ -483,9 +483,11 @@ public class HaxeTypeCompatible {
     for (SpecificHaxeClassReference compatibleType : compatibleTypes) {
       if (canAssignToFromSpecificType(to, compatibleType)) return true;
     }
+    // if we don't know the type and don't have any constraints for Type parameters we just accept it for now
+    // to avoid  wrong error annotations
     if (to.isTypeParameter()) {
-      // if we don't know the type and don't have any constraints for Type parameters we just accept it for now
-      // to avoid  wrong error annotations
+      return true;
+    }else if (from.isTypeParameter()) {
       return true;
     }
 

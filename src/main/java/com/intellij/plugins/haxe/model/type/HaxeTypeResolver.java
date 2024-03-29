@@ -208,13 +208,24 @@ public class HaxeTypeResolver {
         if (null == resolved && resolveElementTypes) {
           resolved = getPsiElementType(param.getPsi(), comp, resolver);
         }
-        ResultHolder result = resolved != null ? resolved
-                                               : new ResultHolder(SpecificTypeReference.getUnknown(param.getPsi()));
+        ResultHolder result;
+        if (resolved != null && !resolved.isUnknown()) {
+          result = resolved;
+        }else if (resolveElementTypes && !isDynamic(comp)) { // hiding typeParameters for dynamic
+          HaxeClassReference clazz = new HaxeClassReference(param.getName(), param.getPsi(), true);
+          result = new ResultHolder(SpecificHaxeClassReference.withoutGenerics(clazz));
+        }else {
+          result = new ResultHolder(SpecificTypeReference.getUnknown(param.getPsi()));
+        }
         specifics[i++] = result;
       }
       return specifics;
     }
     return ResultHolder.EMPTY;
+  }
+
+  private static boolean isDynamic(HaxeNamedComponent comp) {
+    return comp instanceof HaxeClass aClass && aClass.getModel().getName().equals("Dynamic");
   }
 
   private static List<HaxeGenericParamModel> translateGenericParamsToModelList(HaxeGenericParam param) {
@@ -253,7 +264,7 @@ public class HaxeTypeResolver {
       if (typeReference instanceof SpecificHaxeClassReference haxeClassReference && typeReference.isTypeParameter()) {
         String className = haxeClassReference.getClassName();
         ResultHolder resolved = returnType ? resolver.resolveReturnType(haxeClassReference) : resolver.resolve(className);
-        if (null != resolved) {
+        if (null != resolved && !resolved.isUnknown()) {
           result = resolved;
           // removing from resolver to avoid attempting to propagate to the resolved class
           // if T = Array<T> and we continue to propagate T into Array<T>, then it will go on forever Array<Array<Array<...>>

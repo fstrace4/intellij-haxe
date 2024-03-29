@@ -767,7 +767,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
         }
         if (!genericResolver.isEmpty()) {
           final SpecificTypeReference typeReference = propagateGenericsToType(specific.getType(), genericResolver);
-          if (null != typeReference) {
+          if (null != typeReference  && !typeReference.isUnknown()) {
             specific.setType(typeReference);
           }
         }
