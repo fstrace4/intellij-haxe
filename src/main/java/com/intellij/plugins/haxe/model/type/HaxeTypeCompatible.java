@@ -576,7 +576,7 @@ public class HaxeTypeCompatible {
     if (from.isEnumClass()) return false;
     if(!from.isContextAType()) return false;
     // if from is literal class name
-    if (to.isClass() && from.context.getText().equals(from.getHaxeClass().getName())){
+    if (to.isClass()){
       SpecificHaxeClassReference expectedType = to.getSpecifics()[0].getClassType();
       boolean sameClass = canAssignToFromSpecificType(expectedType, from);
       if (sameClass) {

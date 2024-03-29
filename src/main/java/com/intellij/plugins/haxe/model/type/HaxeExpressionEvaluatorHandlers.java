@@ -192,10 +192,11 @@ public class HaxeExpressionEvaluatorHandlers {
 
     // If we aren't walking the body, then we might not have seen the reference.  In that
     // case, the type is still unknown.  Let's see if the resolver can figure it out.
+    PsiElement subelement = null;
     if (!resolved) {
       PsiReference reference = element.getReference();
       if (reference != null) {
-        PsiElement subelement = reference.resolve();
+        subelement = reference.resolve();
         if (subelement != element) {
           if (subelement instanceof HaxeReferenceExpression referenceExpression) {
             PsiElement resolve = referenceExpression.resolve();
@@ -313,6 +314,7 @@ public class HaxeExpressionEvaluatorHandlers {
     }
 
     if (typeHolder != null) {
+      if (subelement instanceof HaxeImportAlias) return typeHolder;
       // overriding  context  to avoid problems with canAssign thinking this is a "Pure" class reference
       return typeHolder.withElementContext(element);
     }else {

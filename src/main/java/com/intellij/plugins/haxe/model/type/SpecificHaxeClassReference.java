@@ -537,6 +537,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
       HaxeParameter type = PsiTreeUtil.getParentOfType(context, HaxeParameter.class);
       return type == null;
     }
+    if (context instanceof HaxeImportAlias) return true;
     else if (context instanceof HaxeReferenceExpression referenceExpression) {
       PsiElement resolve = referenceExpression.resolve();
       return resolve instanceof HaxeClass;
