@@ -101,11 +101,10 @@ public class HaxeGenericResolver {
   }
   @Deprecated
   public ResultHolder add(@NotNull String name, @NotNull ResultHolder specificType) {
-    resolvers.add(new ResolverEntry(name, specificType, ResolveSource.TODO));
-    return specificType;
+    return add (name, specificType, ResolveSource.TODO);
   }
   public ResultHolder add(@NotNull String name, @NotNull ResultHolder specificType, ResolveSource resolveSource) {
-
+    specificType = replaceAnyEnumValueWithEnumClass(specificType);
     resolvers.removeIf(entry -> entry.name().equals(name) && entry.resolveSource() == resolveSource);
     resolvers.add(new ResolverEntry(name, specificType, resolveSource));
 
@@ -114,7 +113,16 @@ public class HaxeGenericResolver {
     return specificType;
   }
 
+  private static ResultHolder replaceAnyEnumValueWithEnumClass(@NotNull ResultHolder specificType) {
+    // EnumValues cant be typeParameters, replacing with declaring EnumClass
+    if (specificType.isEnumValueType()){
+      specificType = specificType.getEnumValueType().getEnumClass().createHolder();
+    }
+    return specificType;
+  }
+
   private void addForTypeParameterConstraints(@NotNull String name, @NotNull ResultHolder specificType) {
+    specificType = replaceAnyEnumValueWithEnumClass(specificType);
     if(specificType.isTypeParameter()) return;
     Optional<ResolverEntry> constraint = findConstraint(name);
     if (constraint.isPresent()) {
@@ -132,6 +140,7 @@ public class HaxeGenericResolver {
   }
 
   public ResultHolder addConstraint(@NotNull String name, @NotNull ResultHolder specificType, ResolveSource resolveSource) {
+    specificType = replaceAnyEnumValueWithEnumClass(specificType);
     constaints.removeIf(entry -> entry.name().equals(name) && entry.resolveSource() == resolveSource);
     constaints.add(new ResolverEntry(name, specificType, resolveSource));
     return specificType;
@@ -148,11 +157,6 @@ public class HaxeGenericResolver {
         this.addConstraint(entry.name(), entry.type(), entry.resolveSource());
       }
 
-      //removeExisting(parentResolver.resolvers, resolvers);
-      //removeExisting(parentResolver.constaints, constaints);
-      //
-      //this.resolvers.addAll(parentResolver.resolvers);
-      //this.constaints.addAll(parentResolver.constaints);
     }
     return this;
   }
