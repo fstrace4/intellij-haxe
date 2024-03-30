@@ -637,7 +637,9 @@ switchBlock ::= '{' (switchCase | defaultCase)* '}'{pin=1}
 
 switchCaseBlock ::=  statementList | (literalExpression <<semicolonUnlessPrecededByStatement>>)
 switchCase ::= 'case' switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
-switchCaseExpr ::= (switchExtractorExpression  | expression | switchCaseCaptureVar) {pin=1} // Should NOT be named Expression, because it should not be an expression.
+private switchCaseExprElement ::=  switchExtractorExpression  | expression | switchCaseCaptureVar
+switchCaseExprArray ::= "["   ( switchCaseExprElement ","?)+ "]"
+switchCaseExpr ::= switchCaseExprArray  | switchCaseExprElement {pin=1} // Should NOT be named Expression, because it should not be an expression.
 
 ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
 

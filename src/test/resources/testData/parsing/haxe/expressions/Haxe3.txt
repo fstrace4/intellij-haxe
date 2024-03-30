@@ -704,15 +704,14 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:LITINT('2')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:LITINT('2')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -724,15 +723,14 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
-                                HaxePsiToken:,(',')
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:LITINT('6')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
+                              HaxePsiToken:,(',')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:LITINT('6')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -757,20 +755,19 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -926,16 +923,15 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('a')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('b')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('a')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('b')
                               HaxePsiToken:](']')
                           GUARD
                             HaxePsiToken:if('if')
@@ -972,16 +968,15 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('a')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('b')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('a')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('b')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -1059,19 +1054,18 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:LITINT('1')
-                                HaxePsiToken:,(',')
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:false('false')
-                                HaxePsiToken:,(',')
-                                STRING_LITERAL_EXPRESSION
-                                  HaxePsiToken:OPEN_QUOTE('"')
-                                  HaxePsiToken:REGULAR_STRING_PART('bar')
-                                  HaxePsiToken:CLOSING_QUOTE('"')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:LITINT('1')
+                              HaxePsiToken:,(',')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:false('false')
+                              HaxePsiToken:,(',')
+                              STRING_LITERAL_EXPRESSION
+                                HaxePsiToken:OPEN_QUOTE('"')
+                                HaxePsiToken:REGULAR_STRING_PART('bar')
+                                HaxePsiToken:CLOSING_QUOTE('"')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -1083,19 +1077,18 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
-                                HaxePsiToken:,(',')
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:true('true')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
+                              HaxePsiToken:,(',')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:true('true')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -1107,19 +1100,18 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            ARRAY_LITERAL
+                            SWITCH_CASE_EXPR_ARRAY
                               HaxePsiToken:[('[')
-                              EXPRESSION_LIST
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
-                                HaxePsiToken:,(',')
-                                LITERAL_EXPRESSION
-                                  HaxePsiToken:false('false')
-                                HaxePsiToken:,(',')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('_')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
+                              HaxePsiToken:,(',')
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:false('false')
+                              HaxePsiToken:,(',')
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('_')
                               HaxePsiToken:](']')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
