@@ -2,11 +2,9 @@ package com.intellij.plugins.haxe.lang.psi.impl;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.HaxeUsingModel;
-import com.intellij.psi.PsiElement;
+import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.psi.PsiElementVisitor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class HaxeImportAliasPsiMixinImpl extends HaxeStatementPsiMixinImpl implements HaxeImportAlias {
   public HaxeImportAliasPsiMixinImpl(ASTNode node) {
@@ -33,7 +31,13 @@ public class HaxeImportAliasPsiMixinImpl extends HaxeStatementPsiMixinImpl imple
     if(getParent() instanceof  HaxeImportStatement importStatement) {
       HaxeReferenceExpression expression = importStatement.getReferenceExpression();
       if (expression != null) {
-        return expression.resolveHaxeClass();
+        HaxeResolveResult result = expression.resolveHaxeClass();
+        HaxeClass haxeClass = result.getHaxeClass();
+        if (haxeClass != null) {
+          // extract type from Class<T>
+          @NotNull ResultHolder[] specifics = result.getGenericResolver().getSpecificsFor(haxeClass);
+          return specifics[0].getClassType().asResolveResult();
+        }
       }
     }
     return HaxeResolveResult.EMPTY;

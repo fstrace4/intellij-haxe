@@ -186,7 +186,7 @@ public class HaxeCallExpressionUtil {
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
       if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, typeParamMap);
+        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, resolver, typeParamMap);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, argumentResolver);
       }
@@ -510,7 +510,7 @@ public class HaxeCallExpressionUtil {
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
       if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, typeParamMap);
+        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamMap);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }
@@ -679,7 +679,7 @@ public class HaxeCallExpressionUtil {
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
       if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, typeParamMap);
+        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamMap);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }
@@ -753,15 +753,17 @@ public class HaxeCallExpressionUtil {
 
   private static void inheritTypeParametersFromArgument(ResultHolder parameterType,
                                                         ResultHolder argumentType,
-                                                        HaxeGenericResolver resolver,
-                                                        Map<String, ResultHolder> typeParamMap) {
+                                                        HaxeGenericResolver argumentResolver,
+                                                        HaxeGenericResolver parentResolver, Map<String, ResultHolder> typeParamMap) {
     if (argumentType == null) return; // this should not happen, we should have an argument
-    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), resolver, typeParamMap);
-    resolver.addAll(inherit);
+    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), argumentResolver, typeParamMap);
+    argumentResolver.addAll(inherit);
     // parameter is a typeParameter type, we can just add it to resolver
     if (parameterType.getClassType().isTypeParameter()) {
       String className = parameterType.getClassType().getClassName();
-      resolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+      argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+      // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
+      parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
       typeParamMap.put(className, argumentType);
     }
   }

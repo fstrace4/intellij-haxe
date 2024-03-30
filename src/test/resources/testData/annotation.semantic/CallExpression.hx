@@ -1,6 +1,8 @@
 package ;
 using StringTools;
 
+import  StringBuf as ImportAlias;
+
 typedef MyStruct = {a:String, b:Int}
 class A {}
 class B extends A {}
@@ -90,6 +92,7 @@ class CallExpressionTest {
         var resultA = genericClassArgs(String); // CORRECT (type passed to var)
         var resultB:String = genericClassArgs(String); // CORRECT (variable and return type matches)
         var resultC:String = genericClassArgs(typeVar); // CORRECT (variable and return type matches)
+        var resultC:StringBuf = genericClassArgs(ImportAlias); // CORRECT (using import alias that matches variable type)
 
         genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'Int')">1</error>);  // WRONG parameter type  (should be Class)
         genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'String')">resultC</error>);  // WRONG parameter type (should be Class)

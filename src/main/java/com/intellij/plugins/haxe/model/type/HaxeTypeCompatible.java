@@ -664,6 +664,10 @@ public class HaxeTypeCompatible {
     if (to.isDynamic() || from.isDynamic()) {
       return true;
     }
+    if (to.isTypeParameter() && !from.isTypeParameter()){
+      // we allow assign to typeParameter when only one of the types is a type parameter
+      return true;
+    }
 
     if (from.isUnknown()) {
       return true;

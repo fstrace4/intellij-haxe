@@ -1139,6 +1139,12 @@ public class HaxeExpressionEvaluatorHandlers {
       functionResolver.addAll(resolver);
       HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, functionResolver);
 
+      // if reference to "real" method, try to use any argument to type parameter mapping
+      if (ftype.method != null) {
+        HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, ftype.method.getMethod());
+        functionResolver.addAll(validation.getResolver());
+      }
+
       ResultHolder resolved = functionResolver.resolveReturnType(returnType);
       if (resolved != null && !resolved.isUnknown()) {
         returnType = resolved;
@@ -1517,7 +1523,8 @@ public class HaxeExpressionEvaluatorHandlers {
     if (haxeClass == null) {
       return new ResultHolder(SpecificHaxeClassReference.getUnknown(element));
     }else {
-      return SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(haxeClass.getModel(), element)).createHolder();
+      @NotNull ResultHolder[] specifics = result.getGenericResolver().getSpecificsFor(haxeClass);
+      return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(haxeClass.getModel(), element), specifics).createHolder();
     }
   }
 

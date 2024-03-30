@@ -29,9 +29,9 @@ class Test {
 
         var withoutTypeTagGeneric = testB;
         var genericResult = withoutTypeTagGeneric("");
-        //TODO try to support generics
-//        genericResult.toLowerCase(); // correct
-//        withoutTypeTagGeneric("").toLowerCase(); // correct
+
+        genericResult.toLowerCase(); // correct
+        withoutTypeTagGeneric("").toLowerCase(); // correct
 
     }
 
