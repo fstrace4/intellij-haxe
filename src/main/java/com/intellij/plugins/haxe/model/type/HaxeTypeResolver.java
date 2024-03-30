@@ -299,7 +299,7 @@ public class HaxeTypeResolver {
           HaxeTypeOrAnonymous typeOrAnonymous = typeTag.getTypeOrAnonymous();
           if (typeOrAnonymous != null) {
             HaxeClass aClass = (HaxeClass)method.getContainingClass();
-            HaxeGenericResolver localResolver = HaxeGenericSpecialization.fromGenericResolver(null, resolver).toGenericResolver(aClass);
+            HaxeGenericResolver localResolver = HaxeGenericSpecialization.fromGenericResolver(null, resolver).toGenericResolver(aClass).withoutUnknowns();
             localResolver.addAssignHint(resolver);
             ResultHolder resolve = HaxeTypeResolver.getTypeFromTypeOrAnonymous(typeOrAnonymous, localResolver, true);
             //TODO mlo: double resolve will cause issues (need another way to get correct typeParameter names)
@@ -354,7 +354,10 @@ public class HaxeTypeResolver {
       Collection<HaxeReturnStatement> returnStatements = PsiTreeUtil.findChildrenOfType(psi, HaxeReturnStatement.class);
       for (HaxeReturnStatement statement : returnStatements) {
         HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class);
-        if (type == null) return statement;
+        // we want to avoid returning return statements that are in a deeper scope / inside a local function, however we might also be
+        // searching for the returnType of a local function, so we check if any parent of local function is null or the same as the function
+        // we are searching
+        if (type == null || type == psi.getParent()) return statement;
       }
     }
     return null;
