@@ -34,7 +34,7 @@ public class HaxeInlayLocalVariableHintsProvider implements InlayHintsProvider {
 
 
     private static void handleLocalVarDeclarationHints(@NotNull InlayTreeSink sink, @NotNull HaxeLocalVarDeclaration varDeclaration) {
-
+      if (varDeclaration instanceof  HaxeSwitchCaseCaptureVar) return; // handled by HaxeInlayCaptureVariableHintsProvider
       HaxeTypeTag tag = varDeclaration.getTypeTag();
       if (tag == null) {
         ResultHolder type;
