@@ -302,11 +302,12 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
       if (parentSwitch != null) {
         HaxeExpression expression = parentSwitch.getExpression();
         if (expression instanceof HaxeParenthesizedExpression parenthesizedExpression) {
+          expression = parenthesizedExpression.getExpression();
+        }
           HaxeSwitchCaseExprArray exprArray = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExprArray.class);
           // TODO: if necessary support array inside array ?
-          int index = findSwitchArrayIndex(exprArray);
-          HaxeExpression subExpression = parenthesizedExpression.getExpression();
-          if (subExpression instanceof  HaxeArrayLiteral arrayLiteral) {
+          int index = findSwitchArrayIndex(exprArray, reference);
+          if (expression instanceof  HaxeArrayLiteral arrayLiteral) {
             HaxeExpressionList list = arrayLiteral.getExpressionList();
             if (list != null && index > -1) {
               HaxeExpression haxeExpression = list.getExpressionList().get(index);
@@ -314,7 +315,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
               if (components != null) return  components;
             }
           }
-        }
+
         List<HaxeNamedComponent> components = evaluateAndFindEnumMember(reference, expression);
         if (components != null) return  components;
       }
@@ -388,15 +389,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     return null;
   }
 
-  private static int findSwitchArrayIndex(HaxeSwitchCaseExprArray exprArray) {
+  private static int findSwitchArrayIndex(HaxeSwitchCaseExprArray exprArray, HaxeReference reference) {
     int index;
     if (exprArray != null) {
       @NotNull List<HaxeExpression> list = exprArray.getExpressionList();
       for (int i = 0; i < list.size(); i++) {
         HaxeExpression haxeExpression = list.get(i);
-        if (PsiTreeUtil.findCommonParent(haxeExpression, exprArray) != null) {
-          return i;
-        }
+        if (haxeExpression == reference) return i; //  check normal array one to one mapping
+        //
+        if (PsiTreeUtil.findCommonContext(reference, haxeExpression)  == haxeExpression) return i;
       }
     }
     return -1;
@@ -654,11 +655,13 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     // check if matches default name ( ex. `case _:`)
     if (result == null) result = checkIfSwitchCaseDefaultValue(reference);
 
+    // try to match  when expression is array literal
+    if (result == null) result = tryResolveCaseArrayElement(reference, switchCaseExpr);
+
     // checks if it matches default name inside array (ex. `case [2, _]:` when switch expression is array reference)
     if (result == null) result = checkIfDefaultNameInCaseArray(reference, switchCaseExpr);
 
-    // try to match  when expression is array literal
-    if (result == null) result = tryResolveCaseArrayElement(reference, switchCaseExpr);
+
 
     // try to resolve reference for guard and block (ex. `case [a, b] if ( b > a): b + ">" + a;`)
     if (result == null) result = tryResolveVariableForGuardsAndBlock(reference);
@@ -721,7 +724,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   private static List<PsiElement> checkIfDefaultNameInCaseArray(HaxeReference reference, HaxeSwitchCaseExpr switchCaseExpr) {
-    if (switchCaseExpr != null && reference.getParent().getParent() instanceof HaxeArrayLiteral) {
+    if (switchCaseExpr != null && reference.getParent() instanceof HaxeSwitchCaseExprArray) {
       HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
       if (switchStatement != null && switchStatement.getExpression() != null) {
         // should be array, but can be anything
@@ -737,11 +740,9 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   @Nullable
   private static List<PsiElement> tryResolveCaseArrayElement(HaxeReference reference, HaxeSwitchCaseExpr switchCaseExpr) {
-    if (switchCaseExpr != null && reference.getParent().getParent() instanceof  HaxeArrayLiteral) {
+    if (switchCaseExpr != null && reference.getParent() instanceof HaxeSwitchCaseExprArray) {
       HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
       if (switchStatement != null && switchStatement.getExpression() != null) {
-        // should be array, but can be anything
-        ResultHolder type = HaxeTypeResolver.getPsiElementType(switchStatement.getExpression(), null);
 
         HaxeExpression haxeExpression = switchStatement.getExpression();
         if (haxeExpression instanceof HaxeParenthesizedExpression parenthesizedExpression) {
@@ -750,18 +751,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         if (haxeExpression instanceof  HaxeArrayLiteral arrayLiteral) {
           int index;
           // find  our reference index (NOTE: may not work if nested arrays or in enum extractor)
-          HaxeArrayLiteral caseArray = PsiTreeUtil.getParentOfType(reference, HaxeArrayLiteral.class);
+          HaxeSwitchCaseExprArray caseArray = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExprArray.class);
           if (caseArray != null) {
-            HaxeExpressionList expressionList = caseArray.getExpressionList();
-            if (expressionList != null) {
-              List<HaxeExpression> caseExpressionList = expressionList.getExpressionList();
-              index = caseExpressionList.indexOf(reference);
-              if (index > -1) {
-                HaxeExpressionList switchExpressionList = arrayLiteral.getExpressionList();
-                if (switchExpressionList != null) {
-                  List<HaxeExpression> list = switchExpressionList.getExpressionList();
-                  if (list.size() > index) return List.of(list.get(index));
-                }
+            List<HaxeExpression> caseExpressionList = caseArray.getExpressionList();
+            index = caseExpressionList.indexOf(reference);
+            if (index > -1) {
+              HaxeExpressionList switchExpressionList = arrayLiteral.getExpressionList();
+              if (switchExpressionList != null) {
+                List<HaxeExpression> list = switchExpressionList.getExpressionList();
+                if (list.size() > index) return List.of(list.get(index));
               }
             }
           }
