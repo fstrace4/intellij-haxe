@@ -161,16 +161,6 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   }
 
   @Test
-  public void testOptionalWithInitWarning() throws Exception {
-    doTestNoFixWithWarnings();
-  }
-
-  @Test
-  public void testNonOptionalArgumentsAfterOptionalOnes() throws Exception {
-    doTestNoFixWithWarnings();
-  }
-
-  @Test
   public void testNonConstantArgument() throws Exception {
     doTestNoFixWithWarnings();
   }

@@ -67,31 +67,19 @@ public class HaxeMethodAnnotator implements Annotator {
 
   private static void checkMethodArguments(final HaxeMethodModel currentMethod, final AnnotationHolder holder) {
     PsiElement methodPsi = currentMethod.getBasePsi();
-    boolean checkOptionalWithInit = OPTIONAL_WITH_INITIALIZER.isEnabled(methodPsi);
     boolean checkParameterInitializers = PARAMETER_INITIALIZER_TYPES.isEnabled(methodPsi);
-    boolean checkParameterOrdering = PARAMETER_ORDERING_CHECK.isEnabled(methodPsi);
     boolean checkRepeatedParameterName = REPEATED_PARAMETER_NAME_CHECK.isEnabled(methodPsi);
 
-    if (!checkOptionalWithInit
-        && !checkParameterInitializers
-        && !checkParameterOrdering
+    if (!checkParameterInitializers
         && !checkRepeatedParameterName) {
       return;
     }
 
-    boolean hasOptional = false;
     HashMap<String, PsiElement> argumentNames = new HashMap<String, PsiElement>();
     for (final HaxeParameterModel param : currentMethod.getParameters()) {
       String paramName = param.getName();
 
-      if (checkOptionalWithInit) {
-        if (param.hasOptionalPsi() && param.getVarInitPsi() != null) {
-          // @TODO: Move to bundle
-          holder.newAnnotation(HighlightSeverity.WARNING, "Optional not needed when specified an init value")
-            .range(param.getOptionalPsi())
-            .create();
-        }
-      }
+
 
       if (checkParameterInitializers) {
         if (param.getVarInitPsi() != null && param.getTypeTagPsi() != null) {
@@ -102,18 +90,6 @@ public class HaxeMethodAnnotator implements Annotator {
             true,
             holder
           );
-        }
-      }
-
-      if (checkParameterOrdering) {
-        if (param.isOptional()) {
-          hasOptional = true;
-        }
-        else if (hasOptional) {
-          // @TODO: Move to bundle
-          holder.newAnnotation(HighlightSeverity.WARNING, "Non-optional argument after optional argument")
-            .range(param.getBasePsi())
-            .create();
         }
       }
 
