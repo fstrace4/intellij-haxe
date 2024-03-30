@@ -686,7 +686,7 @@ public class HaxeExpressionEvaluatorHandlers {
 
           if (!functionBlockContext.getReturnValues().isEmpty()) {
             returnType = HaxeTypeUnifier.unifyHolders(functionBlockContext.getReturnValues(), function);
-          }else  if (block.getExpressionList().size() == 1){
+          }else  if (!block.getExpressionList().isEmpty()){
             returnType = handled;
           }else {
             returnType = SpecificHaxeClassReference.getVoid(function).createHolder();

@@ -933,48 +933,72 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
   @Nullable
   public static ResultHolder tryToFindTypeFromCallExpression(HaxeFunctionLiteral literal, @NotNull PsiElement parameter) {
-    if (literal.getParent().getParent() instanceof  HaxeCallExpression callExpression) {
-      if (callExpression.getExpression() instanceof HaxeReference reference) {
-        if (reference.resolve() instanceof  HaxeMethod haxeMethod) {
-          // TODO find correct parameter, this is just a quick and dirty attempt might get wrong type
-          HaxeCallExpressionList list = callExpression.getExpressionList();
-          if (list == null) return null;
-          int callExpressionIndex = list.getExpressionList().indexOf(literal);
-          List<HaxeParameterModel> parameters = haxeMethod.getModel().getParameters();
-          if (parameters.size() < callExpressionIndex) return null;
-          for (int i = 0; i<callExpressionIndex; i++) {
-            if (parameters.get(i).isOptional()) return null; //TODO,  lazy hack to avoid incorrect results, need parameter map
-          }
-          HaxeParameterModel model = parameters.get(callExpressionIndex);
-          ResultHolder type = model.getType();
-          if (type.isFunctionType()) {
-            SpecificFunctionReference functionType = type.getFunctionType();
-            HaxeParameterList parameterList = literal.getParameterList();
-            if (parameterList == null || functionType == null) return null;
-            int parameterMappedToArgument = parameterList.getParameterList().indexOf(parameter);
-            List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
-            SpecificFunctionReference.Argument argument = arguments.get(parameterMappedToArgument);
-            // this is an ugly hack to get a resolver from callexpression without causing a stack overflow as this parameter could be
-            // a type parameter that the resolver needs to resolve, if we notice that we are resolving multiple times we try to only use
-            //  parent genericResolver values or allow this second pass to return unknown so that any other parameters can populate
-            //  the generic resolver
-            boolean shouldPop = false;
-            HaxeGenericResolver parentExpResolver = null;
-            try {
-              parentExpResolver = getGenericResolverFromParentExpression(callExpression);
-              if (!genericResolverHelper.get().contains(callExpression)) {
-                shouldPop = genericResolverHelper.get().add(callExpression);
-                HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(callExpression);
-                parentExpResolver.addAll(resolver);
-              }
-            }finally{
-              if (shouldPop)genericResolverHelper.get().remove(callExpression);
-            }
-            ResultHolder resolved = parentExpResolver.resolve(argument.getType());
-            if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
+    PsiElement parent = literal.getParent();
 
+    List<HaxeExpression> expressionList = null;
+    HaxeMethodModel methodModel = null;
+    HaxeCallExpression expression = null;
+
+    if (parent instanceof HaxeNewExpression newExpression && newExpression.getType() != null) {
+      ResultHolder type = HaxeTypeResolver.getTypeFromType(newExpression.getType());
+      SpecificHaxeClassReference classType = type.getClassType();
+      if (classType != null && classType.getHaxeClass() != null) {
+        methodModel = classType.getHaxeClass().getModel().getConstructor(null);
+        expressionList = newExpression.getExpressionList();
+      }
+
+    }
+    // double parent due to CallExpressionList level
+    if (parent.getParent() instanceof  HaxeCallExpression callExpression) {
+      if (callExpression.getExpression() instanceof HaxeReference reference) {
+        if (reference.resolve() instanceof HaxeMethod haxeMethod) {
+          HaxeCallExpressionList expressionListPsi = callExpression.getExpressionList();
+          if (expressionListPsi != null) {
+            expressionList = expressionListPsi.getExpressionList();
+            methodModel = haxeMethod.getModel();
+            expression = callExpression;
           }
         }
+      }
+    }
+
+    if (expressionList != null && methodModel != null) {
+      // TODO find correct parameter, this is just a quick and dirty attempt might get wrong type
+      int callExpressionIndex = expressionList.indexOf(literal);
+      List<HaxeParameterModel> parameters = methodModel.getParameters();
+      if (parameters.size() < callExpressionIndex) return null;
+      for (int i = 0; i < callExpressionIndex; i++) {
+        if (parameters.get(i).isOptional()) return null; //TODO,  lazy hack to avoid incorrect results, need parameter map
+      }
+      HaxeParameterModel model = parameters.get(callExpressionIndex);
+      ResultHolder type = model.getType();
+      if (type.isFunctionType()) {
+        SpecificFunctionReference functionType = type.getFunctionType();
+        HaxeParameterList parameterList = literal.getParameterList();
+        if (parameterList == null || functionType == null) return null;
+        int parameterMappedToArgument = parameterList.getParameterList().indexOf(parameter);
+        List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
+        SpecificFunctionReference.Argument argument = arguments.get(parameterMappedToArgument);
+        // this is an ugly hack to get a resolver from callexpression without causing a stack overflow as this parameter could be
+        // a type parameter that the resolver needs to resolve, if we notice that we are resolving multiple times we try to only use
+        //  parent genericResolver values or allow this second pass to return unknown so that any other parameters can populate
+        //  the generic resolver
+        boolean shouldPop = false;
+        HaxeGenericResolver parentExpResolver = new HaxeGenericResolver();
+        if (expression != null) {
+          try {
+            parentExpResolver = getGenericResolverFromParentExpression(expression);
+            if (!genericResolverHelper.get().contains(expression)) {
+              shouldPop = genericResolverHelper.get().add(expression);
+              HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(expression);
+              parentExpResolver.addAll(resolver);
+            }
+          } finally {
+            if (shouldPop) genericResolverHelper.get().remove(expression);
+          }
+        }
+        ResultHolder resolved = parentExpResolver.resolve(argument.getType());
+        if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
       }
     }
     return null;
