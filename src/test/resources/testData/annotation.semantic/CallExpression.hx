@@ -1,4 +1,5 @@
 package ;
+import Float;
 using StringTools;
 
 import  StringBuf as ImportAlias;
@@ -15,6 +16,7 @@ class CallExpressionTest {
     function optionalArgs(arg1:String, ?arg2:Int) {}
     function defaultArgs(arg1:String, arg2:String = "") {}
     function functionArgs(arg1:String,  arg3:Int->String) {}
+    function functionArgs2(arg1:String,  arg3:(String->Int)->(Int->String)->Float) {}
     function varArgs(arg1:String, extra:Array<haxe.macro.Expr>) {}
     function restArgs(arg1:String, extra:haxe.extern.Rest<String>) {}
     function typeDefArg(arg1:MyStruct) {}
@@ -52,10 +54,15 @@ class CallExpressionTest {
         functionArgs("FunctionA", (a:Int)->{return "String";}); // CORRECT
         functionArgs("FunctionA", intToString); // CORRECT
 
+
         functionArgs("FunctionA", <error descr="Type mismatch (Expected: 'Int->String' got: 'String->String')">(a:String)->{return "String";}</error>); // WRONG function must accept Int parameter
         functionArgs("FunctionA", <error descr="Type mismatch (Expected: 'Int->String' got: 'Int->Int')">(a:Int)->{return 1;}</error>); // WRONG function must return String
         functionArgs("FunctionA", <error descr="Type mismatch (Expected: 'Int->String' got: 'Int')">1</error>); // WRONG argument type is not a function
         functionArgs("FunctionA", <error descr="Type mismatch (Expected: 'Int->String' got: 'String->Int')">stringToInt</error>); // WRONG
+
+        var sToI:String->Int;
+        var iToS:Int->String;
+        functionArgs2("FunctionA", (sToI,iToS) -> 1.0 ); // CORRECT
 
         varArgs("Stirng1", "String2", "String3", "String4 "); //CORRECT
         varArgs("Stirng1"); //CORRECT ( when using varArg, arguments are optional)

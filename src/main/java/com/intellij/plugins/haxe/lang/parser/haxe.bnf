@@ -479,7 +479,8 @@ mapLiteral ::= '[' (mapInitializerStatement | mapInitializerExpressionList) ']'
 {pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
 
 optionalMark ::= '?'
-functionType ::= newFunctionType | oldFunctionType
+// this order is important, if new is first then  the return value for `(Int->Void)->(String->Void)->Float` becomes `(String->Void)->Float` and not `Float` as its suppose to be
+functionType ::= oldFunctionType | newFunctionType
 functionReturnType ::= typeWrapper
 // normal types have type parameters that can be nested so its best to check types before function types/function signatures
 // as functions are not nested and checking them first will cause a wasted function type check on every nested type in normal types

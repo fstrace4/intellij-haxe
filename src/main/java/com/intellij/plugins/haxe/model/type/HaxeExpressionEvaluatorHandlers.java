@@ -1140,7 +1140,7 @@ public class HaxeExpressionEvaluatorHandlers {
       HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, functionResolver);
 
       // if reference to "real" method, try to use any argument to type parameter mapping
-      if (ftype.method != null) {
+      if (ftype.method != null && returnType.isTypeParameter()) {
         HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, ftype.method.getMethod());
         functionResolver.addAll(validation.getResolver());
       }
