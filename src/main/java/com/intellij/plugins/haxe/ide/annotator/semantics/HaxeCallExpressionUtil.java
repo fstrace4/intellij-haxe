@@ -106,20 +106,27 @@ public class HaxeCallExpressionUtil {
 
     if (validation.isStaticExtension) {
       // this might not work for literals, need to handle those in a different way
-      if (methodExpression instanceof HaxeReferenceExpression) {
-        if (!callieType.isUnknown()) {
-
-          HaxeParameterModel model = parameterList.get(parameterCounter++);
-          ResultHolder type = model.getType(resolver.withoutUnknowns());
-          if (!canAssignToFrom(type, callieType)) {
-            // TODO better error message
-            validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
-            return validation;
+      if (methodExpression instanceof HaxeReferenceExpression referenceChain) {
+        ResultHolder leftType = callieType;
+        // if callie is unknown try to resolve left
+        if (leftType.isUnknown() || leftType.isTypeParameter()) {
+          HaxeReference leftReference = HaxeResolveUtil.getLeftReference(referenceChain);
+          if (leftReference != null) {
+            PsiElement resolve = leftReference.resolve();
+            if (resolve != null) {
+              leftType = HaxeTypeResolver.getPsiElementType(resolve, resolver);
+            }
           }
         }
-      }
-      else {
-        // TODO check if literals, like "myString".SomeExtension()
+        HaxeParameterModel model = parameterList.get(parameterCounter++);
+        ResultHolder type = model.getType(resolver.withoutUnknowns());
+        if (!canAssignToFrom(type, leftType)) {
+          // TODO better error message
+          validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
+          return validation;
+        } else {
+          // TODO check if literals, like "myString".SomeExtension()
+        }
       }
     }
 
