@@ -216,10 +216,12 @@ public class HaxeTypeCompatible {
       }
     }
     // check if we try to assign enum value to a reference with (it's) enum class as type
-    if (to instanceof SpecificHaxeClassReference classReference && (classReference.isEnumType() || classReference.isEnumValueClass())){
-      if (from instanceof  SpecificEnumValueReference  valueReference) {
-        if (classReference.isEnumValueClass()) return true; // all enum values can be assigned to EnumValueClass type;
-        return canAssignToFromType( classReference, valueReference.getEnumClass());
+    if (to instanceof SpecificHaxeClassReference classReference) {
+      if (classReference.isEnumType() || classReference.isEnumValueClass() || isUnderlyingTypeEnum(classReference)) {
+        if (from instanceof SpecificEnumValueReference valueReference) {
+          if (classReference.isEnumValueClass()) return true; // all enum values can be assigned to EnumValueClass type;
+          return canAssignToFromType(classReference, valueReference.getEnumClass());
+        }
       }
     }
 
@@ -235,6 +237,14 @@ public class HaxeTypeCompatible {
 
 
     return false;
+  }
+
+  private static boolean isUnderlyingTypeEnum(SpecificHaxeClassReference classReference) {
+    HaxeClassModel model = classReference.getHaxeClassModel();
+    if (model == null) return false;
+    SpecificHaxeClassReference reference = model.getUnderlyingClassReference(classReference.getGenericResolver());
+    if (reference == null) return false;
+    return reference.isEnumType();
   }
 
   private static boolean isEnum(@Nullable SpecificTypeReference from) {
