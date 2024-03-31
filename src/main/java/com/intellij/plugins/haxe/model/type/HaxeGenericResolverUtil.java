@@ -144,8 +144,14 @@ public class HaxeGenericResolverUtil {
           // entries that have a constraint should keep the constraint and let the type
           // checker deal with any issues.
           HaxeExpressionList parameterList = call.getExpressionList();
-          List<HaxeExpression> expressionList = null != parameterList ? parameterList.getExpressionList() : null;
-          if (null != expressionList) {
+          List<HaxeExpression> expressionList = null != parameterList ? parameterList.getExpressionList() : new ArrayList<>();
+          // if this is a static extension method call we need to add the type of the callie
+          if (call.resolveIsStaticExtension()) {
+            // add callie as parameter
+            HaxeReference callieReference = HaxeResolveUtil.getLeftReference(callExpression);
+            if (callieReference != null)expressionList.add(0, callieReference);
+          }
+          if (!expressionList.isEmpty()) {
 
 
             parameterArgumentMap = mapArgumentsToParameters(call, methodParameters, expressionList, false, resolver);
