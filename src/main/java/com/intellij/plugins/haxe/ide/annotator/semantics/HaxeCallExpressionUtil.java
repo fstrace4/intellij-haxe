@@ -761,7 +761,7 @@ public class HaxeCallExpressionUtil {
                                                         HaxeGenericResolver argumentResolver,
                                                         HaxeGenericResolver parentResolver, Map<String, ResultHolder> typeParamMap) {
     if (argumentType == null) return; // this should not happen, we should have an argument
-    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), argumentResolver, typeParamMap);
+    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), new HaxeGenericResolver(), typeParamMap);
     argumentResolver.addAll(inherit);
     if (parameterType.getClassType() != null) {
       // parameter is a typeParameter type, we can just add it to resolver
@@ -851,13 +851,12 @@ public class HaxeCallExpressionUtil {
                                                                  SpecificTypeReference argument,
                                                                  HaxeGenericResolver resolver, Map<String, ResultHolder> map) {
 
-    HaxeGenericResolver inheritResolver = new HaxeGenericResolver();
     if (parameter instanceof SpecificHaxeClassReference parameterReference &&
         argument instanceof SpecificHaxeClassReference argumentReference) {
       HaxeGenericResolver paramResolver = parameterReference.getGenericResolver().addAll(resolver.withoutUnknowns());
       HaxeGenericResolver argResolver = argumentReference.getGenericResolver().addAll(resolver.withoutUnknowns());
-      if (parameterReference.isTypeParameter() && !argument.isTypeParameter()) {
-        resolver.add(parameterReference.getClassName(), argumentReference.createHolder());
+      if (parameterReference.isTypeParameter() && !argument.isTypeParameter() && !argument.isUnknown()) {
+        resolver.add(parameterReference.getClassName(), argumentReference.createHolder(),  ResolveSource.ARGUMENT_TYPE);
       }else {
         for (String name : paramResolver.names()) {
           ResultHolder resolve = paramResolver.resolve(name);
@@ -867,7 +866,7 @@ public class HaxeCallExpressionUtil {
             if (className != null && map.containsKey(className)) {
               ResultHolder argResolved = argResolver.resolve(className);
               if (argResolved != null) {
-                resolver.add(className, argResolved);
+                resolver.add(className, argResolved, ResolveSource.ARGUMENT_TYPE);
               }
             }
           }
@@ -893,7 +892,7 @@ public class HaxeCallExpressionUtil {
     }
 
 
-    return inheritResolver;
+    return resolver;
   }
 
 

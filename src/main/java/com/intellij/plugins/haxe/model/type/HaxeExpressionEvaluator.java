@@ -23,6 +23,7 @@ import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.progress.*;
 import com.intellij.openapi.roots.ProjectRootModificationTracker;
 import com.intellij.openapi.util.ModificationTracker;
+import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.model.*;
@@ -95,6 +96,12 @@ public class HaxeExpressionEvaluator {
       // Don't log these, because they are common, but DON'T swallow them, either; it makes things unresponsive.
       throw e;
     }
+    catch (OverflowGuardException e) {
+      // Don't log these, some OverflowGuardException are normal behavior.
+      // when resolving untyped parameters  we need to search the callExpression for  its typeParameters to get the correct type
+      // this will involve iterating over all parameters to see if any of the other ones define the type parameter
+      throw e;
+    }
     catch (Throwable t) {
       // XXX: Watch this.  If it happens a lot, then maybe we shouldn't log it unless in debug mode.
       log.warn("Error evaluating expression type for element " + (null == element ? "<null>" : element.toString()), t);
@@ -120,7 +127,7 @@ public class HaxeExpressionEvaluator {
     if (element instanceof HaxeImportAlias alias) {
       return handleImportAlias(element, alias);
     }
-    // attempt at reducing unnecessary if checks by grouping psi types by their paraent type
+    // attempt at reducing unnecessary if checks by grouping psi types by their parent type
     if (element instanceof PsiStatement) {
 
       if (element instanceof HaxeReturnStatement returnStatement) {
@@ -464,8 +471,8 @@ public class HaxeExpressionEvaluator {
       if (reference instanceof HaxeExpression expression) {
         if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
           HaxeExpression rightExpression = assignExpression.getRightExpression();
-          ResultHolder result = handle(rightExpression, context, resolver);
-          if (!result.isUnknown() && result.getType().isSameType(resultHolder.getType())) {
+          ResultHolder result = handleWithRecursionGuard(rightExpression, context, resolver);
+          if (result != null && !result.isUnknown() && result.getType().isSameType(resultHolder.getType())) {
             HaxeGenericResolver resultResolver = result.getClassType().getGenericResolver();
             HaxeGenericResolver resultResolverWithoutUnknowns = resultResolver.withoutUnknowns();
             // check that assigned value does not contain any unknown typeParameters (ex. someArrVar = [])

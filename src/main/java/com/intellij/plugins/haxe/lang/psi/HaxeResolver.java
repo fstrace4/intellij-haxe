@@ -22,6 +22,7 @@ package com.intellij.plugins.haxe.lang.psi;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Key;
+import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
@@ -91,11 +92,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
        boolean isDumb = DumbService.isDumb(reference.getProject());
        boolean hasTypeHint = checkForTypeHint(reference);
        boolean skipCaching = skipCachingForDebug || isDumb || hasTypeHint;
-       List<? extends PsiElement> elements
-         = skipCaching ? doResolve(reference, incompleteCode)
-                       : ResolveCache.getInstance(reference.getProject()).resolveWithCaching(
-                         reference, this::doResolve, true, incompleteCode);
-
+       List<? extends PsiElement> elements = null;
+       try {
+         elements  = skipCaching ? doResolve(reference, incompleteCode)
+                         : ResolveCache.getInstance(reference.getProject())
+                       .resolveWithCaching(reference, this::doResolve, true, incompleteCode);
+       }catch (OverflowGuardException e) {
+         log.info("resolve stopped by overflow guard");
+         return null;
+       }
        if (reportCacheMetrics) {
          if (skipCachingForDebug) {
            log.debug("Resolve cache is disabled.  No metrics computed.");
@@ -1007,13 +1012,17 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     // TODO: Merge with resolveByClassAndSymbol()??  It is very similar to this method.
 
     String identifier = reference instanceof HaxeReferenceExpression referenceExpression ? referenceExpression.getIdentifier().getText() : reference.getText();
-    final HaxeResolveResult leftExpression = lefthandExpression.resolveHaxeClass();
-    if (leftExpression.getHaxeClass() != null) {
-      HaxeMemberModel member = leftExpression.getHaxeClass().getModel().getMember(identifier, leftExpression.getGenericResolver());
+    HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(lefthandExpression);
+    context.rethrowOverflow = true;
+    ResultHolder result = HaxeExpressionEvaluator.evaluate(lefthandExpression, context, null).result;
+    SpecificHaxeClassReference classType = result.getClassType();
+    HaxeClass  haxeClass = classType != null ? classType.getHaxeClass() : null;
+    if (haxeClass != null) {
+      HaxeMemberModel member = haxeClass.getModel().getMember(identifier, classType.getGenericResolver());
       if (member != null) {
         return Collections.singletonList(member.getBasePsi());
       }
-    }
+
 
     // Check 'using' classes.
       HaxeFileModel fileModel = HaxeFileModel.fromElement(reference.getContainingFile());
@@ -1033,22 +1042,22 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
       }
 
       HaxeMethodModel foundMethod = null;
-      for (int i = usingModels.size() - 1; i >= 0; --i) {
-        foundMethod = usingModels.get(i)
-          .findExtensionMethod(identifier, leftExpression.getSpecificClassReference(reference, leftExpression.getGenericResolver()));
-        if (null != foundMethod && !foundMethod.HasNoUsingMeta()) {
+        for (int i = usingModels.size() - 1; i >= 0; --i) {
+          foundMethod = usingModels.get(i)
+            .findExtensionMethod(identifier, classType);
+          if (null != foundMethod && !foundMethod.HasNoUsingMeta()) {
 
-          if (log.isTraceEnabled()) log.trace("Found method in 'using' import: " + foundMethod.getName());
-          return asList(foundMethod.getBasePsi());
+            if (log.isTraceEnabled()) log.trace("Found method in 'using' import: " + foundMethod.getName());
+            return asList(foundMethod.getBasePsi());
+          }
+          // check other types ("using" can be used to find typedefsetc)
+          PsiElement element = usingModels.get(i).exposeByName(identifier);
+          if (element != null) {
+            if (log.isTraceEnabled()) log.trace("Found method in 'using' import: " + identifier);
+            return List.of(element);
+          }
         }
-        // check other types ("using" can be used to find typedefsetc)
-        PsiElement element = usingModels.get(i).exposeByName(identifier);
-        if (element != null) {
-          if (log.isTraceEnabled()) log.trace("Found method in 'using' import: " + identifier);
-          return List.of(element);
-        }
-    }
-
+      }
     if (log.isTraceEnabled()) log.trace(traceMsg(null));
     final HaxeComponentName componentName = tryResolveHelperClass(lefthandExpression, identifier);
     if (componentName != null) {
@@ -1057,7 +1066,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     }
     if (log.isTraceEnabled()) log.trace(traceMsg("trying keywords (super, new) arrays, literals, etc."));
     // Try resolving keywords (super, new), arrays, literals, etc.
-    return resolveByClassAndSymbol(leftExpression, reference);
+    return resolveByClassAndSymbol(haxeClass, reference);
   }
 
   private PsiElement resolveQualifiedReference(HaxeReference reference) {
@@ -1160,12 +1169,14 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     while (null != model && model.isTypedef() && !recursionGuard.contains(model.getName())) {
       recursionGuard.add(model.getName());
       final HaxeTypeOrAnonymous toa = model.getUnderlyingType();
-      final HaxeType type = toa.getType();
-      if (null == type) {
-        // Anonymous structure
-        result = HaxeResolveResult.create(toa.getAnonymousType(), specialization);
-        break;
-      }
+      if (toa != null) {
+        final HaxeType type = toa.getType();
+        if (null == type) {
+          // Anonymous structure
+          result = HaxeResolveResult.create(toa.getAnonymousType(), specialization);
+          break;
+        }
+
 
       // If the reference is to a type parameter, resolve that instead.
       HaxeResolveResult nakedResult = specialization.get(type, type.getReferenceExpression().getIdentifier().getText());
@@ -1196,6 +1207,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
       result = HaxeResolveResult.create(nakedResult.getHaxeClass(), HaxeGenericSpecialization.fromGenericResolver(null, genericResolver));
       model = null != result.getHaxeClass() ? result.getHaxeClass().getModel() : null;
       specialization = result.getSpecialization();
+      }
     }
     return result;
   }

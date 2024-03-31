@@ -5,6 +5,7 @@ import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
+import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -136,8 +137,19 @@ public class HaxeExpressionEvaluatorHandlers {
   static ResultHolder handleReferenceExpression( HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver,
                                                          HaxeReferenceExpression element) {
     PsiElement[] children = element.getChildren();
-    ResultHolder typeHolder = children.length == 0 ? SpecificTypeReference.getUnknown(element).createHolder() : handle(children[0], context,
-                                                                                                                       resolver);
+    ResultHolder typeHolder;
+    if (children.length == 0) {
+       typeHolder  = SpecificTypeReference.getUnknown(element).createHolder();
+    }else {
+      PsiElement firstChild = children[0];
+      // make sure  expression  is not something like  `var myVar = myVar.add(x)`, we cant resolve type from this
+      if (firstChild != element) {
+        typeHolder = handle(firstChild, context, resolver);
+      }else {
+        typeHolder  = SpecificTypeReference.getUnknown(element).createHolder();
+      }
+    }
+
     boolean resolved = !typeHolder.getType().isUnknown();
     for (int n = 1; n < children.length; n++) {
       PsiElement child = children[n];
@@ -408,7 +420,12 @@ public class HaxeExpressionEvaluatorHandlers {
       }
     }else {
       if (parameter.getParent().getParent() instanceof HaxeFunctionLiteral functionLiteral) {
-        ResultHolder holder = tryToFindTypeFromCallExpression(functionLiteral, parameter);
+        ResultHolder holder = null;
+        try {
+          holder = tryToFindTypeFromCallExpression(functionLiteral, parameter);
+        }catch (OverflowGuardException e) {
+          if(context.rethrowOverflow) throw e;
+        }
         if (holder!= null && !holder.isUnknown()) {
           ResultHolder resolve = resolver.resolve(holder);
           return resolve != null && !resolve.isUnknown() ? resolve : holder;

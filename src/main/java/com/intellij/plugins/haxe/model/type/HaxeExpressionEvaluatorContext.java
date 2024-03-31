@@ -34,6 +34,7 @@ import java.util.List;
 
 public class HaxeExpressionEvaluatorContext {
   public ResultHolder result;
+  public boolean rethrowOverflow = false; // we need to re-throw exception in resolve to avoid cache issues
   private List<ResultHolder> returns = new ArrayList<ResultHolder>();
   private List<PsiElement> returnElements = new ArrayList<PsiElement>();
   private List<ReturnInfo> returnInfos = new ArrayList<ReturnInfo>();
