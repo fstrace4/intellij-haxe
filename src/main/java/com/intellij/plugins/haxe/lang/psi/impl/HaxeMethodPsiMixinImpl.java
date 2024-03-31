@@ -86,7 +86,7 @@ public abstract class HaxeMethodPsiMixinImpl extends AbstractHaxeNamedComponent 
   private HaxeMethodModel _model = null;
   public HaxeMethodModel getModel() {
     if (_model == null) {
-      _model = new HaxeMethodModel((HaxeMethod)this);
+      _model = new HaxeMethodModel((HaxeMethodImpl)this);
     }
     return _model;
   }

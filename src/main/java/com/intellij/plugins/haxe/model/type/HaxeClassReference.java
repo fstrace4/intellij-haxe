@@ -50,6 +50,12 @@ public class HaxeClassReference {
     this.classModel = classModel;
     this.isTypeParameter =  elementContext instanceof HaxeClassWrapperForTypeParameter;
   }
+  protected HaxeClassReference(String name, @NotNull HaxeClassModel classModel, @NotNull PsiElement elementContext) {
+    this.name = name;
+    this.elementContext = elementContext;
+    this.classModel = classModel;
+    this.isTypeParameter =  elementContext instanceof HaxeClassWrapperForTypeParameter;
+  }
 
   public HaxeClassReference(String name, @NotNull PsiElement elementContext) {
     this.name = name;

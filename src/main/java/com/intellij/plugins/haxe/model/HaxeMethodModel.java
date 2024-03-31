@@ -22,6 +22,7 @@ package com.intellij.plugins.haxe.model;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.type.*;
@@ -39,14 +40,17 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.intellij.openapi.util.Key;
 @EqualsAndHashCode
 public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableModel {
 
+  private static final Key<Boolean> isVoidReturn = Key.create("isReturnTypeVoid");
 
-  private HaxeMethod haxeMethod;
+  private HaxeMethodImpl haxeMethod;
   private String name;
 
-  public HaxeMethodModel(HaxeMethod haxeMethod) {
+
+  public HaxeMethodModel(HaxeMethodImpl haxeMethod) {
     super(haxeMethod);
     this.haxeMethod = haxeMethod;
     this.name = getName();
@@ -161,7 +165,17 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
         && haxeMethod.getGenericParam() != null) { // must not have generics
       return CachedValuesManager.getProjectPsiDependentCache(haxeMethod,  HaxeMethodModel::getReturnTypeCacheProvider).getValue();
     }else {
-      return  HaxeTypeResolver.getFieldOrMethodReturnType(haxeMethod, resolver);
+      Boolean data = haxeMethod.getUserData(isVoidReturn);
+      if (data == Boolean.TRUE) {
+        return SpecificHaxeClassReference.getVoid(haxeMethod).createHolder();
+      }else {
+        ResultHolder type = HaxeTypeResolver.getFieldOrMethodReturnType(haxeMethod, resolver);
+        if(type.isVoid()) {
+          haxeMethod.registerCacheKey(isVoidReturn);
+          haxeMethod.putUserData(isVoidReturn, Boolean.TRUE);
+        }
+        return type;
+      }
     }
   }
 

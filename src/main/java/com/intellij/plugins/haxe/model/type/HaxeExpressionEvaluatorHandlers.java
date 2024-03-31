@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.ONLY_COMMENTS;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.KUNTYPED;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.getLiteralClassName;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.tryToFindTypeFromCallExpression;
@@ -1452,6 +1453,8 @@ public class HaxeExpressionEvaluatorHandlers {
     ResultHolder type = createUnknown(element);
     boolean deadCode = false;
     for (PsiElement childElement : element.getChildren()) {
+      // not sure why comments are available here but to avoid overhead we filter them out
+      if (ONLY_COMMENTS.contains( childElement.getNode().getElementType())) continue;
       type = handle(childElement, context, resolver);
       if (deadCode) {
         //context.addWarning(childElement, "Unreachable statement");

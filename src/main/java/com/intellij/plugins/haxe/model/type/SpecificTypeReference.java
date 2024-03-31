@@ -485,7 +485,7 @@ public abstract class SpecificTypeReference {
 
   @NotNull
   private static HaxeClassReference getUnknownClassReference(@NotNull PsiElement context) {
-    return new HaxeClassReference(HaxeClass.createUnknownClass(context.getNode()).getModel(), context);
+    return new HaxeClassReference( UNKNOWN, HaxeClass.createUnknownClass(context.getNode()).getModel(), context);
   }
 
   public boolean isLiteralArray() {

@@ -1285,8 +1285,11 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   private static List<? extends PsiElement> resolveByClassAndSymbol(@Nullable HaxeClass leftClass, @NotNull HaxeReference reference) {
-    HaxeGenericResolver resolver = getGenericResolver(leftClass, reference);
-    return resolveByClassAndSymbol(leftClass, resolver, reference);
+    if (leftClass != null) { // no need wasting resources getting  resolver if type is null
+      HaxeGenericResolver resolver = getGenericResolver(leftClass, reference);
+      return resolveByClassAndSymbol(leftClass, resolver, reference);
+    }
+    return Collections.emptyList();
   }
 
   private static List<? extends PsiElement> resolveByClassAndSymbol(@Nullable HaxeClass leftClass,

@@ -107,13 +107,21 @@ public class HaxeGenericResolverUtil {
     return resolver;
   }
 
+  private static final ThreadLocal<Stack<HaxeCallExpression>> processingCallExpressions = ThreadLocal.withInitial(Stack::new);
   @NotNull public static HaxeGenericResolver appendCallExpressionGenericResolver(@Nullable PsiElement element, @NotNull HaxeGenericResolver resolver) {
     if (null == element) return resolver;
 
     Map<Integer, HaxeParameterUtil.ParameterToArgumentAndResolver> parameterArgumentMap = null;
 
-    if (element instanceof HaxeCallExpression callExpression2) {
-      HaxeCallExpression call = (HaxeCallExpression)element;
+    if (element instanceof HaxeCallExpression call) {
+        Stack<HaxeCallExpression> stack = processingCallExpressions.get();
+        // already processing this call expression, do not start another attempt
+        if (stack.contains(call)) {
+          return resolver;
+        }
+      try {
+        stack.add(call);
+
       HaxeExpression callExpression = call.getExpression();
       PsiElement callTarget = callExpression instanceof HaxeReferenceExpression ? ((HaxeReferenceExpression)callExpression).resolve() : null;
       if (null != callTarget) {
@@ -140,7 +148,7 @@ public class HaxeGenericResolverUtil {
           if (null != expressionList) {
 
 
-            parameterArgumentMap = mapArgumentsToParameters(callExpression2, methodParameters, expressionList, false, resolver);
+            parameterArgumentMap = mapArgumentsToParameters(call, methodParameters, expressionList, false, resolver);
 
             for (Map.Entry<Integer, HaxeParameterUtil.ParameterToArgumentAndResolver> entry : parameterArgumentMap.entrySet()) {
 
@@ -165,14 +173,13 @@ public class HaxeGenericResolverUtil {
                   }
                 }
               }
-
-
-
             }
-          }
-
+        }
           resolver.addAll(methodResolver);
         }
+      }
+      } finally {
+        stack.remove(call);
       }
     }
     return resolver;

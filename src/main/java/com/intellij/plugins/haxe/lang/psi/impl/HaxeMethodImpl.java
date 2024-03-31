@@ -21,6 +21,11 @@ package com.intellij.plugins.haxe.lang.psi.impl;
 import com.intellij.lang.ASTNode;
 import com.intellij.plugins.haxe.lang.psi.HaxeMethod;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.intellij.openapi.util.Key;
+
 /**
  * This is effectively an alias for the mixin class, except with a more
  * memorable and consistent name.
@@ -30,5 +35,22 @@ import com.intellij.plugins.haxe.lang.psi.HaxeMethod;
 public abstract class HaxeMethodImpl extends HaxeMethodPsiMixinImpl implements HaxeMethod {
   protected HaxeMethodImpl(ASTNode node) {
     super(node);
+  }
+
+  private Set<Key<?>> cacheKeys;
+  public void registerCacheKey(Key<?> key) {
+    if (cacheKeys == null) cacheKeys = new HashSet<>();
+    cacheKeys.add(key);
+  }
+  @Override
+  public void subtreeChanged() {
+    super.subtreeChanged();
+    if (cacheKeys != null) {
+      clearCacheKeys(cacheKeys);
+    }
+  }
+
+  private void clearCacheKeys(Set<Key<?>> cacheKeys) {
+    cacheKeys.forEach( key -> changeUserMap(getUserMap(), getUserMap().minus(key)));
   }
 }

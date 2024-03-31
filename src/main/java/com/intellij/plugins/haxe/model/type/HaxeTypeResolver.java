@@ -30,6 +30,7 @@ import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -326,14 +327,24 @@ public class HaxeTypeResolver {
       PsiElement psi = methodModel.getBodyPsi();
       if (psi == null) psi = methodModel.getBasePsi();
 
-      //Performance tweak avoiding  full body evaluation if it does not contain any return statements (no returns = void)
-      HaxeReturnStatement returnStatement = findReturnStatement(psi);
-      if (returnStatement == null || isVoidReturn(returnStatement)) {
-        return SpecificHaxeClassReference.getVoid(psi).createHolder();
-      }
+      // local  function declarations  must use return statements as opposite to HaxeFunctionLiteral and lambda expressions
+      // witch can use the last expression as return value
+      List<HaxeReturnStatement> returnStatementList =
+        CachedValuesManager.getProjectPsiDependentCache(psi, HaxeTypeResolver::findReturnStatementsForMethod);
+      List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> getPsiElementType(statement, resolver)).toList();
+      if (returnTypes.isEmpty()) return SpecificHaxeClassReference.getVoid(psi).createHolder();
+      ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi);
+      return resolveParameterizedType(holder, resolver);
 
-      final HaxeExpressionEvaluatorContext context = getPsiElementType(psi, (AnnotationHolder)null, resolver);
-      return resolveParameterizedType(context.getReturnType(), resolver);
+      ////Performance tweak avoiding  full body evaluation if it does not contain any return statements (no returns = void)
+      //HaxeReturnStatement returnStatement = findReturnStatementForMethod(psi);
+      //if (returnStatement == null || isVoidReturn(returnStatement)) {
+      //  return SpecificHaxeClassReference.getVoid(psi).createHolder();
+      //}
+      //
+      //final HaxeExpressionEvaluatorContext context = getPsiElementType(psi, (AnnotationHolder)null, resolver);
+      //return resolveParameterizedType(context.getReturnType(), resolver);
+
     }
     else if (comp instanceof HaxeFunctionLiteral) {
       final HaxeExpressionEvaluatorContext context = getPsiElementType(comp.getLastChild(), (AnnotationHolder)null, resolver);
@@ -345,7 +356,7 @@ public class HaxeTypeResolver {
   }
 
   @Nullable
-  private static HaxeReturnStatement findReturnStatement(PsiElement psi) {
+  private static HaxeReturnStatement findReturnStatementForMethod(PsiElement psi) {
     if (psi instanceof HaxeReturnStatement statement) {
       return statement;
     }
@@ -361,6 +372,25 @@ public class HaxeTypeResolver {
       }
     }
     return null;
+  }
+  @NotNull
+  private static List<HaxeReturnStatement> findReturnStatementsForMethod(PsiElement psi) {
+    if (psi instanceof HaxeReturnStatement statement) {
+      return List.of(statement);
+    }
+    else {
+      List<HaxeReturnStatement> statements = new ArrayList<>();
+      // search for ReturnStatements but filter out any that are part of local functions
+      Collection<HaxeReturnStatement> returnStatements = PsiTreeUtil.findChildrenOfType(psi, HaxeReturnStatement.class);
+      for (HaxeReturnStatement statement : returnStatements) {
+        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class);
+        // we want to avoid returning return statements that are in a deeper scope / inside a local function, however we might also be
+        // searching for the returnType of a local function, so we check if any parent of local function is null or the same as the function
+        // we are searching
+        if (type == null || type == psi.getParent()) statements.add(statement);
+      }
+      return statements;
+    }
   }
 
   private static boolean isVoidReturn(HaxeReturnStatement statement) {
@@ -512,7 +542,7 @@ public class HaxeTypeResolver {
 
     HaxeReferenceExpression expression = type.getReferenceExpression();
     HaxeClassReference reference;
-    ResultHolder result = HaxeExpressionEvaluator.evaluate(expression, null).result;
+    ResultHolder result = HaxeExpressionEvaluator.evaluate(expression, new HaxeGenericResolver()).result;
     final HaxeClass resolvedHaxeClass =( result != null  && !result.isUnknown() && result.isClassType()) ? result.getClassType().getHaxeClass() : null;
     if (resolvedHaxeClass == null) {
       boolean isTypeParameter = isTypeParameter(expression);
@@ -550,7 +580,7 @@ public class HaxeTypeResolver {
     }
     else if (null != resolvedHaxeClass) {
 
-      ResultHolder[] specifics = expression.resolveHaxeClass().getGenericResolver().getSpecificsFor(resolvedHaxeClass);
+      ResultHolder[] specifics = result.getClassType().getGenericResolver().getSpecificsFor(resolvedHaxeClass);
       Collections.addAll(references, specifics);
     }
     return SpecificHaxeClassReference.withGenerics(reference, references.toArray(ResultHolder.EMPTY)).createHolder();

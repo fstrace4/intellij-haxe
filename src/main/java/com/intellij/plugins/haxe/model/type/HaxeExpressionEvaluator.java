@@ -325,7 +325,8 @@ public class HaxeExpressionEvaluator {
     if (element instanceof AbstractHaxeNamedComponent namedComponent) {
       return HaxeTypeResolver.getFieldOrMethodReturnType(namedComponent, resolver);
     }
-
+    // TODO handle postfix (ex. myVar++ etc)
+    // todo handle object literals
     if(log.isDebugEnabled()) log.debug("Unhandled " + element.getClass());
     return createUnknown(element);
   }
