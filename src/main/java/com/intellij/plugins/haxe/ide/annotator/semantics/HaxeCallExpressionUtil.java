@@ -763,13 +763,15 @@ public class HaxeCallExpressionUtil {
     if (argumentType == null) return; // this should not happen, we should have an argument
     HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), argumentResolver, typeParamMap);
     argumentResolver.addAll(inherit);
-    // parameter is a typeParameter type, we can just add it to resolver
-    if (parameterType.getClassType().isTypeParameter()) {
-      String className = parameterType.getClassType().getClassName();
-      argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-      // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
-      parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-      typeParamMap.put(className, argumentType);
+    if (parameterType.getClassType() != null) {
+      // parameter is a typeParameter type, we can just add it to resolver
+      if (parameterType.getClassType().isTypeParameter()) {
+        String className = parameterType.getClassType().getClassName();
+        argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+        // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
+        parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+        typeParamMap.put(className, argumentType);
+      }
     }
   }
 
@@ -854,19 +856,40 @@ public class HaxeCallExpressionUtil {
         argument instanceof SpecificHaxeClassReference argumentReference) {
       HaxeGenericResolver paramResolver = parameterReference.getGenericResolver().addAll(resolver.withoutUnknowns());
       HaxeGenericResolver argResolver = argumentReference.getGenericResolver().addAll(resolver.withoutUnknowns());
-      for (String name : paramResolver.names()) {
-        ResultHolder resolve = paramResolver.resolve(name);
-        if (resolve != null && resolve.isClassType()) {
-          String className = resolve.getClassType().getClassName();
+      if (parameterReference.isTypeParameter() && !argument.isTypeParameter()) {
+        resolver.add(parameterReference.getClassName(), argumentReference.createHolder());
+      }else {
+        for (String name : paramResolver.names()) {
+          ResultHolder resolve = paramResolver.resolve(name);
+          if (resolve != null && resolve.isClassType()) {
+            String className = resolve.getClassType().getClassName();
 
-          if (className != null && map.containsKey(className)) {
-            ResultHolder argResolved = argResolver.resolve(className);
-            if (argResolved != null) {
-              resolver.add(className, argResolved);
+            if (className != null && map.containsKey(className)) {
+              ResultHolder argResolved = argResolver.resolve(className);
+              if (argResolved != null) {
+                resolver.add(className, argResolved);
+              }
             }
           }
         }
       }
+    }
+    if (parameter instanceof SpecificFunctionReference parameterReference &&
+        argument instanceof SpecificFunctionReference argumentReference) {
+      List<SpecificFunctionReference.Argument> parameterFnArguments = parameterReference.getArguments();
+      List<SpecificFunctionReference.Argument> argumentFnArguments = argumentReference.getArguments();
+      if (parameterFnArguments.size() == argumentFnArguments.size()) {
+        for (int i = 0; i < parameterFnArguments.size(); i++) {
+          SpecificTypeReference functionArgument = argumentFnArguments.get(i).getType().getType();
+          SpecificTypeReference parameterArgument = parameterFnArguments.get(i).getType().getType();
+          findTypeParametersToInherit(parameterArgument, functionArgument, resolver, map);
+        }
+      }
+
+      ResultHolder parameterReturnType = parameterReference.getReturnType();
+      ResultHolder argumentReturnType = argumentReference.getReturnType();
+
+      findTypeParametersToInherit(parameterReturnType.getType(), argumentReturnType.getType(), resolver, map);
     }
 
 

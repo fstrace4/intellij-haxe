@@ -6,6 +6,7 @@ import com.intellij.plugins.haxe.model.HaxeGenericParamModel;
 import com.intellij.plugins.haxe.model.HaxeMethodModel;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificFunctionReference;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,26 +65,34 @@ public class TypeParameterUtil {
   }
 
   public static boolean containsTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
-    if (parameterType.getClassType() == null) return false;
-    if (parameterType.getClassType().isTypeParameter()) return true;
+    if (parameterType.getClassType() != null) {
+      if (parameterType.getClassType().isTypeParameter()) return true;
 
+      ResultHolder[] specifics = parameterType.getClassType().getSpecifics();
+      if (specifics.length == 0) {
+        return typeParamMap.containsKey(parameterType.getClassType().getClassName());
+      }
+      List<ResultHolder> recursionGuard = new ArrayList<>();
 
-    ResultHolder[] specifics = parameterType.getClassType().getSpecifics();
-    if (specifics.length == 0){
-      return typeParamMap.containsKey(parameterType.getClassType().getClassName());
-    }
-    List<ResultHolder> recursionGuard = new ArrayList<>();
-
-    for (ResultHolder specific : specifics) {
-      if (specific.isClassType()) {
-        recursionGuard.add(specific);
-        List<ResultHolder> list = getSpecificsIfClass(specific, recursionGuard);
-        if(list.stream()
-          .map(holder -> holder.getClassType().getClassName())
-          .anyMatch(typeParamMap::containsKey)) {
-          return true;
+      for (ResultHolder specific : specifics) {
+        if (specific.isClassType()) {
+          recursionGuard.add(specific);
+          List<ResultHolder> list = getSpecificsIfClass(specific, recursionGuard);
+          if (list.stream()
+            .map(holder -> holder.getClassType().getClassName())
+            .anyMatch(typeParamMap::containsKey)) {
+            return true;
+          }
         }
       }
+    }else if (parameterType.getFunctionType() != null) {
+      SpecificFunctionReference fn = parameterType.getFunctionType();
+      List<SpecificFunctionReference.Argument> arguments = fn.getArguments();
+      if (arguments != null) {
+        boolean anyMatch = arguments.stream().anyMatch(argument -> containsTypeParameter(argument.getType(), typeParamMap));
+        if(anyMatch) return true;
+      }
+      return containsTypeParameter(fn.getReturnType(), typeParamMap);
     }
 
     return false;
