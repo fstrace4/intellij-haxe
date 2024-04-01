@@ -989,13 +989,8 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
             int parameterMappedToArgument = parameterList.getParameterList().indexOf(parameter);
             List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
             SpecificFunctionReference.Argument argument = arguments.get(parameterMappedToArgument);
-            // this is an ugly hack to get a resolver from callExpression without causing a stack overflow as this parameter could be
-            // a type parameter that the resolver needs to resolve, if we notice that we are resolving multiple times we try to only use
-            //  parent genericResolver values or allow this second pass to return unknown so that any other parameters can populate
-            //  the generic resolver
 
-
-            ResultHolder resolved = validation.getResolver().resolve(argument.getType());
+            ResultHolder resolved = validation.getResolver().withoutUnknowns().resolve(argument.getType());
             if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
           }
         }
@@ -1009,21 +1004,6 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
   }
   private static ThreadLocal<Stack<PsiElement>> genericResolverHelper = ThreadLocal.withInitial(Stack::new);
 
-  private static HaxeGenericResolver getGenericResolverFromParentExpression(HaxeCallExpression callExpression) {
-    @NotNull PsiElement[] children = callExpression.getChildren();
-    if (children.length> 0 ) {
-      PsiElement firstChild = children[0];
-      @NotNull PsiElement[] secondLevelChildren = firstChild.getChildren();
-      if (secondLevelChildren.length > 0) {
-        PsiElement child = secondLevelChildren[0];
-        ResultHolder holder = HaxeExpressionEvaluator.evaluate(child, null).result;
-        if (holder.isClassType()) {
-          return holder.getClassType().getGenericResolver();
-        }
-      }
-    }
-    return new HaxeGenericResolver();
-  }
 
   public boolean isPureClassReferenceOf(@NotNull String className) {
     PsiElement resolve = resolve();
