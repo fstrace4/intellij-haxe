@@ -366,6 +366,13 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
             return findEnumMember(reference, typeReference);
           }
         }
+        if (field.getVarInit() != null) {
+          ResultHolder type = HaxeTypeResolver.getPsiElementType(field.getVarInit(), null);
+          if (type.getClassType() != null) {
+            SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+            return findEnumMember(reference, typeReference);
+          }
+        }
       }
 
       HaxeParameter parameter = PsiTreeUtil.getParentOfType(reference, HaxeParameter.class);
