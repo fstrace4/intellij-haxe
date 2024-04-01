@@ -154,6 +154,7 @@ public class HaxeKeywordCompletionContributor extends CompletionContributor {
 
           HaxeSwitchCase type = PsiTreeUtil.getPrevSiblingOfType(completionElementAsComment, HaxeSwitchCase.class);
           if (type!= null) {
+            // TODO, solve this using getVariants and walkTree
             addSwitchVars(type, lookupElements);
           }
         }

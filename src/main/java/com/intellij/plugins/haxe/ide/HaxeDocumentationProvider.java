@@ -377,17 +377,17 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
 
       resolveTypeAndMakeHeader(builder, varDeclaration);
     }
-    else if (component instanceof HaxeForStatement forStatement) {
-      HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(forStatement);
-      HaxeExpressionEvaluator.evaluate(forStatement, context, null);
-
-      makeHeader(builder, context.result);
+    else if (component instanceof HaxeValueIterator) {
+      resolveTypeAndMakeHeader(builder, component);
     }
-    else if (component instanceof HaxeEnumExtractedValue extractedValue) {
-      HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(extractedValue);
-      HaxeExpressionEvaluator.evaluate(extractedValue, context, null);
-
-      makeHeader(builder, context.result);
+    else if (component instanceof HaxeIteratorkey) {
+      resolveTypeAndMakeHeader(builder, component);
+    }
+    else if (component instanceof HaxeIteratorValue) {
+      resolveTypeAndMakeHeader(builder, component);
+    }
+    else if (component instanceof HaxeEnumExtractedValue) {
+      resolveTypeAndMakeHeader(builder, component);
     }
   }
 

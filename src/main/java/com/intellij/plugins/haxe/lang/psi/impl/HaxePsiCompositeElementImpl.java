@@ -159,16 +159,18 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
       result.addAll(tygenericParameParam.getGenericListPartList());
     }
 
-    if (this instanceof HaxeForStatement) {
-      HaxeForStatement forStatement = (HaxeForStatement)this;
+    if (this instanceof HaxeForStatement forStatement) {
       HaxeKeyValueIterator keyValueIterator = forStatement.getKeyValueIterator();
-      HaxeIterable iterable = forStatement.getIterable();
-
-      if (keyValueIterator != null && forStatement.getKeyValueIterator() != lastParent) {
-        result.add(keyValueIterator.getIteratorkey());
-        result.add(keyValueIterator.getIteratorValue());
-      } else if (iterable != null && iterable != lastParent) {
-        result.add(this);
+      HaxeValueIterator valueIterator = forStatement.getValueIterator();
+      // any reference in HaxeIterable is always defined outside its current loop  (avoid problems like var x:Array<String>; for (x in x))
+      if (!(lastParent instanceof HaxeIterable)) {
+        if (keyValueIterator != null && keyValueIterator != lastParent) {
+          result.add(keyValueIterator.getIteratorkey());
+          result.add(keyValueIterator.getIteratorValue());
+        }
+        else if (valueIterator != null && valueIterator != lastParent) {
+          result.add(valueIterator);
+        }
       }
     }
     if (this instanceof  HaxeSwitchCase switchCase) {

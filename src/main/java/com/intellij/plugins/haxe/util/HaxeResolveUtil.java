@@ -710,18 +710,35 @@ public class HaxeResolveUtil {
           // (sometimes when you're typing for statement it becames null for short time)
           return HaxeResolveResult.EMPTY;
         }
+        ResultHolder type = findIteratorType(element);
+        if (type!= null && !type.isUnknown() && type.isClassType()) {
+          return type.getClassType().asResolveResult();
+        }
+
+        return HaxeResolveResult.EMPTY;
+    }
+    if (element instanceof HaxeValueIterator valueIterator) {
+      final HaxeForStatement forStatement = PsiTreeUtil.getParentOfType(valueIterator, HaxeForStatement.class);
+      if (forStatement != null) {
+        final HaxeIterable iterable = forStatement.getIterable();
+        if (iterable == null) {
+          // iterable is @Nullable
+          // (sometimes when you're typing for statement it becames null for short time)
+          return HaxeResolveResult.EMPTY;
+        }
         final HaxeExpression expression = iterable.getExpression();
         if (expression instanceof HaxeReference reference) {
 
-          ResultHolder type = findIteratorType(reference, element);
-          if (type!= null && !type.isUnknown() && type.isClassType()) {
-            return type.getClassType().asResolveResult();
-          }
-
+          final HaxeResolveResult resolveResult = reference.resolveHaxeClass();
+          List<String> circularReferenceProtection = new LinkedList<>();
+          return searchForIterableTypeRecursively(resolveResult, circularReferenceProtection);
         }
-        return HaxeResolveResult.EMPTY;
+      }
+      return HaxeResolveResult.EMPTY;
     }
+
     if (element instanceof HaxeForStatement) {
+      //TODO remove?
       final HaxeIterable iterable = ((HaxeForStatement)element).getIterable();
       if (iterable == null) {
         // iterable is @Nullable

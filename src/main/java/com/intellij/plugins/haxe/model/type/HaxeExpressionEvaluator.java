@@ -174,6 +174,13 @@ public class HaxeExpressionEvaluator {
         return functionDeclaration.getModel().getFunctionType(resolver).createHolder();
       }
 
+      if (element instanceof HaxeValueIterator valueIterator) {
+        return handleValueIterator(context, resolver, valueIterator);
+      }
+      if (element instanceof HaxeIteratorkey || element instanceof HaxeIteratorValue) {
+        return findIteratorType(element);
+      }
+
       if (element instanceof HaxeEnumExtractedValue extractedValue) {
         return handleEnumExtractedValue(extractedValue);
       }
@@ -333,12 +340,12 @@ public class HaxeExpressionEvaluator {
 
 
   @Nullable
-  public static ResultHolder findIteratorType(PsiElement reference, PsiElement iteratorElement) {
+  public static ResultHolder findIteratorType(PsiElement iteratorElement) {
     HaxeForStatement forStatement = PsiTreeUtil.getParentOfType(iteratorElement, HaxeForStatement.class);
     HaxeGenericResolver forResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(forStatement);
 
     HaxeIterable iterable = forStatement.getIterable();
-    var keyValueIteratorType = HaxeTypeResolver.getPsiElementType(iterable, reference, forResolver);
+    var keyValueIteratorType = HaxeTypeResolver.getPsiElementType(iterable, iteratorElement, forResolver);
 
     var iteratorType = keyValueIteratorType.getClassType();
     if (iteratorType.isTypeDef()) {

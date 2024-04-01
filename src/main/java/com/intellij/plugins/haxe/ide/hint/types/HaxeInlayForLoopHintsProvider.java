@@ -40,16 +40,16 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
       HaxeKeyValueIterator keyValueIterator = forStatement.getKeyValueIterator();
       HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(forStatement);
       if (iterable != null && keyValueIterator == null) {
-        HaxeComponentName componentName = forStatement.getComponentName();
+        HaxeValueIterator valueIterator = forStatement.getValueIterator();
         ResultHolder type = extractIteratorElementType(HaxeTypeResolver.getPsiElementType(iterable, element, resolver));
-        createInlayHint(componentName, sink, type);
+        if (valueIterator!= null) createInlayHint(valueIterator.getComponentName(), sink, type);
       }
       if (keyValueIterator != null) {
         HaxeIteratorkey iteratorKey = keyValueIterator.getIteratorkey();
         HaxeIteratorValue iteratorValue = keyValueIterator.getIteratorValue();
 
-        ResultHolder keyType = HaxeExpressionEvaluator.findIteratorType(element, iteratorKey);
-        ResultHolder valueType = HaxeExpressionEvaluator.findIteratorType(element, iteratorValue);
+        ResultHolder keyType = HaxeExpressionEvaluator.findIteratorType(iteratorKey);
+        ResultHolder valueType = HaxeExpressionEvaluator.findIteratorType(iteratorValue);
 
         if (keyType!= null) createInlayHint(iteratorKey.getComponentName(), sink, keyType);
         if (valueType!= null) createInlayHint(iteratorValue.getComponentName(), sink, valueType);

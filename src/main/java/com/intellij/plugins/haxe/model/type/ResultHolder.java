@@ -64,11 +64,11 @@ public class ResultHolder {
     return (type instanceof SpecificEnumValueReference enumValueReference) ? enumValueReference : null;
   }
 
-  @Nullable
+
   public boolean isFunctionType() {
     return (type instanceof SpecificFunctionReference);
   }
-  @Nullable
+
   public boolean isClassType() {
     return (type instanceof SpecificHaxeClassReference);
   }

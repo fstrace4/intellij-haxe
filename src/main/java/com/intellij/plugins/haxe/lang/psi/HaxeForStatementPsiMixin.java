@@ -28,7 +28,8 @@ import com.intellij.psi.PsiNameIdentifierOwner;
  * See HaxePsiCompositeElementImpl.getDeclarationToProcess() to see how
  * that works.
  */
-public interface HaxeForStatementPsiMixin extends HaxeStatementPsiMixin, PsiNameIdentifierOwner {
+//public interface HaxeForStatementPsiMixin extends HaxeStatementPsiMixin, PsiNameIdentifierOwner {
+public interface HaxeForStatementPsiMixin extends HaxeStatementPsiMixin{
 
   // The funny thing is that we don't need any interfaces at this level.
   // We just need to introduce a specific inheritance.

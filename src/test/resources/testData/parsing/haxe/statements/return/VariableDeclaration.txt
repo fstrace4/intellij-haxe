@@ -62,9 +62,10 @@ Haxe File
                       FOR_STATEMENT
                         HaxePsiToken:for('for')
                         HaxePsiToken:(('(')
-                        COMPONENT_NAME
-                          IDENTIFIER
-                            HaxePsiToken:ID('i')
+                        VALUE_ITERATOR
+                          COMPONENT_NAME
+                            IDENTIFIER
+                              HaxePsiToken:ID('i')
                         HaxePsiToken:in('in')
                         ITERABLE
                           ITERATOR_EXPRESSION

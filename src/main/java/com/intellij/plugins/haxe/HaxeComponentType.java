@@ -180,7 +180,11 @@ public enum HaxeComponentType {
     }
     if (element instanceof HaxeLocalVarDeclaration ||
         element instanceof HaxeForStatement ||
-        element instanceof HaxeEnumExtractedValue) {
+        element instanceof HaxeEnumExtractedValue ||
+        element instanceof HaxeValueIterator || // default iterator
+        element instanceof HaxeIteratorkey || // keyValueIterator
+        element instanceof HaxeIteratorValue // keyValueIterator
+    ) {
       return VARIABLE;
     }
     if (element instanceof HaxeParameter) {

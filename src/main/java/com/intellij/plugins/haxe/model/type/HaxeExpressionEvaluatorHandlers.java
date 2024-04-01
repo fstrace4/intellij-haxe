@@ -275,27 +275,12 @@ public class HaxeExpressionEvaluatorHandlers {
             typeHolder = type.createHolder();
           }
 
-          else if (subelement instanceof HaxeForStatement forStatement) {
-            // key-value iterator is not relevant here as it will be resolved to HaxeIteratorkey  or HaxeIteratorValue
-            final HaxeComponentName name = forStatement.getComponentName();
-            // if element text matches  for loops  iterator  i guess we can consider it a match?
-            if (name != null && element.textMatches(name)) {
-              final HaxeIterable iterable = forStatement.getIterable();
-              if (iterable != null) {
-                ResultHolder iterator = handle(iterable, context, resolver);
-                if (iterator.isClassType()) {
-                  iterator = iterator.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference().createHolder();
-                }
-                // get specific from iterator as thats the type for our variable
-                ResultHolder[] specifics = iterator.getClassType().getSpecifics();
-                if (specifics.length > 0) {
-                  typeHolder = specifics[0];
-                }
-              }
-            }
+          else if (subelement instanceof HaxeValueIterator valueIterator) {
+            typeHolder = handleValueIterator(context, resolver, valueIterator);
           }
+
           else if (subelement instanceof HaxeIteratorkey || subelement instanceof HaxeIteratorValue) {
-            typeHolder = findIteratorType(element, subelement);
+            typeHolder = findIteratorType(subelement);
           }
 
           else if (subelement instanceof HaxeSwitchCaseCaptureVar caseCaptureVar) {
@@ -333,6 +318,28 @@ public class HaxeExpressionEvaluatorHandlers {
     }else {
      return SpecificTypeReference.getDynamic(element).createHolder();
     }
+  }
+
+  static ResultHolder handleValueIterator(HaxeExpressionEvaluatorContext context,
+                                        HaxeGenericResolver resolver,
+                                        HaxeValueIterator valueIterator) {
+    HaxeForStatement forStatement = PsiTreeUtil.getParentOfType(valueIterator, HaxeForStatement.class);
+    if (forStatement != null) {
+        final HaxeIterable iterable = forStatement.getIterable();
+        if (iterable != null) {
+          // NOTE do not forward resolver here, this is a different expression and might have its own typeParameters
+          ResultHolder iterator = handle(iterable, context, null);
+          if (iterator.isClassType()) {
+            iterator = iterator.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference().createHolder();
+          }
+          // get specific from iterator as thats the type for our variable
+          ResultHolder[] specifics = iterator.getClassType().getSpecifics();
+          if (specifics.length > 0) {
+            return specifics[0];
+          }
+      }
+    }
+    return createUnknown(valueIterator);
   }
 
   static ResultHolder handleRegularExpressionLiteral(HaxeRegularExpressionLiteral regexLiteral) {
@@ -542,7 +549,7 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeForStatement forStatement) {
     final HaxeExpression forStatementExpression = forStatement.getExpression();
     final HaxeKeyValueIterator keyValueIterator = forStatement.getKeyValueIterator();
-    final HaxeComponentName name = forStatement.getComponentName();
+    final HaxeValueIterator valueIterator = forStatement.getValueIterator();
     final HaxeIterable iterable = forStatement.getIterable();
     final PsiElement body = forStatement.getLastChild();
     context.beginScope();
@@ -585,12 +592,13 @@ public class HaxeExpressionEvaluatorHandlers {
             type = type.withRangeConstraint(constant);
           }
         }
-        if (name != null) {
-          context.setLocal(name.getText(), new ResultHolder(type));
-        } else if (keyValueIterator != null) {
-          context.setLocal(keyValueIterator.getIteratorkey().getComponentName().getText(), new ResultHolder(type));
-          context.setLocal(keyValueIterator.getIteratorValue().getComponentName().getText(), new ResultHolder(type));
-        }
+        if (valueIterator != null) {
+          HaxeComponentName name = valueIterator.getComponentName();
+            context.setLocal(name.getText(), new ResultHolder(type));
+          } else if (keyValueIterator != null) {
+            context.setLocal(keyValueIterator.getIteratorkey().getComponentName().getText(), new ResultHolder(type));
+            context.setLocal(keyValueIterator.getIteratorValue().getComponentName().getText(), new ResultHolder(type));
+          }
         return handle(body, context, resolver);
       }
     }

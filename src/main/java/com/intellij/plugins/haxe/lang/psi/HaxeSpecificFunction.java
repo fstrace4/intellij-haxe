@@ -133,6 +133,7 @@ public class HaxeSpecificFunction extends HaxeAbstractTypeDeclarationImpl implem
   @Nullable
   @Override
   public HaxeFunctionReturnType getFunctionReturnType() {
+    //TODO consider cache ?
     return null != functionType ? functionType.getFunctionReturnType()
                                 : (HaxeFunctionReturnType)method.getReturnType();
   }
