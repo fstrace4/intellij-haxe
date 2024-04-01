@@ -3,10 +3,7 @@ package com.intellij.plugins.haxe.ide.hint.types;
 import com.intellij.codeInsight.hints.declarative.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
-import com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil;
-import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
-import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import kotlin.Unit;
@@ -44,6 +41,10 @@ public class HaxeInlayLocalVariableHintsProvider implements InlayHintsProvider {
           type = HaxeTypeResolver.getPsiElementType(init, varDeclaration, resolver);
         } else {
           // attempts to resolve type from usage
+          type = HaxeTypeResolver.getPsiElementType(varDeclaration, null);
+        }
+        // if init value is "null" we should search for usage
+        if (type.getType().getConstant() instanceof HaxeNull) {
           type = HaxeTypeResolver.getPsiElementType(varDeclaration, null);
         }
 

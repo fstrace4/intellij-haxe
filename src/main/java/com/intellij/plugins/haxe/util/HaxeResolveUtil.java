@@ -765,8 +765,8 @@ public class HaxeResolveUtil {
           return type.getType().asResolveResult();
         }
       }else if (psiField.getVarInit() != null) {
-        HaxeVarInit init = psiField.getVarInit();
-        HaxeExpressionEvaluatorContext evaluate = evaluate(init.getExpression(), null);
+        // do not resolve VarInit here, we want to be able to to check usage when  init expression  is = null;
+        HaxeExpressionEvaluatorContext evaluate = evaluate(psiField, null);
         ResultHolder holder = evaluate.result;
         if (!holder.isUnknown()) {
           //TODO function literals does not have a HaxeType and will result in null

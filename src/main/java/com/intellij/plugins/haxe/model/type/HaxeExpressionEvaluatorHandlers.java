@@ -1215,44 +1215,36 @@ public class HaxeExpressionEvaluatorHandlers {
     final HaxeComponentName name = varDeclaration.getComponentName();
     final HaxeVarInit init = varDeclaration.getVarInit();
     final HaxeTypeTag typeTag = varDeclaration.getTypeTag();
-    final ResultHolder unknownResult = createUnknown(varDeclaration);
+
+    ResultHolder result = null;
     HaxeGenericResolver localResolver = new HaxeGenericResolver();
     localResolver.addAll(resolver);
+
     if(init != null) {
       // find any type parameters used in init expression as the return type might be of that type
       HaxeGenericResolver initResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(init.getExpression());
       localResolver.addAll(initResolver.withoutUnknowns());
     }
-    final ResultHolder initResult = init != null
-                                    ? handle(init, context, localResolver)
-                                    : unknownResult;
-    final ResultHolder typeTagResult = typeTag != null
-                                       ? HaxeTypeResolver.getTypeFromTypeTag(typeTag, varDeclaration)
-                                       : unknownResult;
 
-    ResultHolder result = typeTag != null ? typeTagResult : initResult;
-
-    if (init == null && typeTag == null) {
-      // search for usage to determine type
-      return searchReferencesForType(varDeclaration.getComponentName(), context, resolver, null);
+    if (typeTag != null) {
+      result = HaxeTypeResolver.getTypeFromTypeTag(typeTag, varDeclaration);
     }
 
-    if (init != null && typeTag != null) {
-      if (context.holder != null) {
-        if (!typeTagResult.canAssign(initResult)) {
-          context.addError(
-            varDeclaration,
-            "Can't assign " + initResult + " to " + typeTagResult,
-            new HaxeTypeTagChangeFixer(typeTag, initResult.getType()),
-            new HaxeTypeTagRemoveFixer(typeTag)
-          );
-        }
-      }
+    if (result == null && init != null) {
+      result = handle(init, context, localResolver);
+    }
+
+    if (result == null || isDynamicBecauseOfNullValueInit(result)) {
+      // search for usage to determine type
+      result = searchReferencesForType(varDeclaration.getComponentName(), context, resolver, null);
     }
 
     context.setLocal(name.getText(), result);
-
     return result;
+  }
+
+  private static boolean isDynamicBecauseOfNullValueInit(ResultHolder result) {
+    return  result.getType().isDynamic() && result.getType().getConstant() instanceof HaxeNull;
   }
 
   static ResultHolder handleAssignExpression(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiElement element) {
