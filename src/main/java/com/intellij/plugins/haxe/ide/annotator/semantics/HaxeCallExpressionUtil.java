@@ -106,21 +106,10 @@ public class HaxeCallExpressionUtil {
 
     if (validation.isStaticExtension) {
       // this might not work for literals, need to handle those in a different way
-      if (methodExpression instanceof HaxeReferenceExpression referenceChain) {
-        ResultHolder leftType = callieType;
-        // if callie is unknown try to resolve left
-        if (leftType.isUnknown() || leftType.isTypeParameter()) {
-          HaxeReference leftReference = HaxeResolveUtil.getLeftReference(referenceChain);
-          if (leftReference != null) {
-            PsiElement resolve = leftReference.resolve();
-            if (resolve != null) {
-              leftType = HaxeTypeResolver.getPsiElementType(resolve, resolver);
-            }
-          }
-        }
+      if (methodExpression instanceof HaxeReferenceExpression) {
         HaxeParameterModel model = parameterList.get(parameterCounter++);
         ResultHolder type = model.getType(resolver.withoutUnknowns());
-        if (!canAssignToFrom(type, leftType)) {
+        if (!canAssignToFrom(type, callieType)) {
           // TODO better error message
           validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
           return validation;
@@ -1012,12 +1001,15 @@ public class HaxeCallExpressionUtil {
   public static ResultHolder tryGetCallieType(HaxeCallExpression callExpression) {
     final HaxeReference leftReference = PsiTreeUtil.getChildOfType(callExpression.getExpression(), HaxeReference.class);
 
+    // if chained call expression:  ...someMethod().thisMethod();
+    if (leftReference instanceof HaxeCallExpression prevCallExpression ) {
+      ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(prevCallExpression, new HaxeExpressionEvaluatorContext(prevCallExpression), null).result;
+      if (evaluateResult.isClassType()) {
+        return evaluateResult.getClassType().createHolder();
+      }
+    }
 
-    //HaxeResolveResult resolveResult = leftReference == null ? null :leftReference.resolveHaxeClass();
-    //if (resolveResult.isFunctionType()) {
-    //  return new ResultHolder(resolveResult.getSpecificFunctionReference(callExpression, resolveResult.getGenericResolver()));
-    //}
-
+    // if  reference expression: ..myVar.thisMethod();
     PsiElement resolve = leftReference == null ? null :leftReference.resolve();
     if (resolve != null) {
       ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
@@ -1025,6 +1017,7 @@ public class HaxeCallExpressionUtil {
         return evaluateResult.getClassType().createHolder();
       }
     }
+
     return SpecificTypeReference.getUnknown(callExpression).createHolder();
 
 
