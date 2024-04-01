@@ -164,9 +164,9 @@ public class HaxeGenericSpecialization implements Cloneable {
         }
 
         SpecificHaxeClassReference classType = holder.getClassType();
-        if (context instanceof HaxeClass haxeClass && classType != null) {
+        if (classType != null && classType.getHaxeClass() != null) {
           HaxeGenericResolver genericResolver = classType.getGenericResolver();
-          HaxeResolveResult resolved = HaxeResolveResult.create(haxeClass, fromGenericResolver(context, genericResolver));
+          HaxeResolveResult resolved = HaxeResolveResult.create(classType.getHaxeClass(), fromGenericResolver(context, genericResolver));
           specialization.put(element, name, resolved);
         } else if (classType != null && !holder.isUnknown()) {
           HaxeClass clazz = classType.getHaxeClass();
@@ -176,11 +176,12 @@ public class HaxeGenericSpecialization implements Cloneable {
           }
           HaxeResolveResult resolved = HaxeResolveResult.create(clazz, fromGenericResolver(clazz, classResolver));
           specialization.put(element, name, resolved);
-        } else if (holder.getFunctionType() != null) {
-          if (context instanceof  HaxeFunctionType functionType){
-            // functions currently do not have specialization
-            HaxeResolveResult resolved = HaxeResolveResult.create(functionType,  new HaxeGenericSpecialization());
-            specialization.put(element, name, resolved);
+        } else {
+          SpecificFunctionReference typeFunctionReference = holder.getFunctionType();
+          if (typeFunctionReference != null && typeFunctionReference.functionType != null) {
+              // functions currently do not have specialization
+              HaxeResolveResult resolved = HaxeResolveResult.create(typeFunctionReference.functionType,  new HaxeGenericSpecialization());
+              specialization.put(element, name, resolved);
           }
         }
       }

@@ -41,8 +41,10 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
       HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(forStatement);
       if (iterable != null && keyValueIterator == null) {
         HaxeValueIterator valueIterator = forStatement.getValueIterator();
-        ResultHolder type = extractIteratorElementType(HaxeTypeResolver.getPsiElementType(iterable, element, resolver));
-        if (valueIterator!= null) createInlayHint(valueIterator.getComponentName(), sink, type);
+        if (valueIterator != null) {
+          ResultHolder type = HaxeTypeResolver.getPsiElementType(valueIterator, element, resolver);
+          createInlayHint(valueIterator.getComponentName(), sink, type);
+        }
       }
       if (keyValueIterator != null) {
         HaxeIteratorkey iteratorKey = keyValueIterator.getIteratorkey();
@@ -57,27 +59,7 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
 
     }
 
-    private static ResultHolder extractKeyValueType(ResultHolder type, boolean key) {
-      if (!type.isUnknown() && type.getClassType() != null) {
-        @NotNull ResultHolder[] specifics = type.getClassType().getSpecifics();
-        if (specifics.length == 2) {
-          return specifics[key ? 0 : 1];
-        }
-      }
-      PsiElement element = type.getOrigin();
-      if(element == null) element = type.getElementContext(); // TODO mlo check why type origin is null (probably string missing iterator or smoething?)
-      return SpecificHaxeClassReference.getUnknown(element).createHolder();
-    }
 
-    private static ResultHolder extractIteratorElementType(ResultHolder type) {
-      if (!type.isUnknown() && type.getClassType() != null) {
-        @NotNull ResultHolder[] specifics = type.getClassType().getSpecifics();
-        if (specifics.length == 1) {
-          return specifics[0];
-        }
-      }
-      return type;
-    }
 
     private static void createInlayHint(@NotNull HaxeComponentName componentName,@NotNull InlayTreeSink sink, ResultHolder type ) {
       if (!type.isUnknown() && !type.getType().isInvalid()) {

@@ -300,8 +300,10 @@ public class HaxeTypeResolver {
           HaxeTypeOrAnonymous typeOrAnonymous = typeTag.getTypeOrAnonymous();
           if (typeOrAnonymous != null) {
             HaxeClass aClass = (HaxeClass)method.getContainingClass();
-            HaxeGenericResolver localResolver = HaxeGenericSpecialization.fromGenericResolver(null, resolver).toGenericResolver(aClass).withoutUnknowns();
-            localResolver.addAssignHint(resolver);
+            HaxeGenericResolver localResolver = new HaxeGenericResolver();
+            HaxeGenericResolver classSpecificResolver = HaxeGenericSpecialization.fromGenericResolver(null, resolver).toGenericResolver(aClass).withoutUnknowns();
+            localResolver.addAll(resolver);
+            localResolver.addAll(classSpecificResolver); // overwrite any existing typeParameters with specifics for class
             ResultHolder resolve = HaxeTypeResolver.getTypeFromTypeOrAnonymous(typeOrAnonymous, localResolver, true);
             //TODO mlo: double resolve will cause issues (need another way to get correct typeParameter names)
             //ResultHolder resolve = resolver.resolveReturnType(anonymous);

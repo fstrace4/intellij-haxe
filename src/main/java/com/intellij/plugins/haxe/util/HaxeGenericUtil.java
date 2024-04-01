@@ -63,18 +63,22 @@ public class HaxeGenericUtil {
       Map<String, ResultHolder> nameAndConstraints = getGenericTypeParametersByName(genericParams);
 
       for (int i = 0; i < specifics.length; i++) {
-        String name = specifics[i].getClassType().getClassName();
-        boolean nameFound = genericParams.stream().anyMatch(m -> m.getName().equals(name));
-        if (nameFound) {
-          if (nameAndConstraints.containsKey(name)) {
-            newSpecifics[i] = nameAndConstraints.get(name);
-          }else {
-            newSpecifics[i] = SpecificTypeReference.getDynamic(model.getMethodPsi()).createHolder();
+        SpecificHaxeClassReference classType = specifics[i].getClassType();
+        if (classType != null) {
+          String name = classType.getClassName();
+          boolean nameFound = genericParams.stream().anyMatch(m -> m.getName().equals(name));
+          if (nameFound) {
+            if (nameAndConstraints.containsKey(name)) {
+              newSpecifics[i] = nameAndConstraints.get(name);
+              continue;
+            } else {
+              newSpecifics[i] = SpecificTypeReference.getDynamic(model.getMethodPsi()).createHolder();
+              continue;
+            }
           }
-        }else {
-          // not found, just copy original
-          newSpecifics[i] = specifics[i];
         }
+        // not found, just copy original
+        newSpecifics[i] = specifics[i];
       }
     }
     return newSpecifics;
