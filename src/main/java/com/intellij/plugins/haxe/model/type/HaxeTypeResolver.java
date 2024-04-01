@@ -305,8 +305,6 @@ public class HaxeTypeResolver {
             localResolver.addAll(resolver);
             localResolver.addAll(classSpecificResolver); // overwrite any existing typeParameters with specifics for class
             ResultHolder resolve = HaxeTypeResolver.getTypeFromTypeOrAnonymous(typeOrAnonymous, localResolver, true);
-            //TODO mlo: double resolve will cause issues (need another way to get correct typeParameter names)
-            //ResultHolder resolve = resolver.resolveReturnType(anonymous);
             if (resolve != null && !resolve.isUnknown()) {
               return resolve;
             }
