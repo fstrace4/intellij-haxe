@@ -33,6 +33,7 @@ import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 
+import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.*;
@@ -241,12 +242,44 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   @Nullable
   @Override
   public HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    return ContainerUtil.find(getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM), component -> name.equals(component.getName()));
+    List<HaxeNamedComponent> all = CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxePsiClass::getHaxeFieldAllCached).getValue();
+    return ContainerUtil.find(all, component -> name.equals(component.getName()));
+  }
+
+  private static CachedValueProvider.Result<List<HaxeNamedComponent>> getHaxeFieldAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
+    List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
+
+    List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
+    return CachedValueProvider.Result.create(all, haxePsiClass, dependencies);
+  }
+
+  @NotNull
+  private static List<PsiElement> collectCacheDependencies(@NotNull AbstractHaxePsiClass haxePsiClass) {
+    List<PsiElement> dependencies = new ArrayList<>();
+
+    dependencies.add(haxePsiClass);
+    dependencies.addAll(Arrays.asList(haxePsiClass.getSupers()));
+
+    if (haxePsiClass instanceof  HaxeAbstractTypeDeclaration abstractTypeDeclaration) {
+      HaxeUnderlyingType type = abstractTypeDeclaration.getUnderlyingType();
+      SpecificHaxeClassReference reference = abstractTypeDeclaration.getModel().getUnderlyingClassReference(new HaxeGenericResolver());
+      if (reference != null) dependencies.add(reference.getHaxeClass());
+
+    }
+    return dependencies;
   }
 
   @Override
   public HaxeNamedComponent findHaxeMethodByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    return ContainerUtil.find(getHaxeMethodsAll(HaxeComponentType.CLASS), (Condition<HaxeNamedComponent>)component -> name.equals(component.getName()));
+    List<HaxeMethod> all = CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxePsiClass::getHaxeMethodsAllCached).getValue();
+    return ContainerUtil.find(all, (Condition<HaxeNamedComponent>)component -> name.equals(component.getName()));
+  }
+
+  private static CachedValueProvider.Result<List<HaxeMethod>> getHaxeMethodsAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
+    List<HaxeMethod> all = haxePsiClass.getHaxeMethodsAll(HaxeComponentType.CLASS);
+
+    List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
+    return CachedValueProvider.Result.create(all, haxePsiClass, dependencies);
   }
 
   /** Optimized path to replace findHaxeMethod and findHaxeField when used together. */
