@@ -30,6 +30,7 @@ import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -329,8 +330,9 @@ public class HaxeTypeResolver {
 
       // local  function declarations  must use return statements as opposite to HaxeFunctionLiteral and lambda expressions
       // witch can use the last expression as return value
+      final PsiElement methodBody = psi;
       List<HaxeReturnStatement> returnStatementList =
-        CachedValuesManager.getProjectPsiDependentCache(psi, HaxeTypeResolver::findReturnStatementsForMethod);
+        CachedValuesManager.getCachedValue(methodBody, () -> HaxeTypeResolver.findReturnStatementsForMethod(methodBody));
       List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> getPsiElementType(statement, resolver)).toList();
       if (returnTypes.isEmpty()) return SpecificHaxeClassReference.getVoid(psi).createHolder();
       ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi);
@@ -374,9 +376,10 @@ public class HaxeTypeResolver {
     return null;
   }
   @NotNull
-  private static List<HaxeReturnStatement> findReturnStatementsForMethod(PsiElement psi) {
+  public static CachedValueProvider.Result<List<HaxeReturnStatement>> findReturnStatementsForMethod(PsiElement psi) {
+
     if (psi instanceof HaxeReturnStatement statement) {
-      return List.of(statement);
+      return new CachedValueProvider.Result<>(List.of(statement), psi);
     }
     else {
       List<HaxeReturnStatement> statements = new ArrayList<>();
@@ -389,7 +392,7 @@ public class HaxeTypeResolver {
         // we are searching
         if (type == null || type == psi.getParent()) statements.add(statement);
       }
-      return statements;
+      return new CachedValueProvider.Result<>(statements, psi);
     }
   }
 

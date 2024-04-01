@@ -20,6 +20,8 @@ import com.intellij.psi.PsiPackage;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.util.CachedValueProvider;
+import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
@@ -701,22 +703,39 @@ public class HaxeExpressionEvaluatorHandlers {
         returnType = HaxeTypeResolver.getTypeFromTypeTag(tag, function);
       } else {
         // If there was no type tag on the function, then we try to infer the value:
-        // If there is a block to this method, then return the type of the block.  (See PsiBlockStatement above.)
+        // If there is a block to this method, then return the type of the block.
+        //  - in order to avoid unnecessary overhead evaluating the entire block we search for
+        //    return statements that belong to the method and evaluate those
+        //  - if no return statement evaluate the last element  (lambda expressions)
         // If there is not a block, but there is an expression, then return the type of that expression.
         // If there is not a block, but there is a statement, then return the type of that statement.
         HaxeBlockStatement block = function.getBlockStatement();
         if (null != block) {
-          //// note : as we enter a block we are leaving the scope where we could use the assignHint directly
-          HaxeExpressionEvaluatorContext functionBlockContext = new HaxeExpressionEvaluatorContext(function);
-          ResultHolder handled = handle(block, functionBlockContext, resolver.withoutAssignHint());
 
-          if (!functionBlockContext.getReturnValues().isEmpty()) {
-            returnType = HaxeTypeUnifier.unifyHolders(functionBlockContext.getReturnValues(), function);
-          }else  if (!block.getExpressionList().isEmpty()){
-            returnType = handled;
-          }else {
-            returnType = SpecificHaxeClassReference.getVoid(function).createHolder();
+          List<HaxeReturnStatement> returnStatementList =
+            CachedValuesManager.getCachedValue(block,  () -> HaxeTypeResolver.findReturnStatementsForMethod(block));
+          List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> HaxeTypeResolver.getPsiElementType(statement, resolver)).toList();
+          if (!returnTypes.isEmpty())  {
+            returnType = HaxeTypeUnifier.unifyHolders(returnTypes, block);
+          } else {
+            // TODO cache last element
+            boolean filtered = false;
+            HaxePsiCompositeElement lastExpression = getLastExpressionCached(block);
+            if (lastExpression != null) {
+              // TODO try to eliminate any expressions that are not valid  value expressions
+              if (lastExpression instanceof HaxeIfStatement ifStatement) {
+                if (ifStatement.getElseStatement() == null) {
+                  // ignore if statements if there's no else as it cant be a value expression
+                  filtered = true;
+                  returnType = SpecificFunctionReference.getVoid(block).createHolder();
+                }
+              }
+              if (!filtered) returnType = HaxeTypeResolver.getPsiElementType(lastExpression, resolver);
+            }else {
+              returnType = SpecificFunctionReference.getVoid(block).createHolder();
+            }
           }
+
         } else if (null != function.getExpression()) {
           returnType = handle(function.getExpression(), context, resolver);
         } else {
@@ -738,6 +757,15 @@ public class HaxeExpressionEvaluatorHandlers {
     return new SpecificFunctionReference(arguments, returnType, null, function, function).createHolder();
   }
 
+  static HaxePsiCompositeElement getLastExpressionCached(HaxeBlockStatement block) {
+   return  CachedValuesManager.getCachedValue(block, () -> {
+     HaxePsiCompositeElement element = null;
+     for (PsiElement child : block.getChildren()) {
+       if (child instanceof  HaxePsiCompositeElement nextElement) element = nextElement;
+     }
+     return new CachedValueProvider.Result<>(element, block);
+    });
+  }
   static ResultHolder handleArrayAccessExpression(
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,

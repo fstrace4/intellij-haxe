@@ -242,7 +242,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   @Nullable
   @Override
   public HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    List<HaxeNamedComponent> all = CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxePsiClass::getHaxeFieldAllCached).getValue();
+    List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
     return ContainerUtil.find(all, component -> name.equals(component.getName()));
   }
 
@@ -250,7 +250,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
     List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
 
     List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
-    return CachedValueProvider.Result.create(all, haxePsiClass, dependencies);
+    return CachedValueProvider.Result.create(all,  dependencies);
   }
 
   @NotNull
@@ -271,15 +271,15 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
 
   @Override
   public HaxeNamedComponent findHaxeMethodByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    List<HaxeMethod> all = CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxePsiClass::getHaxeMethodsAllCached).getValue();
+    List<HaxeMethod> all = CachedValuesManager.getCachedValue(this, () ->AbstractHaxePsiClass.getHaxeMethodsAllCached(this));
     return ContainerUtil.find(all, (Condition<HaxeNamedComponent>)component -> name.equals(component.getName()));
   }
 
   private static CachedValueProvider.Result<List<HaxeMethod>> getHaxeMethodsAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
     List<HaxeMethod> all = haxePsiClass.getHaxeMethodsAll(HaxeComponentType.CLASS);
 
-    List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
-    return CachedValueProvider.Result.create(all, haxePsiClass, dependencies);
+    Collection<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
+    return CachedValueProvider.Result.create(all, dependencies);
   }
 
   /** Optimized path to replace findHaxeMethod and findHaxeField when used together. */
