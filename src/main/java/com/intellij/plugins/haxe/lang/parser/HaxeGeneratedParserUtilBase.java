@@ -134,6 +134,11 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     builder_.error(HaxeBundle.message("parsing.error.missing.semi.colon"));
     return false;
   }
+  // hopefully faster way to stop unnecessary parsing attempts when not reification
+  public static boolean canBeReification(PsiBuilder builder_, int level) {
+    IElementType type = builder_.rawLookup(0) ;
+    return type == DOLLAR || type == MACRO_ID;
+  }
   public static boolean disableSemicolonRule(PsiBuilder builder_, int level) {
     builder_.putUserData(MACRO_VALUE, level);
    return true;

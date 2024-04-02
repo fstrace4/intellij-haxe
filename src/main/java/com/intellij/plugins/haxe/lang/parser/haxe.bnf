@@ -238,7 +238,7 @@ suffixOperator ::= '!'                { extends=operator }
 // KFROM ('from') and KTO ('to') are only keywords for abstracts and can be used as identifiers elsewhere in the code (KNEVER ('never') is only used for getters/setters)
 private identifierWithKeywordName::= 'from' | 'to' | 'never'
 
-identifier ::= ID | identifierWithKeywordName | macroIdentifierReification | MACRO_ID
+identifier ::= ID | identifierWithKeywordName  | MACRO_ID | (<<canBeReification>> macroIdentifierReification)
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeIdentifierPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeIdentifierPsiMixin" name="identifier"}
 
 thisExpression ::= 'this'
@@ -449,7 +449,7 @@ localFunctionDeclaration ::= localFunctionDeclarationAttribute? localFunctionHea
 private localFunctionHeader ::= 'function' localFunctionDeclarator typeTag?
 private localFunctionDeclarator ::= componentName? genericParam? parenthesizedParameterList
 
-private arrowFunctionParameterList ::= openParameterList | parenthesizedParameterList
+private arrowFunctionParameterList ::= parenthesizedParameterList | openParameterList
 private arrowFunctionDeclaration ::=  arrowFunctionParameterList '->' lambdaBody {pin=3}
 
 /*
@@ -556,7 +556,7 @@ macroShorthandExpReification::= '$' "{" expression "}" {mixin="com.intellij.plug
 
 private macroStatementWrapper ::= "{" expression "}"
 
-macroExpressionReification::=  (embeddedMeta)* (macroShorthandExpReification | macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroDynamicReification | macroExpReification ) {pin=2}
+macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (macroShorthandExpReification | macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroDynamicReification | macroExpReification )
 
 //Class Reification
 macroClassReification ::= 'macro' topLevelDeclaration

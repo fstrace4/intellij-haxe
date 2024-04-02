@@ -349,7 +349,7 @@ CONDITIONAL_ERROR="#error"[^\r\n]*
 "catch"                                   {  return emitToken( KCATCH);  }
 
 {META}                                    {  return emitToken( META_ID); }
-{IDENTIFIER_WITH__DOLLAR}                       {  return emitToken( MACRO_ID); }
+{IDENTIFIER_WITH__DOLLAR}                 {  return emitToken( MACRO_ID); }
 {IDENTIFIER_NO_DOLLAR}                    {  return emitToken( ID); }
 
 "."                                       { return emitToken( ODOT); }
