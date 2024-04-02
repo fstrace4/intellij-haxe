@@ -53,8 +53,8 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
         ResultHolder keyType = HaxeExpressionEvaluator.findIteratorType(iteratorKey);
         ResultHolder valueType = HaxeExpressionEvaluator.findIteratorType(iteratorValue);
 
-        if (keyType!= null) createInlayHint(iteratorKey.getComponentName(), sink, keyType);
-        if (valueType!= null) createInlayHint(iteratorValue.getComponentName(), sink, valueType);
+        if (!keyType.isUnknown()) createInlayHint(iteratorKey.getComponentName(), sink, keyType);
+        if (!valueType.isUnknown()) createInlayHint(iteratorValue.getComponentName(), sink, valueType);
       }
 
     }

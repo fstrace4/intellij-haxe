@@ -934,14 +934,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private List<? extends PsiElement> checkIsSuperExpression(HaxeReference reference) {
     if (reference instanceof HaxeSuperExpression && reference.getParent() instanceof HaxeCallExpression) {
       final HaxeClass haxeClass = PsiTreeUtil.getParentOfType(reference, HaxeClass.class);
-      assert haxeClass != null;
-      if (!haxeClass.getHaxeExtendsList().isEmpty()) {
-        final HaxeExpression superExpression = haxeClass.getHaxeExtendsList().get(0).getReferenceExpression();
-        final HaxeClass superClass = ((HaxeReference)superExpression).resolveHaxeClass().getHaxeClass();
-        final HaxeNamedComponent constructor =
-          ((superClass == null) ? null : superClass.findHaxeMethodByName(HaxeTokenTypes.ONEW.toString(), null)); // Self only.
-        LogResolution(reference, "because it's a super expression.");
-        return asList(((constructor != null) ? constructor : superClass));
+      if(haxeClass != null) {
+        if (!haxeClass.getHaxeExtendsList().isEmpty()) {
+          final HaxeExpression superExpression = haxeClass.getHaxeExtendsList().get(0).getReferenceExpression();
+          final HaxeClass superClass = ((HaxeReference)superExpression).resolveHaxeClass().getHaxeClass();
+          final HaxeNamedComponent constructor =
+            ((superClass == null) ? null : superClass.findHaxeMethodByName(HaxeTokenTypes.ONEW.toString(), null)); // Self only.
+          LogResolution(reference, "because it's a super expression.");
+          return asList(((constructor != null) ? constructor : superClass));
+        }
       }
     }
 

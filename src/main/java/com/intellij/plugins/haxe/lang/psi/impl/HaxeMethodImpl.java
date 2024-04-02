@@ -37,20 +37,4 @@ public abstract class HaxeMethodImpl extends HaxeMethodPsiMixinImpl implements H
     super(node);
   }
 
-  private Set<Key<?>> cacheKeys;
-  public void registerCacheKey(Key<?> key) {
-    if (cacheKeys == null) cacheKeys = new HashSet<>();
-    cacheKeys.add(key);
-  }
-  @Override
-  public void subtreeChanged() {
-    super.subtreeChanged();
-    if (cacheKeys != null) {
-      clearCacheKeys(cacheKeys);
-    }
-  }
-
-  private void clearCacheKeys(Set<Key<?>> cacheKeys) {
-    cacheKeys.forEach( key -> changeUserMap(getUserMap(), getUserMap().minus(key)));
-  }
 }

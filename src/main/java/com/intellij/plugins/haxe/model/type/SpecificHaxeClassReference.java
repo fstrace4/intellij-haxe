@@ -641,7 +641,13 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   }
 
   public SpecificTypeReference unwrapNullType() {
-    return specifics[0].getType();
+    if (specifics.length == 1) {
+      return specifics[0].getType();
+    }else {
+      // should not happen!?
+      log.error("Null<> without spesifics");
+      return this;
+    }
   }
 
   public SpecificFunctionReference resolveTypeDefFunction() {

@@ -22,13 +22,12 @@ package com.intellij.plugins.haxe.lang.psi.impl;
 import com.intellij.find.findUsages.PsiElement2UsageTargetAdapter;
 import com.intellij.lang.ASTNode;
 import com.intellij.navigation.ItemPresentation;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
-import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
 import com.intellij.plugins.haxe.util.HaxePresentableUtil;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
@@ -48,6 +47,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -306,4 +306,23 @@ abstract public class AbstractHaxeNamedComponent extends HaxePsiCompositeElement
     }
     return 0; //ChildRole.NONE;
   }
+
+
+  private Set<Key<?>> cacheKeys;
+  public void registerCacheKey(Key<?> key) {
+    if (cacheKeys == null) cacheKeys = new HashSet<>();
+    cacheKeys.add(key);
+  }
+  @Override
+  public void subtreeChanged() {
+    super.subtreeChanged();
+    if (cacheKeys != null) {
+      clearCacheKeys(cacheKeys);
+    }
+  }
+
+  private void clearCacheKeys(Set<Key<?>> cacheKeys) {
+    cacheKeys.forEach( key -> changeUserMap(getUserMap(), getUserMap().minus(key)));
+  }
+
 }

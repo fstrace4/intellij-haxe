@@ -217,12 +217,11 @@ public class HaxeResolveUtil {
     if (file == null) {
       return Collections.emptyList();
     }
-    final HaxeModule HaxeModule = PsiTreeUtil.getChildOfType(file, HaxeModule.class);
-    final HaxeClass[] components = PsiTreeUtil.getChildrenOfType(HaxeModule, HaxeClass.class);
-    if (components == null) {
+    HaxeFileModel model = HaxeFileModel.fromElement(file);
+    if (model == null) {
       return Collections.emptyList();
     }
-    return Arrays.asList(components);
+    return model.getClassModels().stream().map(HaxeClassModel::getPsi).toList();
   }
 
   @Nullable

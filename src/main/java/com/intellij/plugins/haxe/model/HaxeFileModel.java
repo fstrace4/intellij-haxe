@@ -25,7 +25,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -124,15 +123,19 @@ public class HaxeFileModel implements HaxeExposableModel {
     }
     return null;
   }
-  @Nullable
-  private PsiElement[] getChildren() {
-    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeFileModel::_getChildren).getValue();
+  @NotNull
+  private  List<PsiElement> getChildren() {
+    return getChildren(file);
+  }
+  @NotNull
+  private static List<PsiElement> getChildren(HaxeFile file) {
+    return CachedValuesManager.getCachedValue(file, () -> HaxeFileModel._getChildren(file));
   }
 
-  private static CachedValueProvider.Result<PsiElement[]> _getChildren(HaxeFile file) {
+  private static CachedValueProvider.Result<List<PsiElement>> _getChildren(HaxeFile file) {
     PsiElement[] children = file.getChildren();
-    PsiElement[] elements = ArrayUtils.addAll(children, file);
-    return new CachedValueProvider.Result<>(children, (Object[])elements);
+    List<PsiElement> list = Arrays.asList(children);
+    return new CachedValueProvider.Result<>(list, file);
   }
 
   @NotNull
@@ -200,35 +203,35 @@ public class HaxeFileModel implements HaxeExposableModel {
   }
 
   public List<HaxeImportStatement> getImportStatements() {
-    return Arrays.stream(getChildren())
+    return getChildren().stream()
       .filter(element -> element instanceof HaxeImportStatement)
       .map(element -> ((HaxeImportStatement)element))
       .collect(Collectors.toList());
   }
 
   public List<HaxeImportModel> getImportModels() {
-    return Arrays.stream(getChildren())
+    return getChildren().stream()
       .filter(element -> element instanceof HaxeImportStatement)
       .map(element -> ((HaxeImportStatement)element).getModel())
       .collect(Collectors.toList());
   }
 
   public List<HaxeUsingStatement> getUsingStatements() {
-    return Arrays.stream(getChildren())
+    return getChildren().stream()
       .filter(element -> element instanceof HaxeUsingStatement)
       .map(element -> (HaxeUsingStatement)element)
       .collect(Collectors.toList());
   }
 
   public List<HaxeUsingModel> getUsingModels() {
-    return Arrays.stream(getChildren())
+    return getChildren().stream()
       .filter(element -> element instanceof HaxeUsingStatement)
       .map(element -> ((HaxeUsingStatement)element).getModel())
       .collect(Collectors.toList());
   }
   @NotNull
   public List<HaxeImportableModel> getOrderedImportAndUsingModels() {
-    PsiElement[] children = getChildren();
+    List<PsiElement> children = getChildren();
     List<HaxeImportableModel>  result = new ArrayList<>();
     for(PsiElement child : children) {
 
