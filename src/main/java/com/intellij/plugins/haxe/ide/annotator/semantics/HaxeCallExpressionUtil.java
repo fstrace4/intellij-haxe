@@ -752,6 +752,7 @@ public class HaxeCallExpressionUtil {
     if (argumentType == null) return; // this should not happen, we should have an argument
     HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), new HaxeGenericResolver(), typeParamMap);
     argumentResolver.addAll(inherit);
+    parentResolver.addAll(inherit);
     if (parameterType.getClassType() != null) {
       // parameter is a typeParameter type, we can just add it to resolver
       if (parameterType.getClassType().isTypeParameter()) {
