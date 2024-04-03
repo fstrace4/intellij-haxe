@@ -211,6 +211,8 @@ public class HaxeCallExpressionUtil {
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         if (canAssignToFrom(constraint, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -234,6 +236,8 @@ public class HaxeCallExpressionUtil {
 
         if (canAssignToFrom(resolvedParameterType, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -254,6 +258,13 @@ public class HaxeCallExpressionUtil {
     validation.completed = true;
     validation.resolver = resolver;
     return validation;
+  }
+
+  private static void addArgumentTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
+    validation.argumentIndexToType.put(index - 1, type);
+  }
+  private static void addParameterTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
+    validation.ParameterIndexToType.put(index - 1, type);
   }
 
   @NotNull
@@ -390,6 +401,8 @@ public class HaxeCallExpressionUtil {
 
         if (canAssignToFrom(resolvedParameterType, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         }else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -554,6 +567,8 @@ public class HaxeCallExpressionUtil {
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         if (canAssignToFrom(constraint, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -570,6 +585,8 @@ public class HaxeCallExpressionUtil {
 
         if (canAssignToFrom(resolvedParameterType, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         }
         else {
           if (parameter.isOptional()) {
@@ -723,6 +740,8 @@ public class HaxeCallExpressionUtil {
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         if (canAssignToFrom(constraint, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -739,6 +758,8 @@ public class HaxeCallExpressionUtil {
 
         if (canAssignToFrom(resolvedParameterType, argumentType)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
+          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+          addParameterTypeToIndex(validation, parameterCounter, parameterType);
         }
         else {
           if (parameter.isOptional()) {
@@ -1008,6 +1029,8 @@ public class HaxeCallExpressionUtil {
   @Data
   public static class CallExpressionValidation {
     Map<Integer, Integer> argumentToParameterIndex = new HashMap<>();
+    Map<Integer, ResultHolder> argumentIndexToType = new HashMap<>();
+    Map<Integer, ResultHolder> ParameterIndexToType = new HashMap<>();
 
     List<ErrorRecord> errors = new ArrayList<>();
     List<WarningRecord> warnings = new ArrayList<>();

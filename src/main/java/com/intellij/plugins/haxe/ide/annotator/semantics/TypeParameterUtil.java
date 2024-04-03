@@ -48,7 +48,7 @@ public class TypeParameterUtil {
   }
 
   @NotNull
-  public static Map<String, ResultHolder> createTypeParameterConstraintMap(List<HaxeGenericParamModel> modelList,
+  static Map<String, ResultHolder> createTypeParameterConstraintMap(List<HaxeGenericParamModel> modelList,
                                                                            HaxeGenericResolver resolver) {
     Map<String, ResultHolder> typeParamMap = new HashMap<>();
     for (HaxeGenericParamModel model : modelList) {
@@ -60,7 +60,7 @@ public class TypeParameterUtil {
     return typeParamMap;
   }
 
-  public static boolean containsTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
+  static boolean containsTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
     if (parameterType.getClassType() != null) {
       if (parameterType.getClassType().isTypeParameter()) return true;
 
@@ -93,7 +93,7 @@ public class TypeParameterUtil {
 
     return false;
   }
-  public static Optional<ResultHolder> findConstraintForTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
+  static Optional<ResultHolder> findConstraintForTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
     if (!parameterType.isClassType()) return Optional.empty();
 
     ResultHolder[] specifics = parameterType.getClassType().getSpecifics();

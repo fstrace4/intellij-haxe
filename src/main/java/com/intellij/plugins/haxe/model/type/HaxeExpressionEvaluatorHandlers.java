@@ -42,6 +42,22 @@ import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.*;
 public class HaxeExpressionEvaluatorHandlers {
 
 
+  private static ThreadLocal<HashSet<PsiElement>> resolvesInProcess = new ThreadLocal<>().withInitial(()->new HashSet<PsiElement>());
+  @Nullable
+  static ResultHolder handleWithRecursionGuard(PsiElement element,
+                                               HaxeExpressionEvaluatorContext context,
+                                               HaxeGenericResolver resolver) {
+    if (element == null ) return null;
+    HashSet<PsiElement> elements = resolvesInProcess.get();
+    try {
+      if (elements.contains(element)) return null;
+      elements.add(element);
+      return handle(element, context, resolver);
+    } finally {
+      elements.remove(element);
+    }
+  }
+
 
   static ResultHolder handleTernaryExpression(
     HaxeExpressionEvaluatorContext context,
@@ -434,6 +450,9 @@ public class HaxeExpressionEvaluatorHandlers {
         ResultHolder holder = null;
         try {
           holder = tryToFindTypeFromCallExpression(functionLiteral, parameter);
+          //TODO search for usage if nessesary (callExpression may contain TypeParameters we want to resolve)
+          //if (holder.isUnknown() || holder.)
+          //ResultHolder holder1 = searchReferencesForType(parameter.getComponentName(), context, resolver, functionLiteral);
         }catch (OverflowGuardException e) {
           if(context.rethrowOverflow) throw e;
         }
@@ -1284,13 +1303,34 @@ public class HaxeExpressionEvaluatorHandlers {
       result = handle(init, context, localResolver);
     }
 
-    if (result == null || isDynamicBecauseOfNullValueInit(result)) {
+    if (result == null || isDynamicBecauseOfNullValueInit(result) || isUnknownLiteralArray(result)) {
       // search for usage to determine type
-      result = searchReferencesForType(varDeclaration.getComponentName(), context, resolver, null);
+      HaxeComponentName element = varDeclaration.getComponentName();
+      HashSet<PsiElement> resolveInProgress = resolvesInProcess.get();
+      if (!resolveInProgress.contains(element)) {
+        try {
+          resolveInProgress.add(element);
+          result = searchReferencesForType(element, context, resolver, null);
+        }finally {
+          resolveInProgress.remove(element);
+        }
+      }
     }
 
     context.setLocal(name.getText(), result);
     return result;
+  }
+
+  private static boolean isUnknownLiteralArray(ResultHolder result) {
+    SpecificHaxeClassReference classType = result.getClassType();
+    if (classType != null && result.getClassType().isArray()) {
+      @NotNull ResultHolder[] specifics = classType.getSpecifics();
+      if (specifics.length == 1) {
+        ResultHolder specific = specifics[0];
+        if (specific.isUnknown() || isUnknownLiteralArray(specific)) return true;
+      }
+    }
+    return false;
   }
 
   private static boolean isDynamicBecauseOfNullValueInit(ResultHolder result) {

@@ -34,19 +34,8 @@ public class HaxeInlayLocalVariableHintsProvider implements InlayHintsProvider {
       if (varDeclaration instanceof  HaxeSwitchCaseCaptureVar) return; // handled by HaxeInlayCaptureVariableHintsProvider
       HaxeTypeTag tag = varDeclaration.getTypeTag();
       if (tag == null) {
-        ResultHolder type;
-        HaxeVarInit init = varDeclaration.getVarInit();
-        if (init != null) {
-          HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(init.getExpression());
-          type = HaxeTypeResolver.getPsiElementType(init, varDeclaration, resolver);
-        } else {
-          // attempts to resolve type from usage
-          type = HaxeTypeResolver.getPsiElementType(varDeclaration, null);
-        }
-        // if init value is "null" we should search for usage
-        if (type.getType().getConstant() instanceof HaxeNull) {
-          type = HaxeTypeResolver.getPsiElementType(varDeclaration, null);
-        }
+        // attempts to resolve type from init or usage
+        ResultHolder type = HaxeTypeResolver.getPsiElementType(varDeclaration, null);
 
         if (!type.isUnknown() && !type.getType().isInvalid()) {
           int offset = varDeclaration.getComponentName().getTextRange().getEndOffset();

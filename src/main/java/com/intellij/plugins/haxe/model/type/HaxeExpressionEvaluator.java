@@ -23,6 +23,7 @@ import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.progress.*;
 import com.intellij.openapi.roots.ProjectRootModificationTracker;
 import com.intellij.openapi.util.ModificationTracker;
+import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
@@ -90,21 +91,7 @@ public class HaxeExpressionEvaluator {
     }
   }
 
-  private static ThreadLocal<HashSet<PsiElement>> resolvesInProcess = new ThreadLocal<>().withInitial(()->new HashSet<PsiElement>());
-  @Nullable
-  static ResultHolder handleWithRecursionGuard(PsiElement element,
-                                                       HaxeExpressionEvaluatorContext context,
-                                                       HaxeGenericResolver resolver) {
-    if (element == null ) return null;
-    HashSet<PsiElement> elements = resolvesInProcess.get();
-    try {
-      if (elements.contains(element)) return null;
-      elements.add(element);
-      return handle(element, context, resolver);
-    } finally {
-      elements.remove(element);
-    }
-  }
+
 
   // keep package protected, don't use this one outside code running from evaluate()
   // if used outside  it can mess up the result cache
@@ -505,6 +492,22 @@ public class HaxeExpressionEvaluator {
                 return holder;
               }
             }
+          }
+        }
+      }
+    }
+    if (reference instanceof  HaxeReferenceExpression referenceExpression ){
+      if (referenceExpression.getParent().getParent() instanceof HaxeCallExpression callExpression) {
+        if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {
+          final PsiElement resolved = callExpressionReference.resolve();
+          HaxeCallExpressionList list = callExpression.getExpressionList();
+          int index = -1;
+          if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
+          if (index > -1 && resolved instanceof HaxeMethod method) {
+            HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
+            if (validation.isStaticExtension())index++;
+            ResultHolder paramType = validation.getParameterIndexToType().getOrDefault(index, null);
+            if (paramType != null) return paramType;
           }
         }
       }
