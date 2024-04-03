@@ -1177,13 +1177,23 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
     // if not first in chain
     // foo.bar.baz
-    final HaxeReference leftReference = HaxeResolveUtil.getLeftReference(this);
     HaxeResolveResult result = null;
+    final HaxeReference leftReference = HaxeResolveUtil.getLeftReference(this);
+    if (leftReference != null) {
+      HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(leftReference);
+      ResultHolder leftResult = HaxeTypeResolver.getPsiElementType(leftReference, resolver);
+      if (leftResult.getClassType() != null) {
+        SpecificTypeReference reference = leftResult.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+        result = reference.asResolveResult();
+        }else {
+        result = leftResult.getType().asResolveResult();
+      }
+    }
+
     HaxeClass haxeClass = null;
     String name = null;
     HaxeGenericResolver resolver = null;
-    if (leftReference != null) {
-      result = leftReference.resolveHaxeClass();
+    if (result != null) {
       if (result != HaxeResolveResult.EMPTY) {
         haxeClass = result.getHaxeClass();
         if (haxeClass != null) {
@@ -1207,7 +1217,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
       addChildClassVariants(suggestedVariants, haxeClass);
     }
-    else if (leftReference != null && !result.isFunctionType()) {
+    else if (result != null && !result.isFunctionType()) {
       if (null == haxeClass) {
         // TODO: fix haxeClass by type inference. Use compiler code assist?!
       }

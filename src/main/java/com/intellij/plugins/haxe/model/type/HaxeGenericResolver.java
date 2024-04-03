@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.intellij.plugins.haxe.model.type.resolver.ResolveSource.ARGUMENT_TYPE;
 
@@ -185,6 +186,11 @@ public class HaxeGenericResolver {
         .filter(entry -> entry.name().equals(name)).min(this::ResolverPrioritySort)
         .map(ResolverEntry::type)
         .orElse(null);
+    }
+    // continue resolving until no longer typeParameter or no match
+    if (holder!= null && holder.isTypeParameter()){
+      ResultHolder resolve = this.without(name).resolve(holder);
+      if (resolve != null && !resolve.isUnknown()) holder = resolve;
     }
     return holder;
   }
@@ -589,5 +595,13 @@ public class HaxeGenericResolver {
     }
 
 
+  }
+
+  public String toCacheString() {
+    String resolversAsString = resolvers.stream().map(entry -> entry.name() + ":" + entry.type().toPresentationString() + ":" + entry.resolveSource())
+      .collect(Collectors.joining(","));
+    String constrainsAsString = constaints.stream().map(entry -> entry.name() + ":" + entry.type().toPresentationString() + ":" + entry.resolveSource())
+      .collect(Collectors.joining(","));
+    return "resolvers:["+resolversAsString + "], constraints: [" + constrainsAsString+"]";
   }
 }

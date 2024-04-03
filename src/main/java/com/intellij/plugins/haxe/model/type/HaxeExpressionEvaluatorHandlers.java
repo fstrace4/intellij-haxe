@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil.tryGetCallieType;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.ONLY_COMMENTS;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.KUNTYPED;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.getLiteralClassName;
@@ -1094,7 +1095,18 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeGenericResolver resolver,
     HaxeCallExpression callExpression) {
     HaxeExpression callLeft = callExpression.getExpression();
-    SpecificTypeReference functionType = handle(callLeft, context, resolver).getType();
+
+    HaxeGenericResolver localResolver = new HaxeGenericResolver();
+    localResolver.addAll(resolver);
+    ResultHolder callie = tryGetCallieType(callExpression);
+    if (callie.isClassType()){
+      SpecificTypeReference reference = callie.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+      if (reference instanceof  SpecificHaxeClassReference classReference) {
+        localResolver.addAll(classReference.getGenericResolver());
+      }
+    }
+
+    SpecificTypeReference functionType = handle(callLeft, context, localResolver).getType();
 
     // @TODO: this should be innecessary when code is working right!
     if (functionType.isUnknown()) {
@@ -1264,6 +1276,8 @@ public class HaxeExpressionEvaluatorHandlers {
 
     if (typeTag != null) {
       result = HaxeTypeResolver.getTypeFromTypeTag(typeTag, varDeclaration);
+      ResultHolder resolve = resolver.resolve(result);
+      if (!resolve.isUnknown()) result = resolve;
     }
 
     if (result == null && init != null) {

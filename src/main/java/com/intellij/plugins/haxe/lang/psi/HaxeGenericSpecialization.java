@@ -18,6 +18,7 @@
  */
 package com.intellij.plugins.haxe.lang.psi;
 
+import com.intellij.plugins.haxe.lang.psi.impl.AnonymousHaxeTypeImpl;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
@@ -162,6 +163,11 @@ public class HaxeGenericSpecialization implements Cloneable {
           // because the caller is already dealing with it, and there is no further type info.
           continue;
         }
+
+        //NOTE: AnonymousHaxeTypeImpl can be manually created and wont necessarily share the same instance
+        // (see, HaxeTypeParameterMultiType, HaxeClassWrapperForTypeParameter)
+        // we can however check if their from the same node
+        if (element != null && element.getNode() == context.getNode()) continue;
 
         SpecificHaxeClassReference classType = holder.getClassType();
         if (context instanceof HaxeClass haxeClass && classType != null) {
