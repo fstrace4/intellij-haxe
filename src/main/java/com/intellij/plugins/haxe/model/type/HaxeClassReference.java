@@ -165,7 +165,7 @@ public class HaxeClassReference {
     if (otherClass.getModel().isTypedef()) {
       HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(otherClass.getContext());
       SpecificHaxeClassReference reference = otherClass.getModel().getUnderlyingClassReference(resolver);
-      if (reference != null) myClass = reference.getHaxeClass();
+      if (reference != null) otherClass = reference.getHaxeClass();
     }
 
     // Optimization

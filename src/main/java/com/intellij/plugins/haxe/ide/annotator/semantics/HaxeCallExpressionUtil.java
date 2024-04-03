@@ -7,7 +7,6 @@ import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodDeclarationImpl;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
-import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -104,20 +103,7 @@ public class HaxeCallExpressionUtil {
     int parameterCounter = 0;
     int argumentCounter = 0;
 
-    if (validation.isStaticExtension) {
-      // this might not work for literals, need to handle those in a different way
-      if (methodExpression instanceof HaxeReferenceExpression) {
-        HaxeParameterModel model = parameterList.get(parameterCounter++);
-        ResultHolder type = model.getType(resolver.withoutUnknowns());
-        if (!canAssignToFrom(type, callieType)) {
-          // TODO better error message
-          validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
-          return validation;
-        } else {
-          // TODO check if literals, like "myString".SomeExtension()
-        }
-      }
-    }
+
 
     boolean isRestArg = false;
     HaxeParameterModel parameter = null;
@@ -131,6 +117,29 @@ public class HaxeCallExpressionUtil {
     // when resolving parameters
     HaxeGenericResolver parameterResolver = resolver.withoutUnknowns();
     resolver.addAll(methodModel.getGenericResolver(resolver));
+
+
+
+    if (validation.isStaticExtension) {
+      // this might not work for literals, need to handle those in a different way
+      if (methodExpression instanceof HaxeReferenceExpression) {
+        HaxeParameterModel model = parameterList.get(parameterCounter++);
+        ResultHolder type = model.getType(resolver.withoutUnknowns());
+        if (!canAssignToFrom(type, callieType)) {
+          // TODO better error message
+          validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
+          return validation;
+        } else {
+          // callie and extension methods might have different names for their TypeParameters, so we need to substitute values
+          SpecificHaxeClassReference paramClass = type.getClassType();
+          SpecificHaxeClassReference callieClass = callieType.getClassType();
+          HaxeGenericResolver remappedResolver = remapTypeParameters(paramClass, callieClass);
+          argumentResolver.addAll(remappedResolver);
+          resolver.addAll(remappedResolver);
+        }
+      }
+    }
+
 
     // checking arguments is a bit complicated, rest parameters allow "infinite" arguments and optional parameters can be "skipped"
     // so we only want to break the loop once we have either exhausted the arguments or parameter list.
@@ -245,6 +254,25 @@ public class HaxeCallExpressionUtil {
     validation.completed = true;
     validation.resolver = resolver;
     return validation;
+  }
+
+  @NotNull
+  private static HaxeGenericResolver remapTypeParameters(SpecificHaxeClassReference paramClass, SpecificHaxeClassReference callieClass) {
+    HaxeGenericResolver remappedResolver = new HaxeGenericResolver();
+    if (paramClass != null && callieClass != null ) {
+      // just going to do exact match remapping for now, unifying parameter type and callie type and then their typeParameters is probably quite complicated
+      if (paramClass.getHaxeClassReference().refersToSameClass(callieClass.getHaxeClassReference())) {
+        @NotNull ResultHolder[] specificsFromMethodArg = paramClass.getSpecifics();
+        @NotNull ResultHolder[] specificsFromCallie = callieClass.getSpecifics();
+        for (int i = 0; i < specificsFromMethodArg.length; i++) {
+          ResultHolder specArg = specificsFromMethodArg[i];
+          ResultHolder specCallie = specificsFromCallie[i];
+          if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie);
+        }
+
+      }
+    }
+    return remappedResolver;
   }
 
   public static CallExpressionValidation checkFunctionCall(HaxeCallExpression callExpression, SpecificFunctionReference functionType) {

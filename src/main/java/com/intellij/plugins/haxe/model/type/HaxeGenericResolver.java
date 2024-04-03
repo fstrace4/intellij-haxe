@@ -598,10 +598,23 @@ public class HaxeGenericResolver {
   }
 
   public String toCacheString() {
-    String resolversAsString = resolvers.stream().map(entry -> entry.name() + ":" + entry.type().toPresentationString() + ":" + entry.resolveSource())
-      .collect(Collectors.joining(","));
-    String constrainsAsString = constaints.stream().map(entry -> entry.name() + ":" + entry.type().toPresentationString() + ":" + entry.resolveSource())
-      .collect(Collectors.joining(","));
-    return "resolvers:["+resolversAsString + "], constraints: [" + constrainsAsString+"]";
+    if (isEmpty()) return "EMPTY";
+
+    StringBuilder builder = new StringBuilder(128);
+
+    builder.append("resolvers:[");
+    for (ResolverEntry resolver : resolvers) {
+      builder.append(resolver.name()).append(":").append(resolver.type().toPresentationString()).append(":")
+        .append(resolver.resolveSource());
+    }
+
+    builder.append("], constraints: [");
+    for (ResolverEntry entry : constaints) {
+      builder.append(entry.name()).append(":").append(entry.type().toPresentationString()).append(":").append(entry.resolveSource());
+    }
+    builder.append("]");
+
+    return builder.toString();
+
   }
 }
