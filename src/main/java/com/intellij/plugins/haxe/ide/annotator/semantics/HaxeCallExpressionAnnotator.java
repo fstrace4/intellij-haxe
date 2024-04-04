@@ -127,8 +127,8 @@ public class HaxeCallExpressionAnnotator implements Annotator {
   }
 
   private void createAnnotations(@NotNull AnnotationHolder holder, CallExpressionValidation validation) {
-    createErrorAnnotations(validation, holder);
-    createWarningAnnotations(validation, holder);
+    if (!validation.errors.isEmpty())createErrorAnnotations(validation, holder);
+    if (!validation.warnings.isEmpty())createWarningAnnotations(validation, holder);
   }
 
   // the trace method in std does not have rest arg so we ignore it

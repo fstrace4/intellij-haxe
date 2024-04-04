@@ -450,9 +450,19 @@ public class HaxeExpressionEvaluatorHandlers {
         ResultHolder holder = null;
         try {
           holder = tryToFindTypeFromCallExpression(functionLiteral, parameter);
-          //TODO search for usage if nessesary (callExpression may contain TypeParameters we want to resolve)
-          //if (holder.isUnknown() || holder.)
-          //ResultHolder holder1 = searchReferencesForType(parameter.getComponentName(), context, resolver, functionLiteral);
+          if (holder == null || holder.containsTypeParameters()) {
+            HashSet<PsiElement> processingStack = resolvesInProcess.get();
+            HaxeComponentName name = parameter.getComponentName();
+            if (!processingStack.contains(name)) {
+              try {
+                processingStack.add(name);
+                ResultHolder searchResult = searchReferencesForType(name, context, resolver, functionLiteral, holder);
+                if (!searchResult.isUnknown()) holder = searchResult;
+              } finally {
+                processingStack.remove(name);
+              }
+            }
+          }
         }catch (OverflowGuardException e) {
           if(context.rethrowOverflow) throw e;
         }
@@ -1727,6 +1737,21 @@ public class HaxeExpressionEvaluatorHandlers {
     }
     return null;
   }
+
+  //private static boolean containsTypeParameters(ResultHolder holder) {
+  //  if (holder.isUnknown()) return  false;
+  //  if (holder.isTypeParameter()) return true;
+  //  SpecificTypeReference type = holder.getType();
+  //  if (type instanceof  SpecificHaxeClassReference classReference) {
+  //    for (ResultHolder specific : classReference.getSpecifics()) {
+  //      if (containsTypeParameters(specific)) return  true;
+  //    }
+  //  }
+  //  if (type instanceof SpecificFunctionReference  function) {
+  //    if(!function.getTypeParameters().isEmpty()) return true;
+  //  }
+  //  return false;
+  //}
 
   static boolean isUntypedReturn(HaxeReturnStatement statement) {
     PsiElement child = statement.getFirstChild();

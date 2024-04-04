@@ -192,4 +192,23 @@ public class ResultHolder {
     duplicate.type = duplicate.type.withElementContext(element);
     return duplicate;
   }
+
+  public  boolean containsTypeParameters() {
+    return containsTypeParameters(this);
+  }
+  public static boolean containsTypeParameters(ResultHolder holder) {
+    if (holder.isUnknown()) return  false;
+    if (holder.isTypeParameter()) return true;
+    SpecificTypeReference type = holder.getType();
+    if (type instanceof  SpecificHaxeClassReference classReference) {
+      for (ResultHolder specific : classReference.getSpecifics()) {
+        if (containsTypeParameters(specific)) return  true;
+      }
+    }
+    if (type instanceof SpecificFunctionReference  function) {
+      if(!function.getTypeParameters().isEmpty()) return true;
+    }
+    return false;
+  }
+
 }

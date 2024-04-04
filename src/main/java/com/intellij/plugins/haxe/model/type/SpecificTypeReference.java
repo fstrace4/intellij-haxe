@@ -34,6 +34,8 @@ import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Stack;
 
@@ -336,8 +338,11 @@ public abstract class SpecificTypeReference {
   }
 
   public boolean isAnonymousType() {
+    if (this instanceof SpecificHaxeAnonymousReference) return true;
     if (this instanceof SpecificHaxeClassReference specificHaxeClassReference) {
-      if(specificHaxeClassReference.getHaxeClassReference().getHaxeClass() instanceof  HaxeTypedefDeclaration typedefDeclaration) {
+      HaxeClass aClass = specificHaxeClassReference.getHaxeClassReference().getHaxeClass();
+      if (aClass instanceof HaxeAnonymousType) return true;
+      if(aClass instanceof  HaxeTypedefDeclaration typedefDeclaration) {
         if (typedefDeclaration.getTypeOrAnonymous() != null ) {
           return typedefDeclaration.getTypeOrAnonymous().getAnonymousType() != null;
         }
@@ -622,4 +627,20 @@ public abstract class SpecificTypeReference {
   }
 
   public abstract SpecificTypeReference withElementContext(PsiElement element);
+
+
+  public List<ResultHolder> getTypeParameters() {
+    List<ResultHolder> typeParams = new ArrayList<>();
+    if (this instanceof SpecificHaxeClassReference classReference) {
+      @NotNull ResultHolder[] specifics = classReference.getSpecifics();
+      for (ResultHolder specific : specifics) {
+        if (specific.isTypeParameter()){
+          typeParams.add(specific);
+        }else {
+          typeParams.addAll(specific.getType().getTypeParameters());
+        }
+      }
+    }
+    return typeParams;
+  }
 }

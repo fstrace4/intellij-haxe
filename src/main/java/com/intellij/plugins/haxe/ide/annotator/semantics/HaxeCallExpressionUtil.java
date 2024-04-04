@@ -270,20 +270,34 @@ public class HaxeCallExpressionUtil {
   @NotNull
   private static HaxeGenericResolver remapTypeParameters(SpecificHaxeClassReference paramClass, SpecificHaxeClassReference callieClass) {
     HaxeGenericResolver remappedResolver = new HaxeGenericResolver();
-    if (paramClass != null && callieClass != null ) {
-      // just going to do exact match remapping for now, unifying parameter type and callie type and then their typeParameters is probably quite complicated
-      if (paramClass.getHaxeClassReference().refersToSameClass(callieClass.getHaxeClassReference())) {
-        @NotNull ResultHolder[] specificsFromMethodArg = paramClass.getSpecifics();
-        @NotNull ResultHolder[] specificsFromCallie = callieClass.getSpecifics();
-        for (int i = 0; i < specificsFromMethodArg.length; i++) {
-          ResultHolder specArg = specificsFromMethodArg[i];
-          ResultHolder specCallie = specificsFromCallie[i];
-          if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie);
-        }
+    if (paramClass != null && !paramClass.isUnknown()
+        && callieClass != null && !callieClass.isUnknown()) {
+      // just going to do exact match remapping for now, unifying parameter type and callie type and then their typeParameters is probably quite complicated.
+      // anonymous structures are also OK  as long as the types can be assigned to each other, it means they have the same structures and
+      // it should be safe to remapTypeParameters.
+      SpecificTypeReference paramFullyResolved = paramClass.fullyResolveTypeDefAndUnwrapNullTypeReference();
+      SpecificTypeReference callieFullyResolved = callieClass.fullyResolveTypeDefAndUnwrapNullTypeReference();
 
+      if (paramFullyResolved instanceof SpecificHaxeClassReference  param
+          && callieFullyResolved instanceof SpecificHaxeClassReference callie) {
+        if (param.getHaxeClassReference().refersToSameClass(callie.getHaxeClassReference())
+            || param.isAnonymousType() || callie.isAnonymousType())
+        {
+          remap(param, callie, remappedResolver);
+        }
       }
     }
     return remappedResolver;
+  }
+
+  private static void remap(SpecificHaxeClassReference param, SpecificHaxeClassReference callie, HaxeGenericResolver remappedResolver) {
+    @NotNull ResultHolder[] specificsFromMethodArg = param.getSpecifics();
+    @NotNull ResultHolder[] specificsFromCallie = callie.getSpecifics();
+    for (int i = 0; i < specificsFromMethodArg.length; i++) {
+      ResultHolder specArg = specificsFromMethodArg[i];
+      ResultHolder specCallie = specificsFromCallie[i];
+      if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie);
+    }
   }
 
   public static CallExpressionValidation checkFunctionCall(HaxeCallExpression callExpression, SpecificFunctionReference functionType) {
@@ -890,8 +904,17 @@ public class HaxeCallExpressionUtil {
                                                                  SpecificTypeReference argument,
                                                                  HaxeGenericResolver resolver, Map<String, ResultHolder> map) {
 
+    //fully resolving to make sure we dont have issues with Null<T> vs just T etc.
+    if (parameter instanceof SpecificHaxeClassReference parameterReference) {
+      parameter = parameterReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+    }
+    if (argument instanceof SpecificHaxeClassReference argumentReference) {
+      argument = argumentReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+    }
+
     if (parameter instanceof SpecificHaxeClassReference parameterReference &&
         argument instanceof SpecificHaxeClassReference argumentReference) {
+
       HaxeGenericResolver paramResolver = parameterReference.getGenericResolver().addAll(resolver.withoutUnknowns());
       HaxeGenericResolver argResolver = argumentReference.getGenericResolver().addAll(resolver.withoutUnknowns());
       if (parameterReference.isTypeParameter() && !argument.isTypeParameter() && !argument.isUnknown()) {

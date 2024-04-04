@@ -444,6 +444,16 @@ public class HaxeExpressionEvaluator {
                                                      final HaxeGenericResolver resolver,
                                                      @Nullable final PsiElement searchScope
   ) {
+  return searchReferencesForType(componentName, context, resolver,searchScope, null);
+  }
+
+  @NotNull
+  public static ResultHolder searchReferencesForType(final HaxeComponentName componentName,
+                                                     final HaxeExpressionEvaluatorContext context,
+                                                     final HaxeGenericResolver resolver,
+                                                     @Nullable final PsiElement searchScope,
+                                                     @Nullable final ResultHolder hint
+  ) {
     // search is slow so we can probably save some unnecessary searches when analyzing code
     List<PsiReference> references =
       CachedValuesManager.getProjectPsiDependentCache(componentName, (c) -> cachedSearch(c, searchScope))
@@ -451,7 +461,7 @@ public class HaxeExpressionEvaluator {
 
 
       for (PsiReference reference : references) {
-        ResultHolder possibleType = checkSearchResult(context, resolver, reference);
+        ResultHolder possibleType = checkSearchResult(context, resolver, reference, hint);
         if (possibleType != null) return possibleType;
       }
 
@@ -473,7 +483,8 @@ public class HaxeExpressionEvaluator {
   }
 
   @Nullable
-  private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference) {
+  private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference, ResultHolder hint) {
+
     if (reference instanceof HaxeExpression expression) {
       if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
         HaxeExpression rightExpression = assignExpression.getRightExpression();
@@ -496,7 +507,39 @@ public class HaxeExpressionEvaluator {
         }
       }
     }
-    if (reference instanceof  HaxeReferenceExpression referenceExpression ){
+    if (reference instanceof HaxeReferenceExpression referenceExpression) {
+      // reference is callExpression
+      if (referenceExpression.getParent() instanceof HaxeCallExpression callExpression) {
+        SpecificFunctionReference type = hint.getFunctionType();
+        if (type != null ) {
+            HaxeCallExpressionUtil.CallExpressionValidation validation =
+              HaxeCallExpressionUtil.checkFunctionCall(callExpression, type);
+
+
+          Map<Integer, Integer> parameterToArgument = new HashMap<>();
+          for(Map.Entry<Integer, Integer> entry : validation.getArgumentToParameterIndex().entrySet()){
+            parameterToArgument.put(entry.getValue(), entry.getKey());
+          }
+
+          List<SpecificFunctionReference.Argument> newArgList = new ArrayList<>();
+
+          Map<Integer, ResultHolder> argMap = validation.getArgumentIndexToType();
+
+          List<SpecificFunctionReference.Argument> arguments = type.getArguments();
+          for (SpecificFunctionReference.Argument argument : arguments) {
+            int index = argument.getIndex();
+            Integer argumentIndex = parameterToArgument.get(index);
+            ResultHolder newValue = argMap.get(argumentIndex);
+            // if not found use old value
+            if (newValue == null) newValue = argument.getType();
+            newArgList.add(new SpecificFunctionReference.Argument(argument.getIndex(), argument.isOptional(), argument.isRest(), newValue, argument.getName()));
+          }
+
+          return new SpecificFunctionReference(newArgList, type.returnValue ,type.functionType,  type.context).createHolder();
+        }
+
+      }
+      // parameter in call expression
       if (referenceExpression.getParent().getParent() instanceof HaxeCallExpression callExpression) {
         if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {
           final PsiElement resolved = callExpressionReference.resolve();
@@ -505,7 +548,7 @@ public class HaxeExpressionEvaluator {
           if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
           if (index > -1 && resolved instanceof HaxeMethod method) {
             HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
-            if (validation.isStaticExtension())index++;
+            if (validation.isStaticExtension()) index++;
             ResultHolder paramType = validation.getParameterIndexToType().getOrDefault(index, null);
             if (paramType != null) return paramType;
           }

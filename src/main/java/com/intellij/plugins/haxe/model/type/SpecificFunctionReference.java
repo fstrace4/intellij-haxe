@@ -90,15 +90,22 @@ public class SpecificFunctionReference extends SpecificTypeReference {
     this.functionType = functionType;
   }
 
-    public List<ResultHolder> getTypeParameters() {
-    //TODO? find generics recursively inside argument types
+  @Override
+  public List<ResultHolder> getTypeParameters() {
     List<ResultHolder> genericsTypes = new ArrayList<>();
       for (Argument argument : arguments) {
-        if (argument.isTypeParameter()) {
-          genericsTypes.add(argument.getType());
+        ResultHolder holder = argument.getType();
+        if (holder.isTypeParameter()) {
+          genericsTypes.add(holder);
+        }else {
+          genericsTypes.addAll(holder.getType().getTypeParameters());
+          }
         }
+      if (returnValue.isTypeParameter()) {
+        genericsTypes.add(returnValue);
+      }else {
+        genericsTypes.addAll(returnValue.getType().getTypeParameters());
       }
-      if (returnValue.isTypeParameter()) genericsTypes.add(returnValue);
       return genericsTypes;
     }
 
