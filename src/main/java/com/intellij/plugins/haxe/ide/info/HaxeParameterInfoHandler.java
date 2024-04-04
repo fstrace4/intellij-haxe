@@ -44,6 +44,7 @@ public class HaxeParameterInfoHandler implements ParameterInfoHandler<PsiElement
     final PsiElement selectedElement = context.getFile().findElementAt(context.getEditor().getCaretModel().getOffset());
     final HaxeReference method = PsiTreeUtil.getParentOfType(selectedElement, HaxeCallExpression.class, HaxeNewExpression.class);
     if (selectedElement != null && method != null) {
+      context.setItemsToShow(new Object[]{getParametersDescriptions(method)});
       return method;
     }
     return null;
@@ -63,7 +64,9 @@ public class HaxeParameterInfoHandler implements ParameterInfoHandler<PsiElement
 
   @Override
   public void showParameterInfo(@NotNull PsiElement element, @NotNull CreateParameterInfoContext context) {
-    final HaxeFunctionDescription functionDescription = getParametersDescriptions(element);
+    Object[] show = context.getItemsToShow();
+
+    final HaxeFunctionDescription functionDescription = show == null  || show.length == 0 ? null :  (HaxeFunctionDescription)show[0];
 
     if (functionDescription != null) {
       context.setItemsToShow(new Object[]{functionDescription});
