@@ -746,6 +746,7 @@ public class HaxeClassModel implements HaxeExposableModel {
       if (genericParam != null) {
         int index = 0;
         for (HaxeGenericListPart part : genericParam.getGenericListPartList()) {
+          // TODO try to avoid recreating this  model every time
           out.add(new HaxeGenericParamModel(part, index));
           index++;
         }

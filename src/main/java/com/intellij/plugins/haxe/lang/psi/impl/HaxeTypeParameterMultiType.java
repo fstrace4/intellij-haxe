@@ -18,10 +18,12 @@
 package com.intellij.plugins.haxe.lang.psi.impl;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.util.Key;
 import com.intellij.plugins.haxe.lang.psi.HaxeAnonymousTypeBody;
 import com.intellij.plugins.haxe.lang.psi.HaxeGenericParam;
 import com.intellij.plugins.haxe.lang.psi.HaxeType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,17 +38,30 @@ import java.util.Objects;
  */
 public class HaxeTypeParameterMultiType extends AnonymousHaxeTypeImpl {
 
+  private static final Key<HaxeTypeParameterMultiType>  ParameterMultiTypeKey = Key.create("parameterMultiType");
   private final List<HaxeType> typeList;
   private final List<HaxeAnonymousTypeBody> anonymousTypeBodyList;
 
   public static HaxeTypeParameterMultiType withTypeList(@NotNull ASTNode node, @NotNull List<HaxeType> typeList) {
-    return  new HaxeTypeParameterMultiType(node, typeList, null);
+    return  withCached(node, typeList, null);
   }
   public static HaxeTypeParameterMultiType withAnonymousList(@NotNull ASTNode node, @NotNull List<HaxeAnonymousTypeBody> anonymousTypeBodyList) {
-    return  new HaxeTypeParameterMultiType(node, null, anonymousTypeBodyList);
+    return   withCached(node, null, anonymousTypeBodyList);
+  }
+  public static HaxeTypeParameterMultiType withTypeAndAnonymousList(@NotNull ASTNode node,  @NotNull List<HaxeType> typeList,  @NotNull List<HaxeAnonymousTypeBody> anonymousTypeBodyList) {
+    return withCached(node, typeList, anonymousTypeBodyList);
+  }
+  private static HaxeTypeParameterMultiType withCached(@NotNull ASTNode node, @Nullable List<HaxeType> typeList, @Nullable List<HaxeAnonymousTypeBody> anonymousTypeBodyList) {
+    HaxeTypeParameterMultiType data = node.getUserData(ParameterMultiTypeKey);
+    if (data != null) {
+      return data;
+    }
+    data = new HaxeTypeParameterMultiType(node, typeList, anonymousTypeBodyList);
+    node.putUserData(ParameterMultiTypeKey, data);
+    return data;
   }
 
-  public HaxeTypeParameterMultiType(@NotNull ASTNode node, List<HaxeType> typeList, List<HaxeAnonymousTypeBody> anonymousTypeBodyList) {
+  private HaxeTypeParameterMultiType(@NotNull ASTNode node, List<HaxeType> typeList, List<HaxeAnonymousTypeBody> anonymousTypeBodyList) {
     super(node);
     this.typeList = typeList != null ? typeList : List.of();
     this.anonymousTypeBodyList = anonymousTypeBodyList  != null  ? anonymousTypeBodyList : List.of();

@@ -167,7 +167,8 @@ public class HaxeExpressionEvaluator {
       }
 
       if (element instanceof HaxeIfStatement ifStatement) {
-        return handleIfStatement(context, resolver, ifStatement);
+        //return handleIfStatement(context, resolver, ifStatement);
+        return resolveWithCache(ifStatement, resolver, () -> handleIfStatement(context, resolver, ifStatement));
       }
     }
 
@@ -183,7 +184,8 @@ public class HaxeExpressionEvaluator {
       }
 
       if (element instanceof HaxeLocalVarDeclaration varDeclaration) {
-        return handleLocalVarDeclaration(context, resolver, varDeclaration);
+        //return handleLocalVarDeclaration(context, resolver, varDeclaration);
+        return resolveWithCache(varDeclaration, resolver, () -> handleLocalVarDeclaration(context, resolver, varDeclaration));
       }
 
       if (element instanceof HaxeLocalFunctionDeclaration functionDeclaration) {

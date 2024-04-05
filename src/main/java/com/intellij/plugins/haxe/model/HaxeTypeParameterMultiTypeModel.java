@@ -2,9 +2,11 @@ package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.HaxeType;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeTypeParameterMultiType;
+import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -21,6 +23,8 @@ public class HaxeTypeParameterMultiTypeModel extends HaxeAnonymousTypeModel{
     // TODO cache
     return  list.stream().map(HaxeTypeResolver::getTypeFromType).toList();
   }
+
+
 
 
 }

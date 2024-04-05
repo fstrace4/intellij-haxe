@@ -1,10 +1,7 @@
 package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
-import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
-import com.intellij.plugins.haxe.model.type.ResultHolder;
-import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
+import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import lombok.val;
@@ -62,12 +59,7 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
 
   @Override
   public List<HaxeFieldModel> getFields() {
-    List<HaxeFieldModel> inheritedFields = getCompositeTypes().stream()
-      .map(ResultHolder::getClassType).filter(Objects::nonNull)
-      .filter(SpecificHaxeClassReference::isTypeDefOfClass)
-      .map(classReference -> classReference.resolveTypeDefClass().getHaxeClassModel().getFields())
-      .flatMap(Collection::stream)
-      .toList();
+    List<HaxeFieldModel> inheritedFields = getInheritedFields();
 
     List<HaxeFieldModel> bodyFieldList = getAnonymousTypeBodyList().stream()
       .map(this::getFieldsFromBody)
@@ -78,6 +70,29 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
     fields.addAll(inheritedFields);
     fields.addAll(bodyFieldList);
     return fields;
+  }
+
+  private @NotNull List<HaxeFieldModel> getInheritedFields() {
+    return getCompositeTypes().stream()
+      .map(ResultHolder::getClassType)
+      .filter(Objects::nonNull)
+      .map(HaxeAnonymousTypeModel::mapToHaxeClassIfPossible)
+      .filter(Objects::nonNull)
+      .map(haxeClass -> haxeClass.getModel().getFields())
+      .flatMap(Collection::stream)
+      .toList();
+  }
+
+  private static @Nullable HaxeClass mapToHaxeClassIfPossible(SpecificHaxeClassReference reference) {
+    HaxeClass haxeClass = reference.getHaxeClass();
+    if (reference.isTypeDefOfClass()) {
+      SpecificTypeReference resolvedRef = reference.fullyResolveTypeDefReference();
+      if (resolvedRef instanceof SpecificHaxeClassReference classReference) {
+        return classReference.getHaxeClass();
+      }
+      return null;
+    }
+    return haxeClass;
   }
 
   @Override
@@ -103,10 +118,16 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
     return getCompositeTypes().stream()
       .map(ResultHolder::getClassType)
       .filter(Objects::nonNull)
-      .filter(SpecificHaxeClassReference::isTypeDefOfClass)
-      .map(classReference -> classReference.resolveTypeDefClass().getHaxeClassModel().getMethods(resolver))
+      .map(HaxeAnonymousTypeModel::mapToHaxeClassIfPossible)
+      .filter(Objects::nonNull)
+      .map(haxeClass -> haxeClass.getModel().getMethods(resolver))
       .flatMap(Collection::stream)
       .toList();
+  }
+
+  @Override
+  public @Nullable HaxeMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
+    return getAllMembers(resolver).stream().filter(model -> model.getName().equals(name)).findFirst().orElse(null);
   }
 
   public List<HaxeMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
@@ -130,6 +151,14 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
       for (HaxePsiField field : children) {
         HaxeFieldModel model = (HaxeFieldModel)field.getModel();
         list.add(model);
+      }
+
+      List<HaxeAnonymousTypeFieldList> anonymList = PsiTreeUtil.getChildrenOfAnyType(body, HaxeAnonymousTypeFieldList.class);
+      for (HaxeAnonymousTypeFieldList fieldList : anonymList) {
+        for (HaxeAnonymousTypeField field : fieldList.getAnonymousTypeFieldList()) {
+          HaxeFieldModel model = (HaxeFieldModel)field.getModel();
+          list.add(model);
+        }
       }
       return list;
     } else {

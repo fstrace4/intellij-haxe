@@ -63,6 +63,10 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
 
   @Nullable private HaxeClass clazz;
 
+  // cache evaluations
+  Boolean _isTypeDefOfFunction  = null;
+  Boolean _isTypeDefOfClass  = null;
+
   // workaround to avoid overflow when wrapping and unwrapping
   public boolean isWrapper = false;
 
@@ -551,11 +555,17 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   }
   //TODO MLO: Warning, typedef of typedef will be considered class, should probably return false in this case and create istypeDefOfTypeDef or something
   public boolean isTypeDefOfClass() {
-    return isTypeDef() && ((AbstractHaxeTypeDefImpl)getHaxeClassModel().haxeClass).getTargetClass() != null;
+    if (_isTypeDefOfClass == null) {
+      _isTypeDefOfClass = isTypeDef() && ((AbstractHaxeTypeDefImpl)getHaxeClassModel().haxeClass).getTargetClass() != null;
+    }
+    return _isTypeDefOfClass;
   }
 
   public boolean isTypeDefOfFunction() {
-    return isTypeDef() && ((AbstractHaxeTypeDefImpl)getHaxeClassModel().haxeClass).getFunctionType() != null;
+    if (_isTypeDefOfFunction == null) {
+      _isTypeDefOfFunction = isTypeDef() && ((AbstractHaxeTypeDefImpl)getHaxeClassModel().haxeClass).getFunctionType() != null;
+    }
+    return _isTypeDefOfFunction;
   }
 
   public SpecificHaxeClassReference resolveTypeDefClass() {
@@ -595,7 +605,6 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   }
   public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference() {
     if (isTypeParameter()) return this;
-    HaxeClassModel model = this.getHaxeClassModel();
     if (isNullType()) {
       SpecificTypeReference typeReference = unwrapNullType();
       if (typeReference instanceof SpecificHaxeClassReference reference) {
@@ -686,8 +695,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
       HaxeReferenceExpression element = (HaxeReferenceExpression)context;
       PsiElement resolve = element.resolve();
 
-      if (resolve instanceof HaxeClass) {
-        HaxeClass resolved = (HaxeClass)resolve;
+      if (resolve instanceof HaxeClass resolved) {
         if (element.getText().equals(resolved.getName())) {
           return resolved.getName();
         }

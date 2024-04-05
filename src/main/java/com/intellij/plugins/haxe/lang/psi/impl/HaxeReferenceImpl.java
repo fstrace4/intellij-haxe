@@ -1223,7 +1223,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
       }
       if (haxeClass != null) {
         boolean isSuper = leftReference instanceof HaxeSuperExpression;
-        addClassNonStaticMembersVariants(suggestedVariants, haxeClass, resolver, !(isThis || isSuper));
+        addClassNonStaticMembersVariants(suggestedVariants, haxeClass, leftReference, resolver, !(isThis || isSuper));
         addUsingVariants(suggestedVariants, suggestedVariantsExtensions, haxeClass, this);
       }
     }
@@ -1388,9 +1388,10 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
   private void addClassNonStaticMembersVariants(Set<HaxeComponentName> suggestedVariants,
                                                 @Nullable HaxeClass haxeClass,
+                                                @Nullable HaxeReference reference,
                                                 @Nullable HaxeGenericResolver resolver,
                                                 boolean filterByAccess) {
-    if (haxeClass == null) {
+    if (haxeClass == null || reference == null) {
       return;
     }
 
@@ -1421,8 +1422,13 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
       if (isAbstractEnum && HaxeAbstractEnumUtil.couldBeAbstractEnumField(namedComponent)) {
         continue;
       }
+      boolean ifEnumIsClassReference = true;
+      if (haxeClass.isEnum() && !haxeClass.isAbstractType()) {
+        ifEnumIsClassReference = (reference.resolve() instanceof HaxeClass);
+      }
       if ((extern || !needFilter) &&
           !namedComponent.isStatic() &&
+          ifEnumIsClassReference &&
           namedComponent.getComponentName() != null &&
           !isConstructor(namedComponent)) {
         suggestedVariants.add(namedComponent.getComponentName());

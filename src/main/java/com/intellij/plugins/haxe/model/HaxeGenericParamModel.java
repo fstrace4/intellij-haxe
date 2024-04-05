@@ -131,9 +131,13 @@ public class HaxeGenericParamModel {
       .toList();
 
     List<HaxeType> typeList = mapped.stream().filter(t -> t.getType() != null).map(HaxeTypeOrAnonymous::getType).toList();
-
-    HaxeTypeParameterMultiType type = new HaxeTypeParameterMultiType(part.getNode(), typeList, anonymousTypeBodies);
-    return type;
+    if (!typeList.isEmpty() && !anonymousTypes.isEmpty()) {
+      return HaxeTypeParameterMultiType.withTypeAndAnonymousList(part.getNode(), typeList, anonymousTypeBodies);
+    } else if (anonymousTypes.isEmpty()) {
+      return HaxeTypeParameterMultiType.withTypeList(part.getNode(), typeList);
+    } else {
+      return HaxeTypeParameterMultiType.withAnonymousList(part.getNode(), anonymousTypeBodies);
+    }
   }
 
   public String toString() {
