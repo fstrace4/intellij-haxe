@@ -15,6 +15,7 @@ import com.intellij.plugins.haxe.model.fixer.HaxeFixer;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil;
 import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
+import com.intellij.plugins.haxe.model.type.SpecificTypeReference;
 import com.intellij.psi.PsiElement;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -213,26 +214,38 @@ public class HaxeClassAnnotator implements Annotator {
     if (!SUPERINTERFACE_TYPE.isEnabled(clazz.getBasePsi())) return;
 
     for (HaxeClassReferenceModel interfaze : clazz.getImplementingInterfaces()) {
-      HaxeClassModel interfazeClass = interfaze.getHaxeClass();
-      if (interfazeClass != null  && clazz.isInterface()) {
-        AnnotationBuilder builder = holder.newAnnotation(HighlightSeverity.ERROR, " Interfaces cannot implement another interface (use extends instead)")
-            .range(interfaze.getPsi());
-        if (interfazeClass.isInterface()) {
-          builder.withFix(HaxeFixer.create("Change to extends", () -> clazz.changeToExtends(interfazeClass.getName())));
+      HaxeClassModel interfazeModel = interfaze.getHaxeClassModel();
+      HaxeClass interfazeClass = null;
+      if (interfazeModel != null) {
+        if (interfazeModel.isAnonymous()) {
+          SpecificHaxeClassReference reference =
+            interfazeModel.getUnderlyingClassReference(interfaze.getSpecificHaxeClassReference().getGenericResolver());
+          if (reference!= null) interfazeClass = reference.getHaxeClass();
+        }else {
+          interfazeClass = interfazeModel.haxeClass;
         }
-        builder.create();
-      }else {
+      }
 
-        boolean isDynamic =
-          null != interfazeClass && SpecificHaxeClassReference.withoutGenerics(interfazeClass.getReference()).isDynamic();
-        if (interfazeClass != null && !(interfazeClass.isInterface() || isDynamic)) {
+      if (interfazeClass != null) {
+        if (clazz.isInterface()) {
           AnnotationBuilder builder =
-            holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.interface.error.message"))
+            holder.newAnnotation(HighlightSeverity.ERROR, " Interfaces cannot implement another interface (use extends instead)")
               .range(interfaze.getPsi());
-          if (interfazeClass.isClass() || interfazeClass.isAbstractClass()) {
-            builder.withFix(HaxeFixer.create("Change to extends", () -> clazz.changeToExtends(interfazeClass.getName())));
+          if (interfazeClass.isInterface()) {
+            builder.withFix(HaxeFixer.create("Change to extends", () -> clazz.changeToExtends(interfazeModel.getName())));
           }
           builder.create();
+        } else {
+          boolean isDynamic = SpecificHaxeClassReference.withoutGenerics(interfazeModel.getReference()).isDynamic();
+          if (!(interfazeClass.isInterface() || isDynamic)) {
+            AnnotationBuilder builder =
+              holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.interface.error.message"))
+                .range(interfaze.getPsi());
+            if (interfazeModel.isClass() || interfazeModel.isAbstractClass()) {
+              builder.withFix(HaxeFixer.create("Change to extends", () -> clazz.changeToExtends(interfazeModel.getName())));
+            }
+            builder.create();
+          }
         }
       }
     }
@@ -259,7 +272,7 @@ public class HaxeClassAnnotator implements Annotator {
     // for classes its only  allowed to extend one sub-class so we can look for frist element
     if (!types.isEmpty()) {
       HaxeClassReferenceModel model = types.get(0);
-      if (model.getHaxeClass() != null && model.getHaxeClass().isAbstractClass()) {
+      if (model.getHaxeClassModel() != null && model.getHaxeClassModel().isAbstractClass()) {
         checkAbstractMethods(clazz, model, holder);
       }
     }
@@ -272,7 +285,7 @@ public class HaxeClassAnnotator implements Annotator {
 
 
     List<HaxeMethod> allMethodList = clazz.haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.INTERFACE);
-    Set<HaxeMethod> extendedClassMethodList = new HashSet<>(abstractClass.getHaxeClass().haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.INTERFACE));
+    Set<HaxeMethod> extendedClassMethodList = new HashSet<>(abstractClass.getHaxeClassModel().haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.INTERFACE));
 
     Map<String, HaxeMethodModel> abstractMethods = extendedClassMethodList.stream()
       .map(HaxeMethodPsiMixin::getModel)
@@ -348,10 +361,10 @@ public class HaxeClassAnnotator implements Annotator {
     final List<HaxeFieldModel> missingFields = new ArrayList<>();
     final List<String> missingFieldNames = new ArrayList<>();
 
-    if (intReference.getHaxeClass() != null) {
+    if (intReference.getHaxeClassModel() != null) {
       List<HaxeFieldDeclaration> fieldsInThisClass = clazz.haxeClass.getFieldSelf(clazz.getGenericResolver(null));
       List<HaxeNamedComponent> allFields = clazz.haxeClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
-      for (HaxeFieldModel intField : intReference.getHaxeClass().getFields()) {
+      for (HaxeFieldModel intField : intReference.getHaxeClassModel().getFields()) {
         if (!intField.isStatic()) {
 
 
@@ -425,7 +438,7 @@ public class HaxeClassAnnotator implements Annotator {
 
               String message = HaxeBundle.message("haxe.semantic.field.different.mutability",
                                                   fieldDeclaration.getName(),
-                                                  intReference.getHaxeClass().getName());
+                                                  intReference.getHaxeClassModel().getName());
 
               holder.newAnnotation(HighlightSeverity.ERROR, message)
                 .range(fieldDeclaration.getNode())
@@ -473,7 +486,7 @@ public class HaxeClassAnnotator implements Annotator {
 
     holder.newAnnotation(macroCodegen ? HighlightSeverity.WEAK_WARNING : HighlightSeverity.ERROR,
                          "Field " + fieldDeclaration.getName() + " has different type than in  "
-                         + intReference.getHaxeClass().getName())
+                         + intReference.getHaxeClassModel().getName())
       .range(fieldDeclaration.getNode())
       .create();
 
@@ -496,7 +509,7 @@ public class HaxeClassAnnotator implements Annotator {
 
     String message = HaxeBundle.message("haxe.semantic.field.different.access",
                                         fieldDeclaration.getName(),
-                                        intReference.getHaxeClass().getName());
+                                        intReference.getHaxeClassModel().getName());
 
     holder.newAnnotation(macroCodegen ? HighlightSeverity.WEAK_WARNING : HighlightSeverity.ERROR, message)
       .range(rangeElement)
@@ -517,13 +530,13 @@ public class HaxeClassAnnotator implements Annotator {
     final List<HaxeMethodModel> missingMethods = new ArrayList<HaxeMethodModel>();
     final List<String> missingMethodsNames = new ArrayList<String>();
 
-    if (intReference.getHaxeClass() != null) {
+    if (intReference.getHaxeClassModel() != null) {
       List<HaxeMethodModel> methods = clazz.haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM).stream()
         .map(HaxeMethodPsiMixin::getModel)
         .filter(not(HaxeMethodModel::isAbstract))
         .toList();
 
-      for (HaxeMethodModel intMethod : intReference.getHaxeClass().getMethods(null)) {
+      for (HaxeMethodModel intMethod : intReference.getHaxeClassModel().getMethods(null)) {
         if (!intMethod.isStatic()) {
 
           Optional<HaxeMethodModel> methodResult = methods.stream()

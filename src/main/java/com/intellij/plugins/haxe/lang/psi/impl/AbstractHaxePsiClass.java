@@ -110,7 +110,9 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
 
   public HaxeClassModel getModel() {
     if (_model == null) {
-      if (this instanceof HaxeAnonymousType anonymousType) {
+      if (this instanceof HaxeTypeParameterMultiType multiType) {
+        _model = new HaxeTypeParameterMultiTypeModel(multiType);
+      }else if (this instanceof HaxeAnonymousType anonymousType) {
         _model = new HaxeAnonymousTypeModel(anonymousType);
       }else if (this instanceof HaxeEnumDeclaration enumDeclaration) {
         _model = new HaxeEnumModelImpl(enumDeclaration);
@@ -242,7 +244,10 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   @Nullable
   @Override
   public HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
+//TODO: debug line remove
+    List<HaxeNamedComponent> all = this.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
+
+    //List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
     return ContainerUtil.find(all, component -> name.equals(component.getName()));
   }
 

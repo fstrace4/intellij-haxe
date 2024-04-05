@@ -25,7 +25,6 @@ import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.impl.HaxeMetadataTypeName;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
-import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiIdentifier;
@@ -221,10 +220,18 @@ public class HaxeClassModel implements HaxeExposableModel {
     if (typeOrAnon != null) {
       HaxeType type = typeOrAnon.getType();
       if (type != null) {
-        HaxeClass aClass = HaxeResolveUtil.tryResolveClassByQName(type);
-        if (aClass != null) {
-          ResultHolder[] specifics =  HaxeTypeResolver.resolveDeclarationParametersToTypes(aClass, resolver);
-          return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(aClass.getModel(), element), specifics, element);
+        //HaxeClass aClass = HaxeResolveUtil.tryResolveClassByQName(type);
+        ResultHolder resolved = HaxeTypeResolver.getTypeFromType(type);
+        SpecificHaxeClassReference classType = resolved.getClassType();
+        if (!resolved.isUnknown() && classType != null) {
+          HaxeGenericResolver localResolver = new HaxeGenericResolver();
+          localResolver.addAll(classType.getGenericResolver());
+          localResolver.addAll(resolver);
+          HaxeClass aClass = classType.getHaxeClass();
+          if (aClass != null) {
+            ResultHolder[] specifics = HaxeTypeResolver.resolveDeclarationParametersToTypes(aClass, localResolver);
+            return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(aClass.getModel(), element), specifics, element);
+          }
         }
       } else { // Anonymous type
         HaxeAnonymousType anon = typeOrAnon.getAnonymousType();
@@ -656,7 +663,7 @@ public class HaxeClassModel implements HaxeExposableModel {
 
   public List<HaxeFieldModel> getFields() {
     // TODO: Figure out if this needs to deal with forwarded fields in abstracts.
-    HaxePsiCompositeElement body = PsiTreeUtil.getChildOfAnyType(haxeClass, isEnum() ? HaxeEnumBody.class : HaxeClassBody.class, HaxeInterfaceBody.class);
+    HaxePsiCompositeElement body = PsiTreeUtil.getChildOfAnyType(haxeClass, isEnum() ? HaxeEnumBody.class : HaxeClassBody.class, HaxeInterfaceBody.class, HaxeExternClassDeclarationBody.class);
 
     if (body != null) {
       List<HaxeFieldModel> list = new ArrayList<>();
@@ -693,7 +700,7 @@ public class HaxeClassModel implements HaxeExposableModel {
     // Interfaces
     for (HaxeClassReferenceModel model : this.getImplementingInterfaces()) {
       if (model == null) continue;
-      final HaxeClassModel aInterface = model.getHaxeClass();
+      final HaxeClassModel aInterface = model.getHaxeClassModel();
       if (aInterface == null) continue;
       if (!output.contains(aInterface)) {
         aInterface.writeCompatibleTypes(output);

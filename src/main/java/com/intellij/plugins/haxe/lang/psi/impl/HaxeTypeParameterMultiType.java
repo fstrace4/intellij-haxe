@@ -64,7 +64,7 @@ public class HaxeTypeParameterMultiType extends AnonymousHaxeTypeImpl {
 
   @Override
   public @NotNull List<HaxeType> getTypeList() {
-    return List.of();
+    return typeList;
   }
 
 

@@ -270,9 +270,22 @@ public class HaxeGenericResolverUtil {
   }
 
   private static boolean findClasHierarchy(HaxeClass from, HaxeClass to, List<SpecificHaxeClassReference> path) {
-    List<HaxeClassReferenceModel> types = from.getModel().getExtendingTypes();
+    HaxeClassModel fromModel = from.getModel();
+    if (fromModel.isTypedef()) {
+      SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(new HaxeGenericResolver());
+      if (reference!= null) {
+        path.add(reference);
+        SpecificHaxeClassReference resolvedTypeDef = reference.resolveTypeDefClass();
+        if (resolvedTypeDef != null) {
+          HaxeClass childClass = resolvedTypeDef.getHaxeClass();
+          if (childClass == to) return true;
+          if (childClass != null) return findClasHierarchy(childClass, to, path);
+        }
+      }
+    }
+    List<HaxeClassReferenceModel> types = fromModel.getExtendingTypes();
     for (HaxeClassReferenceModel model : types) {
-      HaxeClassModel classModel = model.getHaxeClass();
+      HaxeClassModel classModel = model.getHaxeClassModel();
       if (classModel != null) {
         HaxeClass childClass = classModel.haxeClass;
         if (childClass == to) {

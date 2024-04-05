@@ -7,6 +7,7 @@ import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,15 +23,36 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
   }
 
   public List<ResultHolder> getCompositeTypes() {
-    List<HaxeType> typeList  = CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getCompositeTypes);
+    List<HaxeType> typeList  = getCompositeTypesPsi();
     return typeList.stream().map(HaxeTypeResolver::getTypeFromType).toList();
+  }
+  public  List<HaxeType> getCompositeTypesPsi() {
+    return CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getCompositeTypes);
+  }
+  public  List<HaxeType> getExtensionTypesPsi() {
+    return CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getExtendsTypes);
   }
 
   private static List<HaxeType> _getCompositeTypes(HaxeAnonymousType anonymousType) {
-    return anonymousType.getTypeList();
+    val items = new ArrayList<HaxeType>();
+    if (anonymousType != null) {
+      items.addAll(anonymousType.getTypeList());
+    }
+    return items;
+  }
+  private static List<HaxeType> _getExtendsTypes(HaxeAnonymousType anonymousType) {
+    val items = new ArrayList<HaxeType>();
+    List<HaxeAnonymousTypeBody> bodyList = anonymousType.getAnonymousTypeBodyList();
+    for (HaxeAnonymousTypeBody anonymousTypeBody : bodyList) {
+      if (anonymousTypeBody != null) {
+        HaxeTypeExtendsList list = anonymousTypeBody.getTypeExtendsList();
+        if (list != null) items.addAll(list.getTypeList());
+      }
+    }
+    return items;
   }
 
-  public List<HaxeAnonymousTypeBody> getAnonymousTypeBodyList() {
+  private List<HaxeAnonymousTypeBody> getAnonymousTypeBodyList() {
     return CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getAnonymousTypeBodyList);
   }
 
@@ -128,4 +150,39 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
     }
   }
 
+  public Collection<HaxeNamedComponent> getAnonymousMethodDeclarations() {
+    val items = new ArrayList<HaxeNamedComponent>();
+    List<HaxeAnonymousTypeBody> bodyList = getAnonymousTypeBodyList();
+    for (HaxeAnonymousTypeBody anonymousTypeBody : bodyList) {
+      if (anonymousTypeBody != null) {
+        items.addAll(anonymousTypeBody.getMethodDeclarationList());
+      }
+    }
+    return items;
+  }
+
+  public Collection<HaxeNamedComponent> getAnonymousFieldDeclarations() {
+    val items = new ArrayList<HaxeNamedComponent>();
+    List<HaxeAnonymousTypeBody> bodyList = getAnonymousTypeBodyList();
+    for (HaxeAnonymousTypeBody anonymousTypeBody : bodyList) {
+      final HaxeAnonymousTypeFieldList typeFieldList = anonymousTypeBody.getAnonymousTypeFieldList();
+        if (typeFieldList != null) {
+          items.addAll(typeFieldList.getAnonymousTypeFieldList());
+        }
+        items.addAll(anonymousTypeBody.getFieldDeclarationList());
+    }
+    return items;
+
+  }
+
+  public Collection<HaxeNamedComponent> getAnonymousOptionalFieldDeclarations() {
+    val items = new ArrayList<HaxeNamedComponent>();
+    List<HaxeAnonymousTypeBody> bodyList = getAnonymousTypeBodyList();
+    for (HaxeAnonymousTypeBody anonymousTypeBody : bodyList) {
+      if (anonymousTypeBody != null) {
+        items.addAll(anonymousTypeBody.getOptionalFieldDeclarationList());
+      }
+    }
+    return items;
+  }
 }

@@ -35,10 +35,12 @@ class Test {
 
     function test<T:(SpecifiedStrcuture, ISomeInterface<String>)>(target:T):Void {
         var s:String = target.myMethod(""); // correct from interface
+        var t:Int = target.secondVar *2; // correct from SpecifiedStrcuture
         var t:String = target.fistVar.toLowerCase(); // correct from  SpecifiedStrcuture
 
         var s:String = target.myMethod(<error descr="Type mismatch (Expected: 'String' got: 'Int')">1</error>); // wrong parameter type
-        var t:Int = <error descr="Unable to apply operator * for types T:(SpecifiedStrcuture, ISomeInterface<String>) and Int = 2">target.fistVar * 2</error>; // wrong
+        var <error descr="Incompatible type: String should be Int">t:Int = target.fistVar</error>; // wrong
+        var t:Int = <error descr="Unable to apply operator * for types String and Int = 2">target.fistVar * 2</error>; // wrong
 
     }
 

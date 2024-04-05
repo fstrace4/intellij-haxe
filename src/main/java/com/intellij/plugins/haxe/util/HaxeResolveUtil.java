@@ -454,21 +454,20 @@ public class HaxeResolveUtil {
     }
 
     final List<HaxeNamedComponent> result = new ArrayList<>();
-    if (haxeClass instanceof HaxeAnonymousType anonymousType) {
-      HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel)anonymousType.getModel();
-      List<HaxeAnonymousTypeBody> bodyList = model.getAnonymousTypeBodyList();
-      for (HaxeAnonymousTypeBody anonymousTypeBody : bodyList) {
-        if (anonymousTypeBody != null) {
-          final HaxeAnonymousTypeFieldList typeFieldList = anonymousTypeBody.getAnonymousTypeFieldList();
-          if (typeFieldList != null) {
-            result.addAll(typeFieldList.getAnonymousTypeFieldList());
-          }else {
-            result.addAll(anonymousTypeBody.getMethodDeclarationList());
-            result.addAll(anonymousTypeBody.getFieldDeclarationList());
-            result.addAll(anonymousTypeBody.getOptionalFieldDeclarationList());
-          }
+    if (haxeClass instanceof HaxeTypeParameterMultiType multiType) {
+      HaxeTypeParameterMultiTypeModel model = (HaxeTypeParameterMultiTypeModel) multiType.getModel();
+      List<ResultHolder> types = model.getCompositeTypes();
+      for (ResultHolder holder : types) {
+        if (holder.getClassType() != null) {
+          List<HaxeNamedComponent> components = getNamedSubComponents(holder.getClassType().getHaxeClass());
+          result.addAll(components);
         }
       }
+    } else if (haxeClass instanceof HaxeAnonymousType anonymousType) {
+      HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel)anonymousType.getModel();
+      result.addAll(model.getAnonymousMethodDeclarations());
+      result.addAll(model.getAnonymousFieldDeclarations());
+      result.addAll(model.getAnonymousOptionalFieldDeclarations());
       return result;
     }
 

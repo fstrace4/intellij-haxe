@@ -40,21 +40,8 @@ public abstract class AnonymousHaxeTypeImpl extends AbstractHaxePsiClass impleme
   @NotNull
   @Override
   public List<HaxeType> getHaxeExtendsList() {
-    List<HaxeType> extendsList = new ArrayList<>();
     HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel) getModel();
-    List<HaxeAnonymousTypeBody> bodyList = model.getAnonymousTypeBodyList();
-    for (HaxeAnonymousTypeBody body : bodyList) {
-      if (body != null) {
-        final HaxeTypeExtendsList typeExtendsList = body.getTypeExtendsList();
-        if (typeExtendsList != null) {
-          final List<HaxeType> typeList = typeExtendsList.getTypeList();
-          if (!typeList.isEmpty()) {
-            extendsList.addAll(typeList);
-          }
-        }
-      }
-    }
-    return  extendsList;
+    return model.getExtensionTypesPsi();
   }
 
   @Override

@@ -107,7 +107,7 @@ public class HaxeGenericParamModel {
         else {
           // Anonymous struct for a constraint.
           // TODO: Turn the anonymous structure into a ResolveResult.
-          return HaxeTypeResolver.getPsiElementType(toa.getOriginalElement(), resolver); //temp solution
+          return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa, resolver); //temp solution
         }
       }
       HaxeFunctionType functionType = constraint.getFunctionType();

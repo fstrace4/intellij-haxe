@@ -20,9 +20,9 @@ package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.type.HaxeClassReference;
+import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
-import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,14 +51,16 @@ public class HaxeClassReferenceModel {
   }
 
   @Nullable
-  public HaxeClassModel getHaxeClass() {
+  public HaxeClassModel getHaxeClassModel() {
     if (_clazz == null) {
-      _clazz = HaxeResolveUtil.getHaxeClassResolveResult(type).getHaxeClass();
+      SpecificHaxeClassReference classType = HaxeTypeResolver.getTypeFromType(type).getClassType();
+      _clazz = classType != null ? classType.getHaxeClass() : null;
+      //_clazz = HaxeResolveUtil.getHaxeClassResolveResult(type).getHaxeClass();
     }
     return (_clazz != null) ? _clazz.getModel() : null;
   }
   public SpecificHaxeClassReference getSpecificHaxeClassReference() {
-    HaxeClassModel aClass = getHaxeClass();
+    HaxeClassModel aClass = getHaxeClassModel();
     if (aClass != null){
       HaxeClassReference reference = aClass.getReference();
       List<HaxeTypeParameterModel> parameters = getTypeParameters();

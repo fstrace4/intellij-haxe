@@ -18,7 +18,7 @@ public class AnnotatorUtil {
     if (clazz.hasCompileTimeMeta(HaxeMeta.BUILD)) return true;
 
     List<HaxeClassModel> classModels = clazz.getExtendingTypes().stream()
-      .map(HaxeClassReferenceModel::getHaxeClass)
+      .map(HaxeClassReferenceModel::getHaxeClassModel)
       .filter(Objects::nonNull)
       .collect(Collectors.toList());
 
@@ -32,7 +32,7 @@ public class AnnotatorUtil {
         }
         List<HaxeClassModel> list =
           model.getExtendingTypes().stream()
-            .map(HaxeClassReferenceModel::getHaxeClass)
+            .map(HaxeClassReferenceModel::getHaxeClassModel)
             .filter(not(classModels::contains))
             .toList();
 

@@ -561,8 +561,10 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   public SpecificHaxeClassReference resolveTypeDefClass() {
     if (typeDefClass != null && typeDefClass.getGenericResolver().isEmpty())  return typeDefClass;
     if (isTypeDef()) {
-      typeDefClass = ((AbstractHaxeTypeDefImpl)getHaxeClassModel().haxeClass).getTargetClass(getGenericResolver());
-      return typeDefClass;
+      HaxeClassModel model = getHaxeClassModel();
+      if (model != null) {
+        return model.getUnderlyingClassReference(this.getGenericResolver());
+      }
     }
     return null;
   }
@@ -592,6 +594,8 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     return reference;
   }
   public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference() {
+    if (isTypeParameter()) return this;
+    HaxeClassModel model = this.getHaxeClassModel();
     if (isNullType()) {
       SpecificTypeReference typeReference = unwrapNullType();
       if (typeReference instanceof SpecificHaxeClassReference reference) {
@@ -615,6 +619,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
           SpecificFunctionReference reference1 = reference.resolveTypeDefFunction();
           return resolver.resolve(reference1);
         }
+
         reference = typeDef.getTargetClass(resolver);
         if (reference.isTypeDefOfClass()) {
           haxeClass = reference.getHaxeClass();
