@@ -49,8 +49,8 @@ public class HaxeExpressionEvaluatorHandlers {
                                                HaxeGenericResolver resolver) {
     if (element == null ) return null;
     HashSet<PsiElement> elements = resolvesInProcess.get();
+    if (elements.contains(element)) return null;
     try {
-      if (elements.contains(element)) return null;
       elements.add(element);
       return handle(element, context, resolver);
     } finally {

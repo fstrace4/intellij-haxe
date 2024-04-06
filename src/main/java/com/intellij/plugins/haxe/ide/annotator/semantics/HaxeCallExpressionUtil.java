@@ -130,7 +130,6 @@ public class HaxeCallExpressionUtil {
           validation.errors.add(new ErrorRecord(callExpression.getTextRange(), "Can not use extension method, wrong type"));
           return validation;
         } else {
-          // callie and extension methods might have different names for their TypeParameters, so we need to substitute values
           SpecificHaxeClassReference paramClass = type.getClassType();
           SpecificHaxeClassReference callieClass = callieType.getClassType();
           HaxeGenericResolver remappedResolver = remapTypeParameters(paramClass, callieClass);
@@ -204,7 +203,7 @@ public class HaxeCallExpressionUtil {
 
       //TODO mlo: note to self , when argument function, can assign to "Function"
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -296,7 +295,7 @@ public class HaxeCallExpressionUtil {
     for (int i = 0; i < specificsFromMethodArg.length; i++) {
       ResultHolder specArg = specificsFromMethodArg[i];
       ResultHolder specCallie = specificsFromCallie[i];
-      if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie);
+      if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie, ResolveSource.ARGUMENT_TYPE);
     }
   }
 
@@ -574,7 +573,7 @@ public class HaxeCallExpressionUtil {
 
       //TODO mlo: note to self , when argument function, can assign to "Function"
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -747,7 +746,7 @@ public class HaxeCallExpressionUtil {
 
       //TODO mlo: note to self , when argument function, can assign to "Function"
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -856,7 +855,7 @@ public class HaxeCallExpressionUtil {
       HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(argument);
       HaxeGenericResolver genericResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(argument);
       genericResolver.addAll(resolver);
-      expressionType = HaxeExpressionEvaluator.evaluate(argument, context, genericResolver.withoutUnknowns()).result;
+      expressionType = HaxeExpressionEvaluator.evaluateWithRecursionGuard(argument, context, genericResolver.withoutUnknowns()).result;
     }
 
 

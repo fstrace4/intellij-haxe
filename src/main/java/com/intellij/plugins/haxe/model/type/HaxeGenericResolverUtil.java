@@ -93,11 +93,15 @@ public class HaxeGenericResolverUtil {
       appendStatementGenericResolver(left, resolver);
     }
     if (element instanceof HaxeReference) {
-      HaxeResolveResult result = ((HaxeReference)element).resolveHaxeClass();
-      resolver.addAll(result.getGenericResolver());
+      ResultHolder result1 =
+        HaxeExpressionEvaluator.evaluateWithRecursionGuard(element, new HaxeExpressionEvaluatorContext(element), null).result;
+      if (!result1.isUnknown() && result1.getClassType() != null) {
+        SpecificHaxeClassReference result = result1.getClassType();
+        resolver.addAll(result.getGenericResolver());
       if (result.getHaxeClass() != null) {
         resolver.addAll(getResolverSkipAbstractNullScope(result.getHaxeClass().getModel(), result.getGenericResolver()));
         resolver.addAll(result.getHaxeClass().getMemberResolver(resolver));
+      }
       }
     }
     return resolver;

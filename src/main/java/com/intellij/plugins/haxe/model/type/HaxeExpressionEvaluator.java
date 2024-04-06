@@ -79,6 +79,20 @@ public class HaxeExpressionEvaluator {
       cleanUp();
     }
   }
+  @NotNull
+  static public HaxeExpressionEvaluatorContext evaluateWithRecursionGuard(PsiElement element, HaxeExpressionEvaluatorContext context,
+                                                                          HaxeGenericResolver resolver) {
+    try {
+      processingStack.get().push(element);
+      ProgressIndicatorProvider.checkCanceled();
+      ResultHolder result = handleWithRecursionGuard(element, context, resolver);
+      context.result = result != null ? result : createUnknown(element);
+      return context;
+    }
+    finally {
+      cleanUp();
+    }
+  }
 
   private static void cleanUp() {
     Stack<PsiElement> processing = processingStack.get();
@@ -463,7 +477,7 @@ public class HaxeExpressionEvaluator {
 
 
       for (PsiReference reference : references) {
-        ResultHolder possibleType = checkSearchResult(context, resolver, reference, hint);
+        ResultHolder possibleType = checkSearchResult(context, resolver, reference,componentName,  hint);
         if (possibleType != null) return possibleType;
       }
 
@@ -485,8 +499,11 @@ public class HaxeExpressionEvaluator {
   }
 
   @Nullable
-  private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference, ResultHolder hint) {
+  private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference,
+                                                HaxeComponentName originalComponent,
+                                               @Nullable ResultHolder hint) {
 
+    if (originalComponent.getParent() == reference) return  null;
     if (reference instanceof HaxeExpression expression) {
       if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
         HaxeExpression rightExpression = assignExpression.getRightExpression();

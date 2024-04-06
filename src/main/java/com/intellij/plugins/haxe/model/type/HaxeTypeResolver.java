@@ -282,7 +282,7 @@ public class HaxeTypeResolver {
       if (!stack.contains(result)) {
         try {
           stack.add(result);
-          SpecificHaxeClassReference.propagateGenericsToType(classReference, resolver, returnType);
+          result = SpecificHaxeClassReference.propagateGenericsToType(classReference.createHolder(), resolver, returnType);
         } finally {
           stack.pop();
         }
@@ -610,18 +610,35 @@ public class HaxeTypeResolver {
     final HaxeAnonymousType anonymousType = typeOrAnonymous.getAnonymousType();
     if (anonymousType != null) {
       HaxeNamedComponent contributor = HaxeResolveUtil.findTypeParameterContributor(anonymousType);
-      if (null != contributor) {
+      if (null != contributor ) {
         HaxeClassModel contributorModel = HaxeClassModel.fromElement(contributor);
         if (contributorModel.hasGenericParams()) {
-          HaxeGenericResolver resolver = contributorModel.getGenericResolver(parentResolver);
-          resolver.addAll(parentResolver); // anonymous inherits its typeParameter from parent
-          return SpecificHaxeAnonymousReference.withGenerics(new HaxeClassReference(anonymousType.getModel(), typeOrAnonymous), resolver)
+          HaxeGenericResolver localResolver = new HaxeGenericResolver();
+          // attempt at avoiding recursion issues
+          // for "function X<T:{}>();" contributor would be function X and T would be the anonymous type
+          // if we try to copy generics from X to T we need collect generics and end up trying to resolve T again
+          if(!isChildOf(anonymousType, contributor)) {
+            HaxeGenericResolver resolver = contributorModel.getGenericResolver(parentResolver);
+            localResolver.addAll(resolver);
+          }
+          localResolver.addAll(parentResolver); // anonymous inherits its typeParameter from parent
+          return SpecificHaxeAnonymousReference.withGenerics(new HaxeClassReference(anonymousType.getModel(), typeOrAnonymous), localResolver)
             .createHolder();
         }
       }
       return SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(anonymousType.getModel(), typeOrAnonymous)).createHolder();
     }
     return SpecificTypeReference.getDynamic(typeOrAnonymous).createHolder();
+  }
+
+  private static boolean isChildOf(HaxeAnonymousType type, HaxeNamedComponent contributor) {
+    PsiElement parent = type.getParent();
+    while(parent != null) {
+      if (parent == contributor)
+        return true;
+      parent = parent.getParent();
+    }
+    return false;
   }
 
   @NotNull
