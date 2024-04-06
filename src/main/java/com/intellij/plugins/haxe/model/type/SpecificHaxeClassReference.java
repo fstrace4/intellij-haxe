@@ -455,10 +455,13 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
           list.addAll(type.getCompatibleTypesIInternalCached(direction));
         }
       } else for (HaxeType extendsType : model.haxeClass.getHaxeExtendsList()) {
-        SpecificHaxeClassReference type = propagateGenericsToType(extendsType, genericResolver);
-        if (type != null) {
-          if(direction == Compatibility.ASSIGNABLE_TO)  list.add(type);
-          list.addAll(type.getCompatibleTypesIInternalCached(direction));
+        ResultHolder holder = propagateGenericsToType(extendsType, genericResolver);
+        if (holder != null) {
+          SpecificHaxeClassReference type = holder.getClassType();
+          if (type != null) {
+            if (direction == Compatibility.ASSIGNABLE_TO) list.add(type);
+            list.addAll(type.getCompatibleTypesIInternalCached(direction));
+          }
         }
       }
       // var myVar:MyClass can not be assigned any object with the same interface,
@@ -466,10 +469,13 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
       if(direction == Compatibility.ASSIGNABLE_TO) {
         final List<HaxeClassReferenceModel> interfaces = model.getImplementingInterfaces();
         for (HaxeClassReferenceModel interfaceReference : interfaces) {
-          SpecificHaxeClassReference type = propagateGenericsToType(interfaceReference.getPsi(), genericResolver);
-          if (type != null) {
-            list.add(type);
-            list.addAll(type.getCompatibleTypesIInternalCached(direction));
+          ResultHolder holder = propagateGenericsToType(interfaceReference.getPsi(), genericResolver);
+          if (holder != null) {
+            SpecificHaxeClassReference type = holder.getClassType();
+            if (type != null) {
+              list.add(type);
+              list.addAll(type.getCompatibleTypesIInternalCached(direction));
+            }
           }
         }
       }
@@ -477,10 +483,13 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
 
       List<HaxeType> typeList = direction == Compatibility.ASSIGNABLE_FROM ? model.getAbstractFromList() : model.getAbstractToList();
       for (HaxeType extendsType : typeList) {
-        SpecificHaxeClassReference type = propagateGenericsToType(extendsType, genericResolver);
-        if (type != null) {
-          list.add(type);
-          list.addAll(type.getCompatibleTypesIInternalCached(direction));
+        ResultHolder holder  = propagateGenericsToType(extendsType, genericResolver);
+        if (holder != null) {
+          SpecificHaxeClassReference type = holder.getClassType();
+          if (type != null) {
+            list.add(type);
+            list.addAll(type.getCompatibleTypesIInternalCached(direction));
+          }
         }
       }
     }
@@ -725,78 +734,130 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
         }
       } else
       for (HaxeType extendsType : model.haxeClass.getHaxeExtendsList()) {
-        SpecificHaxeClassReference type = propagateGenericsToType(extendsType, genericResolver);
-        if (type != null) {
-          list.addAll(type.getInferTypesInternal());
+        ResultHolder holder = propagateGenericsToType(extendsType, genericResolver);
+        if (holder!=null) {
+          SpecificHaxeClassReference type = holder.getClassType();
+          if (type != null) {
+            list.addAll(type.getInferTypesInternal());
+          }
         }
       }
 
       final List<HaxeClassReferenceModel> interfaces = model.getImplementingInterfaces();
       for (HaxeClassReferenceModel interfaceReference : interfaces) {
-        SpecificHaxeClassReference type = propagateGenericsToType(interfaceReference.getPsi(), genericResolver);
-        if (type != null) {
-          list.addAll(type.getInferTypesInternal());
+        ResultHolder holder = propagateGenericsToType(interfaceReference.getPsi(), genericResolver);
+        if (holder != null) {
+          SpecificHaxeClassReference type = holder.getClassType();
+          if (type != null) {
+            list.addAll(type.getInferTypesInternal());
+          }
         }
       }
     } else {
       for (HaxeType extendsType : model.getAbstractToList()) {
-        SpecificHaxeClassReference type = propagateGenericsToType(extendsType, genericResolver);
-        if (type != null) {
-          list.addAll(type.getInferTypesInternal());
+        ResultHolder holder = propagateGenericsToType(extendsType, genericResolver);
+        if (holder != null) {
+          SpecificHaxeClassReference type = holder.getClassType();
+          if (type != null) {
+            list.addAll(type.getInferTypesInternal());
+          }
         }
       }
-    }
+  }
 
     return list;
   }
 
-  public static SpecificHaxeClassReference propagateGenericsToType(@Nullable HaxeType type,
-                                                             HaxeGenericResolver genericResolver) {
+  public static ResultHolder propagateGenericsToType(@Nullable HaxeType type, HaxeGenericResolver genericResolver) {
     if (type == null) return null;
-    SpecificHaxeClassReference classType = HaxeTypeResolver.getTypeFromType(type, genericResolver).getClassType();
-    return propagateGenericsToType(classType, genericResolver);
+    ResultHolder typeHolder = HaxeTypeResolver.getTypeFromType(type, genericResolver);
+    return propagateGenericsToType(typeHolder, genericResolver);
   }
 
-  public static SpecificHaxeClassReference propagateGenericsToType(@Nullable SpecificHaxeClassReference originalType, @Nullable HaxeGenericResolver genericResolver) {
-    return propagateGenericsToType(originalType, genericResolver, false);
+  public static ResultHolder propagateGenericsToType(@Nullable ResultHolder typeHolder, @Nullable HaxeGenericResolver genericResolver) {
+    return propagateGenericsToType(typeHolder, genericResolver, false);
   }
-  public static SpecificHaxeClassReference propagateGenericsToType(@Nullable SpecificHaxeClassReference originalType,
+  public static ResultHolder propagateGenericsToType(@Nullable ResultHolder typeHolder,
                                                                    @Nullable HaxeGenericResolver genericResolver, boolean isReturnType) {
-    SpecificHaxeClassReference type = originalType;
-    if (type == null) return null;
-    if (genericResolver == null || genericResolver.isEmpty()) return type;
+
+    if (typeHolder == null || typeHolder.isUnknown()) return typeHolder;
+    if (genericResolver == null || genericResolver.isEmpty()) return typeHolder;
+
+    SpecificTypeReference type = typeHolder.getType();
 
     if (type.isTypeParameter()) {
-      String typeVariableName = type.getHaxeClassReference().name;
-      ResultHolder possibleValue = isReturnType ? genericResolver.resolveReturnType(type) : genericResolver.resolve(typeVariableName);
+      SpecificHaxeClassReference typeParameter = (SpecificHaxeClassReference)type;
+      String typeParameterName = typeParameter.getClassName();
+
+      ResultHolder possibleValue = isReturnType
+                                   ? genericResolver.resolveReturnType(typeHolder)
+                                   : genericResolver.resolve(typeParameterName);
+
       if (possibleValue != null) {
-        SpecificTypeReference possibleType = possibleValue.getType();
-        if (possibleType instanceof SpecificHaxeClassReference classReference) {
-          type = classReference;
-        }
-      }
-      genericResolver = genericResolver.without(typeVariableName);
+        // TODO considder?
+        //HaxeGenericResolver resolverWithoutCurrentTypeParam = genericResolver.without(typeParameterName);
+        //ResultHolder holder = propagateGenericsToType(possibleValue, resolverWithoutCurrentTypeParam);
+
+        return possibleValue;
     }
-    for (ResultHolder specific : type.getSpecifics()) {
-      // recursive guard (remove type parameters that has been used)
-      if (specific.getClassType() != originalType) {
-        ResultHolder resolve = genericResolver.resolve(specific);
-        genericResolver = genericResolver.without(specific);
-        if(resolve != null && !resolve.isUnknown()) {
-          specific.setType(resolve.getType());
+    return typeHolder;
+
+  }
+    // we want to use our resolver to update any Type parameters in a type "downstream" as long as its a "real"/"Visible" type parameter
+    // type structures can be quite complex  ex. Array<Null<Map<Array<Null<T>>,(int,Q)->T>>>
+    // in this case the class Array normally contains a type Parameter T, but the one we got in our resolver is not meant to resolve
+    // the first Array, the first array already got a known type, we need to traverse the type structure and only update type parameters
+    // that are actual Type parameters.
+
+    // If our resolver got a value T that is say Map<X,Y> from Method a typeParameter, and we got X and Y as String and Int from a Class TypeParameter
+    // we might want to resolve T itself first before we  try to apply it  to our initial type, however this might cause problems.
+    // if T happens to contain a typeParameter with the same name (ex. Map<T,Q>) we would end up with a recursive Map<Map<Map<...>,
+    // so we must exclude the names that have been used if we go down this route
+    else if (typeHolder.containsTypeParameters()) {
+
+
+      if (typeHolder.getType() instanceof SpecificFunctionReference functionReference) {
+        SpecificFunctionReference resolve = genericResolver.resolve(functionReference);
+        if (resolve != null && !resolve.isUnknown()) {
+          return resolve.createHolder();
+        }else {
+          return typeHolder;
         }
-        if (!genericResolver.isEmpty()) {
-          final SpecificTypeReference typeReference = propagateGenericsToType(specific.getType(), genericResolver);
-          if (null != typeReference  && !typeReference.isUnknown()) {
-            specific.setType(typeReference);
+      } else if (typeHolder.getType() instanceof SpecificHaxeClassReference classReference) {
+
+        @NotNull ResultHolder[] originalSpecifics = classReference.getSpecifics();
+        @NotNull ResultHolder[]  newSpecifics = new ResultHolder[originalSpecifics.length];
+
+        for (int i = 0; i < originalSpecifics.length; i++) {
+          ResultHolder originalSpecific = originalSpecifics[i];
+
+          if (originalSpecific.isTypeParameter()) {
+            ResultHolder newSpecific = genericResolver.resolve(originalSpecific);
+            if (newSpecific== null || newSpecific.isUnknown()) {
+              newSpecifics[i] = originalSpecific;
+            } else {
+              newSpecifics[i] = newSpecific;
+            }
+            // if specific is not a not type parameter its type might still contain typeParameters
+            // that might contain type parameters we want to resolve
+          }else if (originalSpecific.containsTypeParameters()) {
+            HaxeGenericResolver localResolver = new HaxeGenericResolver();
+            // all parent resolver values as we might use them in resolve
+            localResolver.addAll(genericResolver);
+            // overwrite any values from parent if "child" has these defined
+            if (originalSpecific.getClassType() != null) {
+              HaxeGenericResolver specificResolver = originalSpecific.getClassType().getGenericResolver();
+              localResolver.addAll(specificResolver);
+            }
+            newSpecifics[i] = propagateGenericsToType(originalSpecific, genericResolver);
+          }else {
+            newSpecifics[i] = originalSpecific;
           }
         }
-      }
-      else {
-        log.warn("can not propagate Generics To Type, type and specific is the same type");
+        return SpecificHaxeClassReference.withGenerics(classReference.getHaxeClassReference(), newSpecifics).createHolder();
       }
     }
-    return type;
+    return typeHolder;
   }
 
 

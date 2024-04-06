@@ -1123,24 +1123,37 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
     HaxeCallExpression callExpression) {
-    HaxeExpression callLeft = callExpression.getExpression();
+    HaxeExpression callExpressionRef = callExpression.getExpression();
 
     HaxeGenericResolver localResolver = new HaxeGenericResolver();
     localResolver.addAll(resolver);
     ResultHolder callie = tryGetCallieType(callExpression);
-    if (callie.isClassType()){
-      SpecificTypeReference reference = callie.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
-      if (reference instanceof  SpecificHaxeClassReference classReference) {
-        localResolver.addAll(classReference.getGenericResolver());
+
+    if (callie != null && callie.getClassType() != null && callie.getClassType().isNullType()) {
+      callie = callie.getClassType().unwrapNullType().createHolder();
+    }
+    // TODO should we resolve callie if callie is typeParam ?
+
+    HaxeGenericResolver resolverForMethodDeclaringClass = new HaxeGenericResolver();
+    if (callie != null && !callie.isUnknown() && !callie.isTypeParameter() ) {
+      if (callExpression.getExpression() instanceof HaxeReferenceExpression referenceExpression) {
+        PsiElement resolve = referenceExpression.resolve();
+        if (resolve instanceof HaxeMethodDeclaration methodDeclaration) {
+          HaxeClassModel aClass = methodDeclaration.getModel().getDeclaringClass();
+          SpecificHaxeClassReference type = callie.getClassType();
+          if (type != null && type.getHaxeClass() != null) {
+            resolverForMethodDeclaringClass = createInheritedClassResolver(aClass.haxeClass, type.getHaxeClass(), resolverForMethodDeclaringClass);
+          }
+        }
       }
     }
 
-    SpecificTypeReference functionType = handle(callLeft, context, localResolver).getType();
+    SpecificTypeReference functionType = handle(callExpressionRef, context, resolverForMethodDeclaringClass).getType();
 
     // @TODO: this should be innecessary when code is working right!
     if (functionType.isUnknown()) {
-      if (callLeft instanceof HaxeReference) {
-        PsiReference reference = callLeft.getReference();
+      if (callExpressionRef instanceof HaxeReference) {
+        PsiReference reference = callExpressionRef.getReference();
         if (reference != null) {
           PsiElement subelement = reference.resolve();
           if (subelement instanceof HaxeMethod haxeMethod) {
@@ -1151,7 +1164,7 @@ public class HaxeExpressionEvaluatorHandlers {
     }
 
     if (functionType.isUnknown()) {
-      if(log.isDebugEnabled()) log.debug("Couldn't resolve " + callLeft.getText());
+      if(log.isDebugEnabled()) log.debug("Couldn't resolve " + callExpressionRef.getText());
     }
 
     List<HaxeExpression> parameterExpressions = null;
@@ -1228,7 +1241,7 @@ public class HaxeExpressionEvaluatorHandlers {
     }
     if (functionType instanceof SpecificFunctionReference ftype) {
 
-      ResultHolder returnType = ftype.getReturnType();
+      ResultHolder returnType = ftype.getReturnType().tryUnwrapNullType();
 
       HaxeGenericResolver functionResolver = new HaxeGenericResolver();
       functionResolver.addAll(resolver);

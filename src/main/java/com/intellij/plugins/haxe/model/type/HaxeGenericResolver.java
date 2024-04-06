@@ -161,6 +161,20 @@ public class HaxeGenericResolver {
     }
     return this;
   }
+  @NotNull
+  public HaxeGenericResolver addAll(@Nullable HaxeGenericResolver parentResolver, ResolveSource type) {
+    if (null != parentResolver && parentResolver != this) {
+      // not using "collection.addAll" because there is extra logic in add() that we need to execute
+      for (ResolverEntry resolver : parentResolver.resolvers) {
+        if (resolver.resolveSource() == type) this.add(resolver.name(), resolver.type(), resolver.resolveSource());
+      }
+      for (ResolverEntry entry : parentResolver.constaints) {
+        if (entry.resolveSource() == type)  this.addConstraint(entry.name(), entry.type(), entry.resolveSource());
+      }
+
+    }
+    return this;
+  }
 
   private void removeExisting(@NotNull LinkedList<ResolverEntry> newValues, LinkedList<ResolverEntry> oldValues ) {
     LinkedList<ResolverEntry> removeList = new LinkedList<>();

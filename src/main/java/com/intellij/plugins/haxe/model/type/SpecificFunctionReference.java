@@ -164,7 +164,7 @@ public class SpecificFunctionReference extends SpecificTypeReference {
     if (null != toa) {
       ResultHolder result = getTypeFromTypeOrAnonymous(toa);
       if (null != result.getClassType()) {
-        return SpecificHaxeClassReference.propagateGenericsToType(result.getClassType(), resolver).createHolder();
+        return SpecificHaxeClassReference.propagateGenericsToType(result, resolver);
       }
       return result;
     }

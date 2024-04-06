@@ -198,8 +198,7 @@ public class HaxeExpressionEvaluator {
       }
 
       if (element instanceof HaxeLocalVarDeclaration varDeclaration) {
-        //return handleLocalVarDeclaration(context, resolver, varDeclaration);
-        return resolveWithCache(varDeclaration, resolver, () -> handleLocalVarDeclaration(context, resolver, varDeclaration));
+        return handleLocalVarDeclaration(context, resolver, varDeclaration);
       }
 
       if (element instanceof HaxeLocalFunctionDeclaration functionDeclaration) {
@@ -529,7 +528,7 @@ public class HaxeExpressionEvaluator {
     if (reference instanceof HaxeReferenceExpression referenceExpression) {
       // reference is callExpression
       if (referenceExpression.getParent() instanceof HaxeCallExpression callExpression) {
-        SpecificFunctionReference type = hint.getFunctionType();
+        SpecificFunctionReference type = hint != null ? hint.getFunctionType() : null;
         if (type != null ) {
             HaxeCallExpressionUtil.CallExpressionValidation validation =
               HaxeCallExpressionUtil.checkFunctionCall(callExpression, type);

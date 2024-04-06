@@ -4,14 +4,15 @@ import com.intellij.plugins.haxe.lang.psi.HaxeMethod;
 import com.intellij.plugins.haxe.model.HaxeClassModel;
 import com.intellij.plugins.haxe.model.HaxeGenericParamModel;
 import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.model.HaxeParameterModel;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
+import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificFunctionReference;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 
 public class TypeParameterUtil {
@@ -46,6 +47,17 @@ public class TypeParameterUtil {
     }
     return typeParamMap;
   }
+
+  public static void applyCallieConstraints(Map<String, ResultHolder> map, HaxeGenericResolver callieResolver) {
+    HaxeGenericResolver resolver = new HaxeGenericResolver();
+    resolver.addAll(callieResolver, ResolveSource.CLASS_TYPE_PARAMETER);
+
+    for (String name : resolver.names()) {
+      ResultHolder resolve = resolver.resolve(name);
+      map.put(name, resolve);
+    }
+  }
+
 
   @NotNull
   static Map<String, ResultHolder> createTypeParameterConstraintMap(List<HaxeGenericParamModel> modelList,
@@ -93,7 +105,7 @@ public class TypeParameterUtil {
 
     return false;
   }
-  static Optional<ResultHolder> findConstraintForTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
+  static Optional<ResultHolder> findConstraintForTypeParameter(HaxeParameterModel parameter, @NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
     if (!parameterType.isClassType()) return Optional.empty();
 
     ResultHolder[] specifics = parameterType.getClassType().getSpecifics();
@@ -112,11 +124,16 @@ public class TypeParameterUtil {
     }
 
 
+
     result.stream().map(holder -> holder.getClassType().getClassName())
       .filter(typeParamMap::containsKey)
       .filter( s ->  typeParamMap.get(s) != null)
       .forEach( s ->  resolver.addConstraint(s, typeParamMap.get(s), ResolveSource.CLASS_TYPE_PARAMETER));
 
+    ResultHolder type = HaxeTypeResolver.getTypeFromTypeTag(parameter.getTypeTagPsi(), parameter.getNamePsi());
+    if (type.isTypeParameter()) {
+      return Optional.ofNullable(resolver.resolve(type));
+    }
 
     return Optional.ofNullable(resolver.resolve(parameterType));
 

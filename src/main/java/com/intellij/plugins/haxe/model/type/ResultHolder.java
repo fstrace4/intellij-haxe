@@ -202,7 +202,7 @@ public class ResultHolder {
     SpecificTypeReference type = holder.getType();
     if (type instanceof  SpecificHaxeClassReference classReference) {
       for (ResultHolder specific : classReference.getSpecifics()) {
-        if (containsTypeParameters(specific)) return  true;
+        if (specific.type != type && containsTypeParameters(specific)) return  true;
       }
     }
     if (type instanceof SpecificFunctionReference  function) {
@@ -211,4 +211,13 @@ public class ResultHolder {
     return false;
   }
 
+  public ResultHolder tryUnwrapNullType() {
+    SpecificHaxeClassReference classType = getClassType();
+    if (classType != null && classType.isNullType()) {
+      if (classType.getSpecifics().length == 1) {
+        return classType.getSpecifics()[0];
+      }
+    }
+    return this;
+  }
 }

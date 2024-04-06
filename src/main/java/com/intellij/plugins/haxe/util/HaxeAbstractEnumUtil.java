@@ -116,7 +116,7 @@ public class HaxeAbstractEnumUtil {
           HaxeClassReference enumReference = new HaxeClassReference(abstractEnumClass.getModel(), element);
           ResultHolder[] specifics = resolver != null ? resolver.getSpecificsFor(enumReference) : ResultHolder.EMPTY;
           specificRef = SpecificHaxeClassReference.withGenerics(enumReference, specifics);
-          return SpecificHaxeClassReference.propagateGenericsToType(specificRef, resolver);
+          return SpecificHaxeClassReference.propagateGenericsToType(specificRef.createHolder(), resolver).getClassType();
         }
         HaxeGenericSpecialization specialization = resolver != null ? resolver.getSpecialization(element) : HaxeGenericSpecialization.EMPTY;
         HaxeResolveResult result = HaxeResolveUtil.tryResolveClassByTypeTag(varDecl, specialization);

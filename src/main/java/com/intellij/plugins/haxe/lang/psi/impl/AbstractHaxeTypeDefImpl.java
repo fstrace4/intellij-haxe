@@ -60,7 +60,11 @@ public abstract class AbstractHaxeTypeDefImpl extends AbstractHaxePsiClass imple
       );
     }
 
-    return SpecificHaxeClassReference.propagateGenericsToType(haxeTypeOrAnonymous.getType(), genericResolver);
+    ResultHolder holder = SpecificHaxeClassReference.propagateGenericsToType(haxeTypeOrAnonymous.getType(), genericResolver);
+    if (holder != null && holder.getClassType() != null) {
+      return holder.getClassType();
+    }
+    return null;
   }
 
   public HaxeResolveResult getTargetClass(HaxeGenericSpecialization specialization) {

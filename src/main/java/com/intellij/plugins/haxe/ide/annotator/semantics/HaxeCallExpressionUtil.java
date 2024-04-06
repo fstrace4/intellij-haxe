@@ -83,21 +83,16 @@ public class HaxeCallExpressionUtil {
 
     // generics and type parameter
     HaxeGenericResolver classTypeResolver =  new HaxeGenericResolver();
-    ResultHolder callieType = tryGetCallieType(callExpression);
-    if (callieType.isClassType() && !callieType.isUnknown()) {
-      if (!callieType.getClassType().isNullType()) {
-        classTypeResolver.addAll(callieType.getClassType().getGenericResolver());
-      }else {
-        //null Type Hack
-        ResultHolder specific = callieType.getClassType().getSpecifics()[0];
-        if (specific.isClassType()) {
-          classTypeResolver.addAll(specific.getClassType().getGenericResolver());
+    ResultHolder callieType = tryGetCallieType(callExpression).tryUnwrapNullType();
+    // if  this is not a static extension method we can inherit callie's class type parameter
+    if(!validation.isStaticExtension) {
+      if (callieType.isClassType() && !callieType.isUnknown()) {
+          classTypeResolver.addAll(callieType.getClassType().getGenericResolver(), ResolveSource.CLASS_TYPE_PARAMETER);
         }
-      }
     }
     HaxeGenericResolver resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, classTypeResolver);
 
-    Map<String, ResultHolder> typeParamMap = createTypeParameterConstraintMap(method, resolver);
+
 
 
     int parameterCounter = 0;
@@ -118,7 +113,7 @@ public class HaxeCallExpressionUtil {
     HaxeGenericResolver parameterResolver = resolver.withoutUnknowns();
     resolver.addAll(methodModel.getGenericResolver(resolver));
 
-
+    Map<String, ResultHolder> typeParamMap = createTypeParameterConstraintMap(method, resolver);
 
     if (validation.isStaticExtension) {
       // this might not work for literals, need to handle those in a different way
@@ -135,8 +130,13 @@ public class HaxeCallExpressionUtil {
           HaxeGenericResolver remappedResolver = remapTypeParameters(paramClass, callieClass);
           argumentResolver.addAll(remappedResolver);
           resolver.addAll(remappedResolver);
+
+          applyCallieConstraints(typeParamMap, remappedResolver);
+
         }
       }
+    }else {
+      applyCallieConstraints(typeParamMap, callieType.getClassType().getGenericResolver());
     }
 
 
@@ -201,8 +201,6 @@ public class HaxeCallExpressionUtil {
       }
 
 
-      //TODO mlo: note to self , when argument function, can assign to "Function"
-
       Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
 
       // check if  argument matches Type Parameter constraint
@@ -259,6 +257,8 @@ public class HaxeCallExpressionUtil {
     return validation;
   }
 
+
+
   private static void addArgumentTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
     validation.argumentIndexToType.put(index - 1, type);
   }
@@ -292,7 +292,8 @@ public class HaxeCallExpressionUtil {
   private static void remap(SpecificHaxeClassReference param, SpecificHaxeClassReference callie, HaxeGenericResolver remappedResolver) {
     @NotNull ResultHolder[] specificsFromMethodArg = param.getSpecifics();
     @NotNull ResultHolder[] specificsFromCallie = callie.getSpecifics();
-    for (int i = 0; i < specificsFromMethodArg.length; i++) {
+    int maxSpecifics = Math.min(specificsFromMethodArg.length, specificsFromCallie.length);
+    for (int i = 0; i < maxSpecifics; i++) {
       ResultHolder specArg = specificsFromMethodArg[i];
       ResultHolder specCallie = specificsFromCallie[i];
       if (specArg.isTypeParameter()) remappedResolver.add(specArg.getClassType().getClassName(), specCallie, ResolveSource.ARGUMENT_TYPE);
@@ -812,19 +813,37 @@ public class HaxeCallExpressionUtil {
                                                         HaxeGenericResolver argumentResolver,
                                                         HaxeGenericResolver parentResolver, Map<String, ResultHolder> typeParamMap) {
     if (argumentType == null) return; // this should not happen, we should have an argument
-    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType(), new HaxeGenericResolver(), typeParamMap);
-    argumentResolver.addAll(inherit);
-    parentResolver.addAll(inherit);
-    if (parameterType.getClassType() != null) {
-      // parameter is a typeParameter type, we can just add it to resolver
-      if (parameterType.getClassType().isTypeParameter()) {
-        String className = parameterType.getClassType().getClassName();
-        argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-        // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
-        parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-        typeParamMap.put(className, argumentType);
+    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType().withoutConstantValue(), new HaxeGenericResolver(), typeParamMap);
+    for (String name : inherit.names()) {
+      // make sure any inherited types conforms with constraints
+      if (typeParamMap.containsKey(name)) {
+        ResultHolder constraint = typeParamMap.get(name);
+        ResultHolder type = inherit.resolve(name);
+        if (type == null) continue;
+        // if TypeParameter without constraint
+        if (constraint == null) {
+          typeParamMap.put(name, type);
+        }else if (constraint.canAssign(type)) {
+          typeParamMap.put(name, type);
+        }
+        argumentResolver.add(name, type, ResolveSource.ARGUMENT_TYPE);
+        parentResolver.add(name, type, ResolveSource.ARGUMENT_TYPE);
       }
     }
+
+    //argumentResolver.addAll(inherit);
+    //parentResolver.addAll(inherit);
+    //if (parameterType.getClassType() != null) {
+    //  // parameter is a typeParameter type, we can just add it to resolver
+    //  // TODO check if it exists
+    //  if (parameterType.getClassType().isTypeParameter()) {
+    //    String className = parameterType.getClassType().getClassName();
+    //    argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+    //    // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
+    //    parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
+    //    typeParamMap.put(className, argumentType);
+    //  }
+    //}
   }
 
   private static ResultHolder resolveArgumentType(HaxeExpression argument, HaxeGenericResolver resolver) {
@@ -1075,22 +1094,41 @@ public class HaxeCallExpressionUtil {
   public static ResultHolder tryGetCallieType(HaxeCallExpression callExpression) {
     final HaxeReference leftReference = PsiTreeUtil.getChildOfType(callExpression.getExpression(), HaxeReference.class);
 
-    // if chained call expression:  ...someMethod().thisMethod();
-    if (leftReference instanceof HaxeCallExpression prevCallExpression ) {
-      ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(prevCallExpression, new HaxeExpressionEvaluatorContext(prevCallExpression), null).result;
-      if (evaluateResult.isClassType()) {
-        return evaluateResult.getClassType().createHolder();
+    if (leftReference != null) {
+      // if chained call expression:  ...someMethod().thisMethod();
+      if (leftReference instanceof HaxeCallExpression prevCallExpression) {
+        ResultHolder evaluateResult =
+          HaxeExpressionEvaluator.evaluate(prevCallExpression, new HaxeExpressionEvaluatorContext(prevCallExpression), null).result;
+        if (evaluateResult.isClassType()) {
+          return evaluateResult.getClassType().createHolder();
+        }
+      }
+
+      // if  reference expression: ..myVar.thisMethod();
+
+      PsiElement resolve = leftReference.resolve();
+      if (resolve != null) {
+        ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
+        if (evaluateResult.isClassType()) {
+          return evaluateResult.getClassType().createHolder();
+        }
+      }
+    }
+    else {
+      // check if we can use  implicit "this" since there's no leftReference
+      HaxeMethodDeclaration parentMethod = PsiTreeUtil.getParentOfType(callExpression, HaxeMethodDeclaration.class);
+      if (parentMethod != null) {
+        HaxeMethodModel methodModel = parentMethod.getModel();
+        //if method is not static and is inside a class, use that class as "this" type
+        if (!methodModel.isStatic()) {
+          HaxeClassModel aClass = methodModel.getDeclaringClass();
+          if (aClass != null) {
+            return aClass.getInstanceType();
+          }
+        }
       }
     }
 
-    // if  reference expression: ..myVar.thisMethod();
-    PsiElement resolve = leftReference == null ? null :leftReference.resolve();
-    if (resolve != null) {
-      ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
-      if (evaluateResult.isClassType()) {
-        return evaluateResult.getClassType().createHolder();
-      }
-    }
 
     return SpecificTypeReference.getUnknown(callExpression).createHolder();
 

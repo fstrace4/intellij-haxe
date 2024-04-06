@@ -501,81 +501,81 @@ public abstract class SpecificTypeReference {
   }
 
 
-  public static SpecificTypeReference propagateGenericsToType(@Nullable HaxeType type,
-                                                              HaxeGenericResolver genericResolver) {
-    if (type == null) return null;
-    SpecificHaxeClassReference classType = HaxeTypeResolver.getTypeFromType(type, genericResolver).getClassType();
-    return propagateGenericsToType(classType, genericResolver);
-  }
+  //public static SpecificTypeReference propagateGenericsToType(@Nullable HaxeType type,
+  //                                                            HaxeGenericResolver genericResolver) {
+  //  if (type == null) return null;
+  //  SpecificHaxeClassReference classType = HaxeTypeResolver.getTypeFromType(type, genericResolver).getClassType();
+  //  return propagateGenericsToType(classType, genericResolver);
+  //}
 
-  public static SpecificTypeReference propagateGenericsToType(@Nullable SpecificTypeReference originalType,
-                                                              @Nullable HaxeGenericResolver genericResolver) {
-    return propagateGenericsToType(originalType, genericResolver , false);
-  }
+  //public static SpecificTypeReference propagateGenericsToType(@Nullable SpecificTypeReference originalType,
+  //                                                            @Nullable HaxeGenericResolver genericResolver) {
+  //  return propagateGenericsToType(originalType, genericResolver , false);
+  //}
 
   private static final ThreadLocal<Stack<ResultHolder>> propagatedElement = ThreadLocal.withInitial(Stack::new);
 
-  public static SpecificTypeReference propagateGenericsToType(@Nullable SpecificTypeReference originalType,
-                                                              @Nullable HaxeGenericResolver genericResolver,
-                                                              boolean isReturnType
-  ) {
-    SpecificTypeReference type = originalType;
-    if (type == null) return null;
-    if (genericResolver == null) return type;
-
-    if (type.isTypeParameter() && type instanceof  SpecificHaxeClassReference classReference) {
-      String typeVariableName = classReference.getHaxeClassReference().name;
-      ResultHolder possibleValue = isReturnType ? genericResolver.resolveReturnType(classReference) : genericResolver.resolve(typeVariableName);
-      if (possibleValue != null) {
-        SpecificTypeReference possibleType = possibleValue.getType();
-        if (possibleType != null) {
-          type = possibleType;
-        }
-      }
-    }
-    if (type instanceof  SpecificHaxeClassReference classReference) {
-      for (ResultHolder specific : classReference.getSpecifics()) {
-        // recursive guard
-        if (specific.getClassType() != originalType) {
-          //Note to self:  this one caused stackoverflow due to recursion alternating between 2 types
-          //final SpecificTypeReference typeReference = propagateGenericsToType(specific.getClassType(), genericResolver);
-          if (specific.getClassType() != null) {
-            SpecificTypeReference typeReference = null;
-            if (!specific.getClassType().isTypeParameter()) {
-              Stack<ResultHolder> stack = propagatedElement.get();
-                 if (!stack.contains(specific)) {
-                   try {
-                   stack.add(specific);
-                   HaxeGenericResolver resolver = specific.getClassType().getGenericResolver().without(specific);
-                   typeReference = propagateGenericsToType(specific.getClassType(), resolver, isReturnType);
-                   }finally {
-                     stack.pop();
-                   }
-                 }else {
-                   typeReference = getUnknown(createUnknownContext());
-                 }
-            }else {
-              if (isReturnType) {
-                ResultHolder resolve = genericResolver.resolveReturnType(specific);
-                if (resolve != null) typeReference = resolve.getType();
-              }
-              else {
-                ResultHolder resolve = genericResolver.resolve(specific);
-                if (resolve != null) typeReference = resolve.getType();
-              }
-            }
-            if (null != typeReference) {
-              specific.setType(typeReference);
-            }
-          }
-        }
-        else {
-          log.warn("can not propagate Generics To Type, type and specific is the same type");
-        }
-      }
-    }
-    return type;
-  }
+  //public static SpecificTypeReference propagateGenericsToType(@Nullable SpecificTypeReference originalType,
+  //                                                            @Nullable HaxeGenericResolver genericResolver,
+  //                                                            boolean isReturnType
+  //) {
+  //  SpecificTypeReference type = originalType;
+  //  if (type == null) return null;
+  //  if (genericResolver == null) return type;
+  //
+  //  if (type.isTypeParameter() && type instanceof  SpecificHaxeClassReference classReference) {
+  //    String typeVariableName = classReference.getHaxeClassReference().name;
+  //    ResultHolder possibleValue = isReturnType ? genericResolver.resolveReturnType(classReference) : genericResolver.resolve(typeVariableName);
+  //    if (possibleValue != null) {
+  //      SpecificTypeReference possibleType = possibleValue.getType();
+  //      if (possibleType != null) {
+  //        type = possibleType;
+  //      }
+  //    }
+  //  }
+  //  if (type instanceof  SpecificHaxeClassReference classReference) {
+  //    for (ResultHolder specific : classReference.getSpecifics()) {
+  //      // recursive guard
+  //      if (specific.getClassType() != originalType) {
+  //        //Note to self:  this one caused stackoverflow due to recursion alternating between 2 types
+  //        //final SpecificTypeReference typeReference = propagateGenericsToType(specific.getClassType(), genericResolver);
+  //        if (specific.getClassType() != null) {
+  //          SpecificTypeReference typeReference = null;
+  //          if (!specific.getClassType().isTypeParameter()) {
+  //            Stack<ResultHolder> stack = propagatedElement.get();
+  //               if (!stack.contains(specific)) {
+  //                 try {
+  //                 stack.add(specific);
+  //                 HaxeGenericResolver resolver = specific.getClassType().getGenericResolver().without(specific);
+  //                 typeReference = propagateGenericsToType(specific.getClassType(), resolver, isReturnType);
+  //                 }finally {
+  //                   stack.pop();
+  //                 }
+  //               }else {
+  //                 typeReference = getUnknown(createUnknownContext());
+  //               }
+  //          }else {
+  //            if (isReturnType) {
+  //              ResultHolder resolve = genericResolver.resolveReturnType(specific);
+  //              if (resolve != null) typeReference = resolve.getType();
+  //            }
+  //            else {
+  //              ResultHolder resolve = genericResolver.resolve(specific);
+  //              if (resolve != null) typeReference = resolve.getType();
+  //            }
+  //          }
+  //          if (null != typeReference) {
+  //            specific.setType(typeReference);
+  //          }
+  //        }
+  //      }
+  //      else {
+  //        log.warn("can not propagate Generics To Type, type and specific is the same type");
+  //      }
+  //    }
+  //  }
+  //  return type;
+  //}
 
 
   public boolean isSameType(@NotNull SpecificTypeReference other) {

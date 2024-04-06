@@ -14,7 +14,7 @@ class Generics {
         // verify that we get expected class(Baseclass) and not just constraints(BaseInterface)
         var assignA:Baseclass = getValue(Baseclass);
         var assignB:BaseInterface = getValue(Baseclass);
-        var assignB:BaseInterface = getValue(<error descr="Type mismatch (Expected: 'Class<BaseInterface>' got: 'Class<OtherClass>')">OtherClass</error>);// wrong: does not match constraints
+        var <error descr="Incompatible type: OtherClass should be BaseInterface">assignB:BaseInterface = getValue(<error descr="Type mismatch (Expected: 'Class<BaseInterface>' got: 'Class<OtherClass>')">OtherClass</error>)</error>;// wrong: does not match constraints
         var <error descr="Incompatible type: BaseInterface should be Baseclass">assignC:Baseclass = getValue(BaseInterface)</error>; //wrong
 
         // verify that correct type is resolved when no typetag is provided
