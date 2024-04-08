@@ -8,9 +8,9 @@ enum Color {
 class Test {
     static function main() {
         var rgb = Color.Rgb(1, 0, 1);
-        switch (rgb) {
+        switch(rgb) {
         /*<# :Int #>*/ ca/*<# :Int #>*/se /*<# :Int #>*/Rgb(r, g, b) :
-            trace("R:" + r + " G " + g + " B " + b);
-        }
+        trace("R:" + r + " G " + g + " B " + b);
     }
+}
 }
