@@ -486,9 +486,11 @@ public class HaxeExpressionEvaluator {
   public static CachedValueProvider.Result<List<PsiReference>> cachedSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
     SearchScope scope = searchScope != null ? new LocalSearchScope(searchScope) :  searchHelper.getCodeUsageScope(componentName);
-
+    return cachedSearch(componentName, scope);
+  }
+  public static CachedValueProvider.Result<List<PsiReference>> cachedSearch(final HaxeComponentName componentName, @Nullable final SearchScope searchScope) {
     int offset = componentName.getIdentifier().getTextRange().getEndOffset();
-    List<PsiReference> references = new ArrayList<>(ReferencesSearch.search(componentName, scope).findAll()).stream()
+    List<PsiReference> references = new ArrayList<>(ReferencesSearch.search(componentName, searchScope).findAll()).stream()
       .sorted((r1, r2) -> {
         int i1 = getDistance(r1, offset);
         int i2 = getDistance(r2, offset);
@@ -587,18 +589,12 @@ public class HaxeExpressionEvaluator {
 
     HaxeGenericResolver classResolver = classType.getGenericResolver();
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
-    SearchScope useScope = searchHelper.getCodeUsageScope(componentName);
+    final SearchScope useScope = searchHelper.getCodeUsageScope(componentName);
 
+    List<PsiReference> references =
+      CachedValuesManager.getProjectPsiDependentCache(componentName, (c) -> cachedSearch(c,  useScope))
+        .getValue();
 
-    int offset = componentName.getIdentifier().getTextRange().getEndOffset();
-    List<PsiReference> references = ProgressManager.getInstance().computeInNonCancelableSection(() -> {
-      return new ArrayList<>(ReferencesSearch.search(componentName, useScope).findAll()).stream()
-        .sorted((r1, r2) -> {
-          int i1 = getDistance(r1, offset);
-          int i2 = getDistance(r2, offset);
-          return  i1 -i2;
-        } ).toList();
-    });
     for (PsiReference reference : references) {
       if (reference instanceof HaxeExpression expression) {
         if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
@@ -618,67 +614,19 @@ public class HaxeExpressionEvaluator {
           if (resolved instanceof HaxeMethodDeclaration methodDeclaration
               && referenceExpression.getParent() instanceof HaxeCallExpression callExpression) {
 
-            @NotNull String[] specificNames = classResolver.names();
             HaxeMethodModel methodModel = methodDeclaration.getModel();
-            HaxeGenericResolver methodResolver = methodModel.getGenericResolver(null);
-            @NotNull String[] methodSpecificNames = methodResolver.names();
 
-            List<String> specificsForClass = Arrays.asList(specificNames);
-            specificsForClass.removeAll(Arrays.asList(methodSpecificNames));
-            // make sure we are using class level typeParameters (and not method level)
-            if (methodModel.getGenericParams().isEmpty()) {
-              HaxeCallExpressionList list = callExpression.getExpressionList();
-              if (list != null) {
-                List<HaxeExpression> arguments = list.getExpressionList();
-                List<HaxeParameterModel> parameters = methodDeclaration.getModel().getParameters();
-                //TODO This really need to be cleaned up and is one big messy hack at the moment
+            HaxeCallExpressionUtil.CallExpressionValidation validation =
+              evaluateCallExpressionWithRecursionGuard(callExpression, methodModel);
 
-                // correct way to solve it.
-                //- find method parameters that are typeParameters from class (not from method)
-                // - try to match parameters and arguments and create map with typeParameters to resolved argument type
-                // update type specifics  with map
-
-
-
-                HaxeClassModel classModel = classType.getHaxeClassModel();
-                if (classModel == null) continue;
-                List<HaxeGenericParamModel> params = classModel.getGenericParams();
-                @NotNull ResultHolder[] specifics = type.getSpecifics();
-                Map<String, Integer>specificsMap = new HashMap<>();
-                for (int i = 0; i < specifics.length; i++) {
-                  HaxeGenericParamModel model = params.get(i);
-                  ResultHolder specific = specifics[i];
-                  if (specific.getType() instanceof  SpecificHaxeClassReference classReference) {
-                    if (classReference.isUnknown() || classReference.isTypeParameter()) {
-                      specificsMap.put(model.getName(), i);
-                    }
-                  }
-                }
-
-                Set<String> genericNames = specificsMap.keySet();
-
-                int inputCount = Math.min(parameters.size(), arguments.size());
-                for (int i = 0; i<inputCount; i++) {
-                  SpecificTypeReference paramType = parameters.get(i).getType().getType();
-                  if (paramType instanceof SpecificHaxeClassReference classReference && classReference.isTypeParameter()) {
-                    String name = classReference.getClassName();
-
-                    if (genericNames.contains(name)) {
-                      Integer index = specificsMap.get(name);
-                        if (specifics[index].isUnknown()) {
-                          ResultHolder handle = handle(arguments.get(i), context, resolver);
-                          if (specifics[index].isUnknown()) {
-                            specifics[index] = handle;
-                          }else {
-                            ResultHolder unified = HaxeTypeUnifier.unify(handle, specifics[index]);
-                            specifics[index] = unified;
-                          }
-                      }
-                    }
-                  }
-                }
+            HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
+            if (resolverFromCallExpression != null) {
+              ResultHolder resolve = resolverFromCallExpression.resolve(resultHolder);
+              if (resolve != null && !resolve.isUnknown()) {
+                return resolve;
               }
             }
+
           }
         }
         if (expression.getParent() instanceof HaxeArrayAccessExpression arrayAccessExpression) {
@@ -763,7 +711,10 @@ public class HaxeExpressionEvaluator {
     return  resultHolder;
   }
 
-
-
-
+  private static HaxeCallExpressionUtil.@NotNull CallExpressionValidation evaluateCallExpressionWithRecursionGuard(HaxeCallExpression callExpression,
+                                                                                        HaxeMethodModel methodModel) {
+    HaxeCallExpressionUtil.CallExpressionValidation validation =
+      HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod());
+    return validation;
+  }
 }

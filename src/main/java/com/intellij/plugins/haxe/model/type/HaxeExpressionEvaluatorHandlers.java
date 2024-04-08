@@ -1294,7 +1294,8 @@ public class HaxeExpressionEvaluatorHandlers {
     if (expression == null) {
       return SpecificTypeReference.getInvalid(varInit).createHolder();
     }
-    return handle(expression, context, resolver);
+    ResultHolder holder = handleWithRecursionGuard(expression, context, resolver);
+    return holder != null ? holder : createUnknown(varInit);
   }
 
   @NotNull

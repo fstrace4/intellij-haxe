@@ -23,6 +23,7 @@ import com.intellij.ide.util.projectWizard.importSources.ProjectStructureDetecto
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.plugins.haxe.ide.projectStructure.detection.HaxeProjectStructureDetector;
 import com.intellij.plugins.haxe.util.HaxeTestUtils;
+import com.intellij.testFramework.LightPlatformTestCase;
 import com.intellij.testFramework.PlatformTestCase;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ import java.util.Set;
 /**
  * @author: Fedor.Korotkov
  */
-public class HaxeSourceRootDetectionTest extends PlatformTestCase {
+public class HaxeSourceRootDetectionTest extends LightPlatformTestCase {
 
   @Override
   protected void tearDown() throws Exception {

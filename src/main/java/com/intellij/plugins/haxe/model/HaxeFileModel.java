@@ -16,6 +16,7 @@
  */
 package com.intellij.plugins.haxe.model;
 
+import com.intellij.openapi.util.ModificationTracker;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.util.HaxeAddImportHelper;
@@ -135,7 +136,7 @@ public class HaxeFileModel implements HaxeExposableModel {
   private static CachedValueProvider.Result<List<PsiElement>> _getChildren(HaxeFile file) {
     PsiElement[] children = file.getChildren();
     List<PsiElement> list = Arrays.asList(children);
-    return new CachedValueProvider.Result<>(list, file);
+    return new CachedValueProvider.Result<>(list, ModificationTracker.EVER_CHANGED );
   }
 
   @NotNull
