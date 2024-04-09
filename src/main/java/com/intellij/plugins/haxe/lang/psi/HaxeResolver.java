@@ -904,7 +904,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
       if (method != null) {
         LogResolution(reference, "via accessor.");
-        return asList(method.getBasePsi());
+        HaxeNamedComponent namedComponentPsi = method.getNamedComponentPsi();
+        if (namedComponentPsi != null) {
+          return asList(namedComponentPsi.getComponentName());
+        }
       }
     }
 
