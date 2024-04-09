@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 
+import static com.intellij.plugins.haxe.lang.psi.HaxeResolver.recursiveLookupFailures;
 import  static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.*;
 
 @CustomLog
@@ -66,6 +67,7 @@ public class HaxeExpressionEvaluator {
   private static final ThreadLocal<Map<PsiElement, CacheRecord>> resultCache = ThreadLocal.withInitial(HashMap::new);
   private static final ThreadLocal<Map<PsiElement, AtomicInteger>> resultCacheHits = ThreadLocal.withInitial(HashMap::new);
   private static final ThreadLocal<Stack<PsiElement>> processingStack = ThreadLocal.withInitial(Stack::new);
+  public static final ThreadLocal<AtomicInteger> searchScopeCounter = ThreadLocal.withInitial(() -> new AtomicInteger(0));
   @NotNull
   static public HaxeExpressionEvaluatorContext evaluate(PsiElement element, HaxeExpressionEvaluatorContext context,
                                                         HaxeGenericResolver resolver) {
@@ -95,6 +97,7 @@ public class HaxeExpressionEvaluator {
   }
 
   private static void cleanUp() {
+    recursiveLookupFailures.get().set(0);
     Stack<PsiElement> processing = processingStack.get();
     processing.pop();
     if (processing.isEmpty()) {
@@ -469,6 +472,8 @@ public class HaxeExpressionEvaluator {
                                                      @Nullable final PsiElement searchScope,
                                                      @Nullable final ResultHolder hint
   ) {
+    try {
+      searchScopeCounter.get().incrementAndGet();
     // search is slow so we can probably save some unnecessary searches when analyzing code
     List<PsiReference> references =
       CachedValuesManager.getProjectPsiDependentCache(componentName, (c) -> cachedSearch(c, searchScope))
@@ -481,6 +486,9 @@ public class HaxeExpressionEvaluator {
       }
 
     return createUnknown(componentName);
+    }finally {
+      searchScopeCounter.get().decrementAndGet();
+    }
   }
   @NotNull
   public static CachedValueProvider.Result<List<PsiReference>> cachedSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
@@ -617,7 +625,7 @@ public class HaxeExpressionEvaluator {
             HaxeMethodModel methodModel = methodDeclaration.getModel();
 
             HaxeCallExpressionUtil.CallExpressionValidation validation =
-              evaluateCallExpressionWithRecursionGuard(callExpression, methodModel);
+              HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod());
 
             HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
             if (resolverFromCallExpression != null) {
@@ -709,12 +717,5 @@ public class HaxeExpressionEvaluator {
       }
     }
     return  resultHolder;
-  }
-
-  private static HaxeCallExpressionUtil.@NotNull CallExpressionValidation evaluateCallExpressionWithRecursionGuard(HaxeCallExpression callExpression,
-                                                                                        HaxeMethodModel methodModel) {
-    HaxeCallExpressionUtil.CallExpressionValidation validation =
-      HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod());
-    return validation;
   }
 }

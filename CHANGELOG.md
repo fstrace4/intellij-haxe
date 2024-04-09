@@ -1,5 +1,5 @@
 # Changelog
-## 1.5.0.beta-1
+## 1.5.0
 * Improvement: Better type inferences
 * Improvement: Better resolve of TypeParameters (generics)
 * Fixed: Incorrect parsing of functionTypes where old and new styles where mixed.
@@ -9,7 +9,6 @@
 
 * Known issues:
   -  Resolver might not select correct method when extension methods and member methods got the same name.
-  -  Non-idempotent computation errors, happens due to mix between old and new resolver (just ignore for now)
   -  Parser fails to parse more complex cases of Reification 
   -  heavy use of type inference can lead to slower annotations
 

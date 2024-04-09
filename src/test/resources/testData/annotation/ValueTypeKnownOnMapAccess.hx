@@ -1,7 +1,7 @@
 // This is a negative test where no errors should be marked.
 package ;
 
-import StdTypes;
+import <info descr="null">StdTypes</info>;
 import <info descr="null">Map</info>;
 import <info descr="null">String</info>;
 

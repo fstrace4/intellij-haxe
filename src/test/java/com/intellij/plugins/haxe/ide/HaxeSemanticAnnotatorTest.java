@@ -27,6 +27,7 @@ import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.ex.LocalInspectionToolWrapper;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.registry.Registry;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.HaxeCodeInsightFixtureTestCase;
 import com.intellij.plugins.haxe.ide.annotator.HaxeSemanticAnnotatorInspections;
@@ -44,6 +45,8 @@ import java.util.*;
 public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   @Override
   public void setUp() throws Exception {
+    // for use when idempotence check problems occur and we need consistent results.
+    //Registry.get("platform.random.idempotence.check.rate").setValue(1, getTestRootDisposable());
     useHaxeToolkit();
     super.setUp();
     setTestStyleSettings(2);

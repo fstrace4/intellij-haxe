@@ -49,7 +49,10 @@ public class HaxeExpressionEvaluatorHandlers {
                                                HaxeGenericResolver resolver) {
     if (element == null ) return null;
     HashSet<PsiElement> elements = resolvesInProcess.get();
-    if (elements.contains(element)) return null;
+    if (elements.contains(element)) {
+      HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
+      return null;
+    }
     try {
       elements.add(element);
       return handle(element, context, resolver);
@@ -461,10 +464,12 @@ public class HaxeExpressionEvaluatorHandlers {
               } finally {
                 processingStack.remove(name);
               }
+            }else {
+              HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
             }
           }
         }catch (OverflowGuardException e) {
-          if(context.rethrowOverflow) throw e;
+          HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
         }
         if (holder!= null && !holder.isUnknown()) {
           ResultHolder resolve = resolver.resolve(holder);
@@ -512,6 +517,7 @@ public class HaxeExpressionEvaluatorHandlers {
             HaxeMethod method = constructor.getMethod();
             HaxeMethodModel methodModel = method.getModel();
             if (methodModel.getGenericParams().isEmpty()) {
+              //TODO needs stackoverflow protecting
               HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkConstructor(expression);
               HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
 
@@ -1334,10 +1340,16 @@ public class HaxeExpressionEvaluatorHandlers {
       if (!resolveInProgress.contains(element)) {
         try {
           resolveInProgress.add(element);
-          result = searchReferencesForType(element, context, resolver, null);
+          ResultHolder searchResult = searchReferencesForType(element, context, resolver, null);
+          // if we got a type we should check that we find the correct match (avoid replacing a class with an interface match etc.)
+          if (result == null || searchResult.getType().isSameType(result.getType())) {
+            result = searchResult;
+          }
         }finally {
           resolveInProgress.remove(element);
         }
+      }else {
+        HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
       }
     }
 

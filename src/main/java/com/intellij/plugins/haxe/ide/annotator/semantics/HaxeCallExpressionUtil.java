@@ -1108,7 +1108,7 @@ public class HaxeCallExpressionUtil {
 
       PsiElement resolve = leftReference.resolve();
       if (resolve != null) {
-        ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluate(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
+        ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluateWithRecursionGuard(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
         if (evaluateResult.isClassType()) {
           return evaluateResult.getClassType().createHolder();
         }
