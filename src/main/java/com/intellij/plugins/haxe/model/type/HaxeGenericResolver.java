@@ -631,4 +631,11 @@ public class HaxeGenericResolver {
     return builder.toString();
 
   }
+
+  public void removeAll(String[] names) {
+    for (String name : names) {
+      resolvers.removeIf(entry -> entry.name().equals(name));
+      constaints.removeIf(entry -> entry.name().equals(name));
+    }
+  }
 }

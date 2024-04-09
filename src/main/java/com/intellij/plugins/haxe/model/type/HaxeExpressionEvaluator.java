@@ -572,16 +572,35 @@ public class HaxeExpressionEvaluator {
         if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {
           final PsiElement resolved = callExpressionReference.resolve();
           HaxeCallExpressionList list = callExpression.getExpressionList();
-          int index = -1;
-          if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
-          if (index > -1 && resolved instanceof HaxeMethod method) {
-            HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
-            if (validation.isStaticExtension()) index++;
-            ResultHolder paramType = validation.getParameterIndexToType().getOrDefault(index, null);
-            if (paramType != null) return paramType;
+          // check if reference used as parameter
+          ResultHolder paramType = findUsageAsParameterInFunctionCall(referenceExpression, callExpression, list, resolved);
+          if (paramType != null) return paramType;
+          // check if our reference is the callie
+          final HaxeReference leftReference = PsiTreeUtil.getChildOfType(callExpression.getExpression(), HaxeReference.class);
+          if (leftReference == reference) {
+            if (resolved instanceof HaxeMethod method ) {
+              HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
+              ResultHolder hintResolved = validation.getResolver().resolve(hint);
+              if (hintResolved != null && !hintResolved.isUnknown()) return hintResolved;
+            }
           }
         }
       }
+    }
+    return null;
+  }
+
+  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeReferenceExpression referenceExpression,
+                                                  HaxeCallExpression callExpression,
+                                                  HaxeCallExpressionList list,
+                                                  PsiElement resolved) {
+    int index = -1;
+    if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
+    if (index > -1 && resolved instanceof HaxeMethod method) {
+      HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
+      if (validation.isStaticExtension()) index++;
+      ResultHolder paramType = validation.getParameterIndexToType().getOrDefault(index, null);
+      if (paramType != null) return paramType;
     }
     return null;
   }
@@ -629,7 +648,10 @@ public class HaxeExpressionEvaluator {
 
             HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
             if (resolverFromCallExpression != null) {
-              ResultHolder resolve = resolverFromCallExpression.resolve(resultHolder);
+              // removing any typeParameters that are local to the method (we only want type parameters that are class specific)
+              resolverFromCallExpression.removeAll(methodModel.getGenericResolver(null).names());
+              // bit of a hack to get rid of any unknowns
+              ResultHolder resolve = resolverFromCallExpression.resolve(resultHolder.getClassType().replaceUnknownsWithTypeParameter());
               if (resolve != null && !resolve.isUnknown()) {
                 return resolve;
               }

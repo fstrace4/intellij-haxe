@@ -295,6 +295,21 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     return null;
   }
 
+  public ResultHolder replaceUnknownsWithTypeParameter() {
+    if (getHaxeClassModel() == null) return this.createHolder();
+    List<HaxeGenericParamModel> params = getHaxeClassModel().getGenericParams();
+    ResultHolder[] newSpecifics = new ResultHolder[params.size()];
+    for (HaxeGenericParamModel param : params) {
+      int index = param.getIndex();
+      if (specifics[index].isUnknown()) {
+        HaxeClassReference reference = new HaxeClassReference(param.getName(), param.getPsi(), true);
+        newSpecifics[index] = SpecificHaxeClassReference.withoutGenerics(reference).createHolder();
+      }else {
+        newSpecifics[index] = specifics[index];
+      }
+    }
+    return new ResultHolder(SpecificHaxeClassReference.withGenerics(classReference, newSpecifics));
+  }
 
 
   public enum Compatibility {

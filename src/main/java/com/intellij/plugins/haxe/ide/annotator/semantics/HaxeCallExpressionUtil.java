@@ -970,6 +970,13 @@ public class HaxeCallExpressionUtil {
 
       findTypeParametersToInherit(parameterReturnType.getType(), argumentReturnType.getType(), resolver, map);
     }
+    if (parameter.isTypeParameter() && !argument.isTypeParameter() && !argument.isUnknown()) {
+      if (parameter instanceof  SpecificHaxeClassReference classReference) {
+        if (classReference.getClassName() != null) {
+          resolver.add(classReference.getClassName(), argument.createHolder(), ResolveSource.ARGUMENT_TYPE);
+        }
+      }
+    }
 
 
     return resolver;
@@ -1072,6 +1079,7 @@ public class HaxeCallExpressionUtil {
     Map<Integer, Integer> argumentToParameterIndex = new HashMap<>();
     Map<Integer, ResultHolder> argumentIndexToType = new HashMap<>();
     Map<Integer, ResultHolder> ParameterIndexToType = new HashMap<>();
+    ResultHolder returnType;
 
     List<ErrorRecord> errors = new ArrayList<>();
     List<WarningRecord> warnings = new ArrayList<>();

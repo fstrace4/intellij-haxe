@@ -1340,7 +1340,7 @@ public class HaxeExpressionEvaluatorHandlers {
       if (!resolveInProgress.contains(element)) {
         try {
           resolveInProgress.add(element);
-          ResultHolder searchResult = searchReferencesForType(element, context, resolver, null);
+          ResultHolder searchResult = searchReferencesForType(element, context, resolver, null, result);
           // if we got a type we should check that we find the correct match (avoid replacing a class with an interface match etc.)
           if (result == null || searchResult.getType().isSameType(result.getType())) {
             result = searchResult;
