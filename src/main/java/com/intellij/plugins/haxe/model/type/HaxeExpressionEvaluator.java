@@ -21,10 +21,9 @@ package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.progress.*;
-import com.intellij.openapi.roots.ProjectRootModificationTracker;
-import com.intellij.openapi.util.ModificationTracker;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
-import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.model.*;
@@ -33,8 +32,6 @@ import com.intellij.psi.search.LocalSearchScope;
 import com.intellij.psi.search.PsiSearchHelper;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
-import com.intellij.psi.util.CachedValueProvider;
-import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
@@ -45,12 +42,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 
-import static com.intellij.plugins.haxe.lang.psi.HaxeResolver.recursiveLookupFailures;
 import  static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.*;
 
 @CustomLog
 public class HaxeExpressionEvaluator {
   static { log.setLevel(LogLevel.INFO); }
+
 
   @NotNull
   static public HaxeExpressionEvaluatorContext evaluate(PsiElement element, HaxeGenericResolver resolver) {
@@ -67,7 +64,10 @@ public class HaxeExpressionEvaluator {
   private static final ThreadLocal<Map<PsiElement, CacheRecord>> resultCache = ThreadLocal.withInitial(HashMap::new);
   private static final ThreadLocal<Map<PsiElement, AtomicInteger>> resultCacheHits = ThreadLocal.withInitial(HashMap::new);
   private static final ThreadLocal<Stack<PsiElement>> processingStack = ThreadLocal.withInitial(Stack::new);
-  public static final ThreadLocal<AtomicInteger> searchScopeCounter = ThreadLocal.withInitial(() -> new AtomicInteger(0));
+
+
+  private static RecursionGuard<PsiElement> evaluationRecursionGuard = RecursionManager.createGuard("evaluationRecursionGuard");
+
   @NotNull
   static public HaxeExpressionEvaluatorContext evaluate(PsiElement element, HaxeExpressionEvaluatorContext context,
                                                         HaxeGenericResolver resolver) {
@@ -86,7 +86,6 @@ public class HaxeExpressionEvaluator {
                                                                           HaxeGenericResolver resolver) {
     try {
       processingStack.get().push(element);
-      ProgressIndicatorProvider.checkCanceled();
       ResultHolder result = handleWithRecursionGuard(element, context, resolver);
       context.result = result != null ? result : createUnknown(element);
       return context;
@@ -97,13 +96,12 @@ public class HaxeExpressionEvaluator {
   }
 
   private static void cleanUp() {
-    recursiveLookupFailures.get().set(0);
     Stack<PsiElement> processing = processingStack.get();
     processing.pop();
     if (processing.isEmpty()) {
-      if (!resultCache.get().isEmpty()) {
-        //log.warn(" cached references" + resultCache.get().size());
-      }
+      //if (!resultCache.get().isEmpty()) {
+      //  log.info(" cached references" + resultCache.get().size());
+      //}
       resultCache.set(new HashMap<>());
     }
   }
@@ -129,15 +127,11 @@ public class HaxeExpressionEvaluator {
       // Don't log these, because they are common, but DON'T swallow them, either; it makes things unresponsive.
       throw e;
     }
-    catch (OverflowGuardException e) {
-      // Don't log these, some OverflowGuardException are normal behavior.
-      // when resolving untyped parameters  we need to search the callExpression for  its typeParameters to get the correct type
-      // this will involve iterating over all parameters to see if any of the other ones define the type parameter
-      throw e;
-    }
+
     catch (Throwable t) {
       // XXX: Watch this.  If it happens a lot, then maybe we shouldn't log it unless in debug mode.
-      log.warn("Error evaluating expression type for element " + (null == element ? "<null>" : element.toString()), t);
+      //log.warn("Error evaluating expression type for element " + (null == element ? "<null>" : element.toString()), t);
+      //throw t;
     }
     return createUnknown(element != null ? element : context.root);
   }
@@ -469,16 +463,10 @@ public class HaxeExpressionEvaluator {
   public static ResultHolder searchReferencesForType(final HaxeComponentName componentName,
                                                      final HaxeExpressionEvaluatorContext context,
                                                      final HaxeGenericResolver resolver,
-                                                     @Nullable final PsiElement searchScope,
+                                                     @Nullable final PsiElement searchScopePsi,
                                                      @Nullable final ResultHolder hint
   ) {
-    try {
-      searchScopeCounter.get().incrementAndGet();
-    // search is slow so we can probably save some unnecessary searches when analyzing code
-    List<PsiReference> references =
-      CachedValuesManager.getProjectPsiDependentCache(componentName, (c) -> cachedSearch(c, searchScope))
-        .getValue();
-
+      List<PsiReference> references = cachedSearch(componentName, searchScopePsi);
 
       for (PsiReference reference : references) {
         ResultHolder possibleType = checkSearchResult(context, resolver, reference,componentName,  hint);
@@ -486,25 +474,22 @@ public class HaxeExpressionEvaluator {
       }
 
     return createUnknown(componentName);
-    }finally {
-      searchScopeCounter.get().decrementAndGet();
-    }
   }
   @NotNull
-  public static CachedValueProvider.Result<List<PsiReference>> cachedSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
+  public static List<PsiReference> cachedSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
     SearchScope scope = searchScope != null ? new LocalSearchScope(searchScope) :  searchHelper.getCodeUsageScope(componentName);
     return cachedSearch(componentName, scope);
   }
-  public static CachedValueProvider.Result<List<PsiReference>> cachedSearch(final HaxeComponentName componentName, @Nullable final SearchScope searchScope) {
+
+  public static List<PsiReference> cachedSearch(final HaxeComponentName componentName, @NotNull final SearchScope searchScope) {
     int offset = componentName.getIdentifier().getTextRange().getEndOffset();
-    List<PsiReference> references = new ArrayList<>(ReferencesSearch.search(componentName, searchScope).findAll()).stream()
+    return new ArrayList<>(ReferencesSearch.search(componentName, searchScope).findAll()).stream()
       .sorted((r1, r2) -> {
         int i1 = getDistance(r1, offset);
         int i2 = getDistance(r2, offset);
         return i1 - i2;
       }).toList();
-    return CachedValueProvider.Result.create(references, ModificationTracker.EVER_CHANGED, ProjectRootModificationTracker.getInstance(componentName.getProject()));
   }
 
   @Nullable
@@ -618,9 +603,7 @@ public class HaxeExpressionEvaluator {
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
     final SearchScope useScope = searchHelper.getCodeUsageScope(componentName);
 
-    List<PsiReference> references =
-      CachedValuesManager.getProjectPsiDependentCache(componentName, (c) -> cachedSearch(c,  useScope))
-        .getValue();
+    List<PsiReference> references = cachedSearch(componentName,  useScope);
 
     for (PsiReference reference : references) {
       if (reference instanceof HaxeExpression expression) {

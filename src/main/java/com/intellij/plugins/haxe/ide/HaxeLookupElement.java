@@ -31,6 +31,7 @@ import com.intellij.plugins.haxe.model.HaxeMethodModel;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,6 +48,13 @@ public class HaxeLookupElement extends LookupElement {
   private final HaxeMethodContext context;
 
   private final HaxeGenericResolver resolver;
+  private HaxeBaseMemberModel model;
+
+  private String presentableText;
+  private String tailText;
+  private boolean strikeout = false;
+  private boolean bold = false;
+  private Icon icon = null;
 
   public static Collection<HaxeLookupElement> convert(HaxeResolveResult leftReferenceResolveResult,
                                                       @NotNull Collection<HaxeComponentName> componentNames,
@@ -82,6 +90,9 @@ public class HaxeLookupElement extends LookupElement {
     this.myComponentName = name;
     this.context = context;
     this.resolver = resolver;
+
+
+    calculatePresentation();
   }
 
   @NotNull
@@ -92,37 +103,43 @@ public class HaxeLookupElement extends LookupElement {
 
   @Override
   public void renderElement(LookupElementPresentation presentation) {
+    presentation.setItemText(presentableText);
+    presentation.setStrikeout(strikeout);
+    presentation.setItemTextBold(bold);
+    presentation.setIcon(icon);
+    presentation.setTailText(tailText, true);
+
+  }
+
+  public void calculatePresentation() {
     final ItemPresentation myComponentNamePresentation = myComponentName.getPresentation();
     if (myComponentNamePresentation == null) {
-      presentation.setItemText(getLookupString());
+      presentableText = getLookupString();
       return;
     }
 
-    // Check for members: methods and fields
-    HaxeBaseMemberModel model = HaxeBaseMemberModel.fromPsi(myComponentName);
-
+    model = HaxeBaseMemberModel.fromPsi(myComponentName);
     if (model == null) {
-      presentation.setItemText(myComponentNamePresentation.getPresentableText());
+      presentableText = myComponentNamePresentation.getPresentableText();
     }else {
-      presentation.setItemText( model.getPresentableText(context, resolver));
+      presentableText = model.getPresentableText(context, resolver);
       // Check deprecated modifiers
       if (model instanceof HaxeMemberModel && ((HaxeMemberModel)model).getModifiers().hasModifier(HaxePsiModifier.DEPRECATED)) {
-        presentation.setStrikeout(true);
+        strikeout = true;
       }
 
       // Check for non-inherited members to highlight them as intellij-java does
-      // @TODO: Self members should be displayed first!
       if (leftReference != null) {
         if (model.getDeclaringClass().getPsi() == leftReference.getHaxeClass()) {
-          presentation.setItemTextBold(true);
+          bold = true;
         }
       }
     }
 
-    presentation.setIcon(myComponentNamePresentation.getIcon(true));
+    icon = myComponentNamePresentation.getIcon(true);
     final String pkg = myComponentNamePresentation.getLocationString();
     if (StringUtil.isNotEmpty(pkg)) {
-      presentation.setTailText(" " + pkg, true);
+      tailText =" " + pkg;
     }
   }
 

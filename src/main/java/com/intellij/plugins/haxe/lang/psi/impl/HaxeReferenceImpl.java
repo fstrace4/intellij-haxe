@@ -24,11 +24,12 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.plugins.haxe.ide.HaxeLookupElement;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
-import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.ide.refactoring.move.HaxeFileMoveHandler;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -841,12 +842,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
         if (parameterList != null) {
           if (parameterList.getParent() instanceof HaxeFunctionLiteral literal) {
           // if parameter type is unknown  (allowed in function literals) we can try to find it from assignment, ex. callExpression
-            ResultHolder holder = null;
-            try {
-              holder = tryToFindTypeFromCallExpression(literal, resolve);
-            }catch (OverflowGuardException e) {
-              // ignoring this one
-            }
+            ResultHolder holder = tryToFindTypeFromCallExpression(literal, resolve);
           if (holder != null && !holder.isUnknown()) return holder.getType().asResolveResult();
         }
           else if (parameterList.getParent() instanceof HaxeMethodDeclaration method) {
@@ -939,16 +935,14 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
   }
 
   @Nullable
-  public static ResultHolder tryToFindTypeFromCallExpression(@NotNull HaxeFunctionLiteral literal, @NotNull PsiElement parameter) throws OverflowGuardException {
+  public static ResultHolder tryToFindTypeFromCallExpression(@NotNull HaxeFunctionLiteral literal, @NotNull PsiElement parameter) {
     PsiElement parent = literal.getParent();
+    RecursionManager.markStack();
+    return genericResolverRecursionGuard.computePreventingRecursion(parameter, true, () -> {
+          List<HaxeExpression> expressionList = null;
+          HaxeMethodModel methodModel = null;
+          HaxeCallExpressionUtil.CallExpressionValidation validation = null;
 
-    List<HaxeExpression> expressionList = null;
-    HaxeMethodModel methodModel = null;
-    HaxeCallExpressionUtil.CallExpressionValidation validation = null;
-    if (!genericResolverHelper.get().contains(parameter)) {
-      try {
-
-        genericResolverHelper.get().add(parameter);
 
         if (parent instanceof HaxeNewExpression newExpression && newExpression.getType() != null) {
           ResultHolder type = HaxeTypeResolver.getTypeFromType(newExpression.getType());
@@ -994,15 +988,11 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
             if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
           }
         }
-      } finally {
-        genericResolverHelper.get().remove(parameter);
-      }
-    }else {
-      throw  new OverflowGuardException();
-    }
-    return null;
+      return null;
+    });
   }
-  private static ThreadLocal<Stack<PsiElement>> genericResolverHelper = ThreadLocal.withInitial(Stack::new);
+
+  private static final RecursionGuard<PsiElement> genericResolverRecursionGuard = RecursionManager.createGuard("genericResolverRecursionGuard");
 
 
   public boolean isPureClassReferenceOf(@NotNull String className) {

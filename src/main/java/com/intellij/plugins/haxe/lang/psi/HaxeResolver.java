@@ -22,7 +22,8 @@ package com.intellij.plugins.haxe.lang.psi;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Key;
-import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
@@ -45,7 +46,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.searchScopeCounter;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
 import static com.intellij.plugins.haxe.util.HaxeStringUtil.elide;
 
@@ -66,7 +66,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   public static final HaxeResolver INSTANCE = new HaxeResolver();
 
   public static ThreadLocal<Stack<PsiElement>> referencesProcessing = ThreadLocal.withInitial(() -> new Stack<PsiElement>());
-  public static ThreadLocal<AtomicInteger> recursiveLookupFailures = ThreadLocal.withInitial(() -> new AtomicInteger(0));
+
+
 
   private static boolean reportCacheMetrics = false;   // Should always be false when checked in.
   private static AtomicInteger dumbRequests = new AtomicInteger(0);
@@ -76,16 +77,18 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   public static final List<? extends PsiElement> EMPTY_LIST = Collections.emptyList();
 
+  private final RecursionGuard<PsiElement> resolveInnerRecursionGuard = RecursionManager.createGuard("resolveInnerRecursionGuard");
+
   @Override
   public List<? extends PsiElement> resolve(@NotNull HaxeReference reference, boolean incompleteCode) {
        /** See docs on {@link HaxeDebugUtil#isCachingDisabled} for how to set this flag. */
        boolean skipCachingForDebug = HaxeDebugUtil.isCachingDisabled();
 
-       // Kill circular resolutions -- before checking the cache.
-       if (isResolving(reference)) {
-         recursiveLookupFailures.get().incrementAndGet();
-         return null;
-       }
+       //// Kill circular resolutions -- before checking the cache.
+       //if (isResolving(reference)) {
+       //  recursiveLookupFailures.get().incrementAndGet();
+       //  return null;
+       //}
 
        // If we are in dumb mode (e.g. we are still indexing files and resolving may
        // fail until the indices are complete), we don't want to cache the (likely incorrect)
@@ -93,18 +96,11 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
        boolean isDumb = DumbService.isDumb(reference.getProject());
        boolean hasTypeHint = checkForTypeHint(reference);
        boolean skipCaching = skipCachingForDebug || isDumb || hasTypeHint;
-       List<? extends PsiElement> elements = null;
-       try {
-         elements  = skipCaching ? doResolve(reference, incompleteCode)
+
+        List<? extends PsiElement>  elements  = skipCaching ? doResolve(reference, incompleteCode)
                          : ResolveCache.getInstance(reference.getProject())
-                       .resolveWithCaching(reference, this::doResolve, true, incompleteCode);
-       }catch (DoNotCacheException e) {
-         log.info("resolve returned null possibly due to recursion guards");
-         recursiveLookupFailures.get().decrementAndGet();
-       }catch (OverflowGuardException e) {
-         log.info("resolve stopped by overflow guard");
-         return null;
-       }
+                       .resolveWithCaching(reference, this::doResolve, false, incompleteCode);
+
        if (reportCacheMetrics) {
          if (skipCachingForDebug) {
            log.debug("Resolve cache is disabled.  No metrics computed.");
@@ -141,13 +137,6 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     return stack.contains(reference);
   }
 
-  private void reportSkip(HaxeReference reference) {
-    if (log.isTraceEnabled()) {
-      log.trace(traceMsg("-----------------------------------------"));
-      log.trace(traceMsg("Skipping circular resolve for reference: " + reference.getText()));
-      log.trace(traceMsg("-----------------------------------------"));
-    }
-  }
 
   @Nullable
   private List<? extends PsiElement> doResolve(@NotNull HaxeReference reference, boolean incompleteCode) {
@@ -162,19 +151,9 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         log.trace(traceMsg("Resolving reference: " + referenceText));
       }
 
-       List<? extends PsiElement> foundElements = doResolveInner(reference, incompleteCode, referenceText);
+       List<? extends PsiElement> foundElements = resolveInnerRecursionGuard
+         .computePreventingRecursion( reference, true, () ->  doResolveInner(reference, incompleteCode, referenceText));
 
-      // a hacky way to get around idempotent caching issues
-      // most likely caused by attempted type inference that try to search for usage or in some other way end up
-      // trying to resolve something already in the resolve stack
-      if (foundElements == null) {
-        boolean lookupFailedDUeToRecursionGuard = recursiveLookupFailures.get().get() > 0;
-        boolean inSearchScope = searchScopeCounter.get().get() > 0;
-        if (lookupFailedDUeToRecursionGuard || inSearchScope) {
-          log.info("Do not cache exception thrown for : " + referenceText);
-          throw new DoNotCacheException();
-        }
-      }
 
       if (traceEnabled) {
         log.trace(traceMsg("Finished  reference: " + referenceText));
@@ -189,7 +168,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   private List<? extends PsiElement> doResolveInner(@NotNull HaxeReference reference, boolean incompleteCode, String referenceText) {
-
+    RecursionManager.markStack();
     if (reportCacheMetrics) {
       resolves.incrementAndGet();
     }

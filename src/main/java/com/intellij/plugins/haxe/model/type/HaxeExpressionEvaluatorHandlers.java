@@ -2,10 +2,11 @@ package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.annotation.AnnotationBuilder;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
-import com.intellij.plugins.haxe.ide.annotator.semantics.OverflowGuardException;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -42,23 +43,17 @@ import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.*;
 public class HaxeExpressionEvaluatorHandlers {
 
 
-  private static ThreadLocal<HashSet<PsiElement>> resolvesInProcess = new ThreadLocal<>().withInitial(()->new HashSet<PsiElement>());
+  //private static ThreadLocal<HashSet<PsiElement>> resolvesInProcess = new ThreadLocal<>().withInitial(()->new HashSet<PsiElement>());
+  private static final RecursionGuard<PsiElement>
+    evaluatorHandlersRecursionGuard = RecursionManager.createGuard("EvaluatorHandlersRecursionGuard");
+
   @Nullable
   static ResultHolder handleWithRecursionGuard(PsiElement element,
                                                HaxeExpressionEvaluatorContext context,
                                                HaxeGenericResolver resolver) {
+    RecursionManager.markStack();
     if (element == null ) return null;
-    HashSet<PsiElement> elements = resolvesInProcess.get();
-    if (elements.contains(element)) {
-      HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
-      return null;
-    }
-    try {
-      elements.add(element);
-      return handle(element, context, resolver);
-    } finally {
-      elements.remove(element);
-    }
+    return evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> handle(element, context, resolver));
   }
 
 
@@ -451,26 +446,17 @@ public class HaxeExpressionEvaluatorHandlers {
     }else {
       if (parameter.getParent().getParent() instanceof HaxeFunctionLiteral functionLiteral) {
         ResultHolder holder = null;
-        try {
+        RecursionManager.markStack();
           holder = tryToFindTypeFromCallExpression(functionLiteral, parameter);
           if (holder == null || holder.containsTypeParameters()) {
-            HashSet<PsiElement> processingStack = resolvesInProcess.get();
             HaxeComponentName name = parameter.getComponentName();
-            if (!processingStack.contains(name)) {
-              try {
-                processingStack.add(name);
-                ResultHolder searchResult = searchReferencesForType(name, context, resolver, functionLiteral, holder);
-                if (!searchResult.isUnknown()) holder = searchResult;
-              } finally {
-                processingStack.remove(name);
-              }
-            }else {
-              HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
-            }
+            final ResultHolder hint = holder;
+            ResultHolder searchResult =  evaluatorHandlersRecursionGuard.computePreventingRecursion(name, true, () -> {
+                return searchReferencesForType(name, context, resolver, functionLiteral, hint);
+            });
+            if (searchResult!= null && !searchResult.isUnknown()) holder = searchResult;
           }
-        }catch (OverflowGuardException e) {
-          HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
-        }
+
         if (holder!= null && !holder.isUnknown()) {
           ResultHolder resolve = resolver.resolve(holder);
           return resolve != null && !resolve.isUnknown() ? resolve : holder;
@@ -1336,25 +1322,21 @@ public class HaxeExpressionEvaluatorHandlers {
     if (result == null || isDynamicBecauseOfNullValueInit(result) || isUnknownLiteralArray(result)) {
       // search for usage to determine type
       HaxeComponentName element = varDeclaration.getComponentName();
-      HashSet<PsiElement> resolveInProgress = resolvesInProcess.get();
-      if (!resolveInProgress.contains(element)) {
-        try {
-          resolveInProgress.add(element);
-          ResultHolder searchResult = searchReferencesForType(element, context, resolver, null, result);
-          // if we got a type we should check that we find the correct match (avoid replacing a class with an interface match etc.)
-          if (result == null || searchResult.getType().isSameType(result.getType())) {
-            result = searchResult;
-          }
-        }finally {
-          resolveInProgress.remove(element);
+      final ResultHolder hint = result;
+      RecursionManager.markStack();
+      ResultHolder searchResult = evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> {
+          return searchReferencesForType(element, context, resolver, null, hint);
+      });
+      // if we got a type we should check that we find the correct match (avoid replacing a class with an interface match etc.)
+      if (searchResult != null) {
+        if (result == null || searchResult.getType().isSameType(result.getType())) {
+          result = searchResult;
         }
-      }else {
-        HaxeResolver.recursiveLookupFailures.get().incrementAndGet();
       }
     }
 
     context.setLocal(name.getText(), result);
-    return result;
+    return result != null ? result : createUnknown(varDeclaration);
   }
 
   private static boolean isUnknownLiteralArray(ResultHolder result) {

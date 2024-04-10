@@ -20,6 +20,8 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.lang.annotation.AnnotationHolder;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl;
@@ -257,7 +259,8 @@ public class HaxeTypeResolver {
     return resolveParameterizedType(result, resolver, false);
   }
 
-  private static final ThreadLocal<Stack<ResultHolder>> propagatedElement = ThreadLocal.withInitial(Stack::new);
+
+  private static final RecursionGuard<ResultHolder> propagateRecursionGuard = RecursionManager.createGuard("propagateRecursionGuard");
 
   @NotNull
   static public ResultHolder resolveParameterizedType(@NotNull ResultHolder result, HaxeGenericResolver resolver, boolean returnType) {
@@ -274,19 +277,14 @@ public class HaxeTypeResolver {
         }
       }
     }
-
+    final HaxeGenericResolver finalResolver = resolver;
     // Resolve any generics on the resolved type as well.
     typeReference = result.getType();
     if (typeReference instanceof SpecificHaxeClassReference classReference) {
-      Stack<ResultHolder> stack = propagatedElement.get();
-      if (!stack.contains(result)) {
-        try {
-          stack.add(result);
-          result = SpecificHaxeClassReference.propagateGenericsToType(classReference.createHolder(), resolver, returnType);
-        } finally {
-          stack.pop();
-        }
-      }
+      RecursionManager.markStack();
+      ResultHolder holder = propagateRecursionGuard.computePreventingRecursion(result, true, () ->
+        SpecificHaxeClassReference.propagateGenericsToType(classReference.createHolder(), finalResolver, returnType));
+      if (holder != null) result = holder;
     }
 
     return result;
