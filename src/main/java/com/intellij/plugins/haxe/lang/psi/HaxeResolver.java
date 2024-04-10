@@ -436,9 +436,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     if(fileModel != null) {
       String className = reference.getText();
       PsiElement target = HaxeResolveUtil.searchInSameFile(fileModel, className, isType);
-      if (target!= null) {
+      if (target instanceof HaxeNamedComponent namedComponent) {
         LogResolution(reference, "via search In Same File");
-        return List.of(target);
+        HaxeComponentName componentName = namedComponent.getComponentName();
+        if (componentName != null) return List.of(componentName);
       }
     }
     return null;
