@@ -466,7 +466,7 @@ public class HaxeExpressionEvaluator {
                                                      @Nullable final PsiElement searchScopePsi,
                                                      @Nullable final ResultHolder hint
   ) {
-      List<PsiReference> references = cachedSearch(componentName, searchScopePsi);
+      List<PsiReference> references = referenceSearch(componentName, searchScopePsi);
 
       for (PsiReference reference : references) {
         ResultHolder possibleType = checkSearchResult(context, resolver, reference,componentName,  hint);
@@ -476,13 +476,13 @@ public class HaxeExpressionEvaluator {
     return createUnknown(componentName);
   }
   @NotNull
-  public static List<PsiReference> cachedSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
+  public static List<PsiReference> referenceSearch(final HaxeComponentName componentName, @Nullable final PsiElement searchScope) {
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
     SearchScope scope = searchScope != null ? new LocalSearchScope(searchScope) :  searchHelper.getCodeUsageScope(componentName);
-    return cachedSearch(componentName, scope);
+    return referenceSearch(componentName, scope);
   }
 
-  public static List<PsiReference> cachedSearch(final HaxeComponentName componentName, @NotNull final SearchScope searchScope) {
+  public static List<PsiReference> referenceSearch(final HaxeComponentName componentName, @NotNull final SearchScope searchScope) {
     int offset = componentName.getIdentifier().getTextRange().getEndOffset();
     return new ArrayList<>(ReferencesSearch.search(componentName, searchScope).findAll()).stream()
       .sorted((r1, r2) -> {
@@ -603,7 +603,7 @@ public class HaxeExpressionEvaluator {
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
     final SearchScope useScope = searchHelper.getCodeUsageScope(componentName);
 
-    List<PsiReference> references = cachedSearch(componentName,  useScope);
+    List<PsiReference> references = referenceSearch(componentName, useScope);
 
     for (PsiReference reference : references) {
       if (reference instanceof HaxeExpression expression) {

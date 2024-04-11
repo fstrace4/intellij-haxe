@@ -3,6 +3,7 @@ package com.intellij.plugins.haxe.ide.inlay;
 import com.intellij.codeInsight.hints.declarative.InlayHintsProvider;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.HaxeCodeInsightFixtureTestCase;
 import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.util.HaxeTestUtils;
@@ -38,7 +39,8 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
 
   @Override
   protected void setUp() throws Exception {
-    testFixtureFactory.registerFixtureBuilder(HaxeCodeInsightFixtureTestCase.MyHaxeModuleFixtureBuilderImpl.class, HaxeCodeInsightFixtureTestCase.MyHaxeModuleFixtureBuilderImpl.class);
+    testFixtureFactory.registerFixtureBuilder(HaxeCodeInsightFixtureTestCase.MyHaxeModuleFixtureBuilderImpl.class,
+                                              HaxeCodeInsightFixtureTestCase.MyHaxeModuleFixtureBuilderImpl.class);
     final TestFixtureBuilder<IdeaProjectTestFixture> projectBuilder = testFixtureFactory.createFixtureBuilder(getName());
     myFixture = testFixtureFactory.createCodeInsightFixture(projectBuilder.getFixture());
     moduleFixtureBuilder = projectBuilder.addModule(HaxeCodeInsightFixtureTestCase.MyHaxeModuleFixtureBuilderImpl.class);
@@ -56,6 +58,12 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
     myFixture.setTestDataPath(getTestDataPath());
     myFixture.setUp();
     LanguageLevelProjectExtension.getInstance(getProject()).setLanguageLevel(LanguageLevel.JDK_1_8);
+
+    // disable RecursionPrevention assert as type inference will cause several RecursionPrevention events,
+    // and want to be able to test inlays for inferred types
+    RecursionManager.disableAssertOnRecursionPrevention(myFixture.getProjectDisposable());
+    RecursionManager.disableMissedCacheAssertions(myFixture.getProjectDisposable());
+
   }
 
   @Override
@@ -68,7 +76,6 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
       addSuppressedException(e);
     }
   }
-
 
 
   public String getTestDataPath() {
@@ -104,9 +111,9 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
 
     String name = getTestDataPath() + getTestName(false) + ".hx";
     String data = Files.readString(Path.of(name));
-    //seems to be an issue with windows line endings and inlays so to avoid any issues we relace them here.
+    //seems to be an issue with windows line endings and inlays so to avoid any issues we replace them here.
     data = data.replaceAll("\\r\\n?", "\n");
 
-    doTestProvider("testFile.hx",  data, inlayHintsProvider, Map.of(), false);
+    doTestProvider("testFile.hx", data, inlayHintsProvider, Map.of(), false);
   }
 }
