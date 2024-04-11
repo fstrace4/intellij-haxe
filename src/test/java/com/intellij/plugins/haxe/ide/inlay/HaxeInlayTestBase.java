@@ -10,12 +10,10 @@ import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.codeStyle.CodeStyleSettingsManager;
 import com.intellij.testFramework.builders.ModuleFixtureBuilder;
-import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import com.intellij.testFramework.utils.inlays.declarative.DeclarativeInlayHintsProviderTestCase;
-import com.intellij.util.ArrayUtil;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -106,6 +104,9 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
 
     String name = getTestDataPath() + getTestName(false) + ".hx";
     String data = Files.readString(Path.of(name));
-    doTestProvider("testFile.hx", data, inlayHintsProvider, Map.of(), false);
+    //seems to be an issue with windows line endings and inlays so to avoid any issues we relace them here.
+    data = data.replaceAll("\\r\\n?", "\n");
+
+    doTestProvider("testFile.hx",  data, inlayHintsProvider, Map.of(), false);
   }
 }

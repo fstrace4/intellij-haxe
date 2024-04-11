@@ -47,9 +47,8 @@ public class HaxeInlayEnumExtractorHintsProvider implements InlayHintsProvider {
           for (int i = 0; i < children.length; i++) {
             if (children[i] instanceof HaxeEnumExtractedValue enumExtractedValue) {
               int offset = enumExtractedValue.getTextRange().getEndOffset();
-
-              InlineInlayPosition position = new InlineInlayPosition(offset, true, 0);
               if (extractedValueList.size() > i) {
+                InlineInlayPosition position = new InlineInlayPosition(offset, true, 0);
                 ResultHolder type = HaxeExpressionEvaluator.evaluate(extractedValueList.get(i), null).result;
                 sink.addPresentation(position, null, null, false, appendTypeTextToBuilder(type));
               }

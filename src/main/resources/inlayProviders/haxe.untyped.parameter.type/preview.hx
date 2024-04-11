@@ -1,7 +1,7 @@
 class Test {
 
     public static function main() {
-        filter(function(/*<# :String #>*/arg) {return true;});
+        filter(function(arg/*<# :String #>*/) {return true;});
     }
 
     public function filter(fn:String -> Bool) {

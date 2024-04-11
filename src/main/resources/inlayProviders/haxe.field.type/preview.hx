@@ -1,6 +1,6 @@
 class Test {
 
-    public var myFie/*<# :String #>*/ld= "String vaule";
+    public var myField/*<# :String #>*/= "String vaule";
 
     public function new () {}
 
