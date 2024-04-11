@@ -4,7 +4,7 @@ class SimpleVarHints {
         var fromInitExpression/*<# :String #>*/  = "";
         var fromInitExpressionGenerics/*<# :Array<String> #>*/  = [""];
         var fromFunctionCall/*<# :String #>*/ = simpleFunction();
-        var fromVarUsage/*<# :Map<String, Int> #>*/ = new haxe.ds.Map();
+        var fromVarUsage/*<# :Map<String, Int> #>*/ = new Map();
         var fromGenerics/*<# :Int #>*/ = genricFunction(1);
 
         fromVarUsage.set("Key", 1);
