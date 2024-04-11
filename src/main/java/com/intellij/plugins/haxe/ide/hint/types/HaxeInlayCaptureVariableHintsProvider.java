@@ -38,7 +38,7 @@ public class HaxeInlayCaptureVariableHintsProvider implements InlayHintsProvider
 
         if (!result.isUnknown() && !result.getType().isInvalid()) {
           int offset = varDeclaration.getComponentName().getTextRange().getEndOffset();
-          InlineInlayPosition position = new InlineInlayPosition(offset, false, 0);
+          InlineInlayPosition position = new InlineInlayPosition(offset, true, 0);
           sink.addPresentation(position, null, null, false, appendTypeTextToBuilder(result)
           );
         }

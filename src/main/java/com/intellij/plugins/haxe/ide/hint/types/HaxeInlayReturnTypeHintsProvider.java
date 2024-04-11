@@ -43,7 +43,7 @@ public class HaxeInlayReturnTypeHintsProvider implements InlayHintsProvider {
           if (paramListEnd == null) return;
           int offset = paramListEnd.getTextRange().getEndOffset();
           if (!returnType.isUnknown() && !returnType.getType().isInvalid()) {
-            InlineInlayPosition position = new InlineInlayPosition(offset, false, 0);
+            InlineInlayPosition position = new InlineInlayPosition(offset, true, 0);
             sink.addPresentation(position, null, null, false, appendTypeTextToBuilder(returnType));
           }
         }

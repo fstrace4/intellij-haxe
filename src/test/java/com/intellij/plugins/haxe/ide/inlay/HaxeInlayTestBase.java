@@ -102,17 +102,10 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
   }
 
 
-
-
-  protected void doTest(InlayHintsProvider inlayHintsProvider, String... additionalFiles)
-    throws Exception {
-    String testFile = getTestName(false) + ".hx";
-    myFixture.setTestDataPath(getTestDataPath());
-    myFixture.configureByFiles(ArrayUtil.mergeArrays(new String[]{testFile}, additionalFiles));
+  protected void doTest(InlayHintsProvider inlayHintsProvider) throws Exception {
 
     String name = getTestDataPath() + getTestName(false) + ".hx";
     String data = Files.readString(Path.of(name));
-
     doTestProvider("testFile.hx", data, inlayHintsProvider, Map.of(), false);
   }
 }
