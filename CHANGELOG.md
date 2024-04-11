@@ -9,8 +9,7 @@
 
 * Known issues:
   -  Resolver might not select correct method when extension methods and member methods got the same name.
-  -  Parser fails to parse more complex cases of Reification 
-  -  heavy use of type inference can lead to slower annotations
+  -  Parser fails to parse more complex cases of Reification
 
 ## 1.4.47
 * Fixed: Incorrect sorting of Project roots
