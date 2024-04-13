@@ -935,10 +935,11 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         if (!haxeClass.getHaxeExtendsList().isEmpty()) {
           final HaxeExpression superExpression = haxeClass.getHaxeExtendsList().get(0).getReferenceExpression();
           final HaxeClass superClass = ((HaxeReference)superExpression).resolveHaxeClass().getHaxeClass();
-          final HaxeNamedComponent constructor =
-            ((superClass == null) ? null : superClass.findHaxeMethodByName(HaxeTokenTypes.ONEW.toString(), null)); // Self only.
-          LogResolution(reference, "because it's a super expression.");
-          return asList(((constructor != null) ? constructor.getComponentName() : superClass.getComponentName()));
+          if (superClass != null) {
+            final HaxeNamedComponent constructor = superClass.findHaxeMethodByName(HaxeTokenTypes.ONEW.toString(), null); // Self only.
+            LogResolution(reference, "because it's a super expression.");
+            return asList(((constructor != null) ? constructor.getComponentName() : superClass.getComponentName()));
+          }
         }
       }
     }
