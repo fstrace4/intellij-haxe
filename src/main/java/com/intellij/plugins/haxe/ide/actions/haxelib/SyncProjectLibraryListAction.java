@@ -89,4 +89,8 @@ public class SyncProjectLibraryListAction extends AnAction implements DumbAware 
     return CommonDataKeys.PROJECT.getData(context);
   }
 
+  @Override
+  public @NotNull ActionUpdateThread getActionUpdateThread() {
+    return ActionUpdateThread.BGT;
+  }
 }

@@ -1,4 +1,6 @@
 # Changelog
+## 1.5.1
+* Fixed: Issue setting up Haxe SDK in intelliJ 2024.1
 ## 1.5.0
 * Improvement: Better type inferences
 * Improvement: Better resolve of TypeParameters (generics)

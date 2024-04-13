@@ -85,18 +85,27 @@ public class HaxeSdkType extends SdkType {
 
   @Override
   public void setupSdkPaths(Sdk sdk) {
-    final SdkModificator modificator = sdk.getSdkModificator();
+
+
 
     SdkAdditionalData data = sdk.getSdkAdditionalData();
     if (data == null) {
       data = HaxeSdkUtil.testHaxeSdk(sdk.getHomePath());
-      modificator.setSdkAdditionalData(data);
+
     }
-
-    HaxeSdkUtil.setupSdkPaths(sdk.getHomeDirectory(), modificator);
-
-    modificator.commitChanges();
     super.setupSdkPaths(sdk);
+    writeSdkData(sdk, data);
+  }
+
+  private static void writeSdkData(Sdk sdk, SdkAdditionalData data) {
+      ApplicationManager.getApplication().runWriteAction(() -> {
+        if (data != null) {
+          final SdkModificator modificator = sdk.getSdkModificator();
+          modificator.setSdkAdditionalData(data);
+          HaxeSdkUtil.setupSdkPaths(sdk.getHomeDirectory(), modificator);
+          modificator.commitChanges();
+        }
+      });
   }
 
   @Override

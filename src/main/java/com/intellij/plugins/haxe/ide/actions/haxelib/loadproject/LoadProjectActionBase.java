@@ -57,4 +57,9 @@ public abstract class LoadProjectActionBase extends AnAction {
     DataContext context = e.getDataContext();
     return CommonDataKeys.PROJECT.getData(context);
   }
+
+  @Override
+  public @NotNull ActionUpdateThread getActionUpdateThread() {
+    return ActionUpdateThread.BGT;
+  }
 }

@@ -18,6 +18,7 @@
  */
 package com.intellij.plugins.haxe.haxelib;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -52,7 +53,9 @@ public class HaxelibSdkUtils {
                                       sdkType,
                                       sdkType.suggestHomePath(),
                                       sdkType.getVersionString(sdkType.suggestHomePath()));
-      sdkType.setupSdkPaths(defaultSDK);
+      ApplicationManager.getApplication().invokeLaterOnWriteThread(() -> {
+        sdkType.setupSdkPaths(defaultSDK);
+      });
     }
   }
   static boolean myDefaultSdkErrorHasBeenLogged = false;
