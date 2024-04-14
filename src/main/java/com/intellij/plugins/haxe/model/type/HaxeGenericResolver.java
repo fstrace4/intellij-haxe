@@ -316,7 +316,7 @@ public class HaxeGenericResolver {
   public ResultHolder resolveReturnType(ResultHolder resultHolder) {
     if (null == resultHolder ) return null;
     if (resultHolder.getType().isTypeParameter()) {
-      String className = resultHolder.getType().context.getText();
+      String className = resultHolder.getClassType().getClassName();
       List<ResolverEntry> list = resolvers.stream().filter(entry -> entry.name().equals(className)).sorted(this::ResolverPrioritySort).toList();
       if (list.isEmpty())  {
         Optional<ResolverEntry> assign = findAssignToType();
