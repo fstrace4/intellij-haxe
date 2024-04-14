@@ -97,6 +97,10 @@ public enum HaxeComponentType {
     public Icon getIcon() {
       return icons.HaxeIcons.Class;
     }
+  }, MODULE(11) {
+    public Icon getIcon() {
+      return HaxeIcons.Class; // TODO icon for module
+    }
   };
 
   private final int myKey;
@@ -192,6 +196,9 @@ public enum HaxeComponentType {
     }
     if (element instanceof HaxeGenericListPart ) {
       return TYPE_PARAMETER;
+    }
+    if (element instanceof HaxeModule ) {
+      return MODULE;
     }
 
     return null;

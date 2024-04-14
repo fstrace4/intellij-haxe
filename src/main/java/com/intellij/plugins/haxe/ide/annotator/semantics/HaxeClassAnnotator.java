@@ -554,14 +554,16 @@ public class HaxeClassAnnotator implements Annotator {
             final HaxeMethodModel methodModel = methodResult.get();
 
             // We should check if signature in inherited method differs from method provided by interface
-            if (methodModel.getDeclaringClass() != clazz) {
-              if (methodModel.getDeclaringClass().isInterface()) {
+            HaxeClassModel declaringClass = methodModel.getDeclaringClass();
+
+            if (declaringClass != null && declaringClass != clazz) {
+              if (declaringClass.isInterface()) {
                 missingMethods.add(methodModel);
                 missingMethodsNames.add(intMethod.getName());
               }
               else {
                 if (checkInheritedInterfaceMethodSignature && checkIfMethodSignatureDiffers(methodModel, intMethod)) {
-                  final HaxeClass parentClass = methodModel.getDeclaringClass().haxeClass;
+                  final HaxeClass parentClass = declaringClass.haxeClass;
 
                   final String errorMessage = HaxeBundle.message(
                     "haxe.semantic.implemented.super.method.signature.differs",

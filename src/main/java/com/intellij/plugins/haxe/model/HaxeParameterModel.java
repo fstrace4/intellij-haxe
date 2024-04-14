@@ -198,6 +198,11 @@ public class HaxeParameterModel extends HaxeBaseMemberModel implements HaxeModel
     return getMemberModel().getDeclaringClass();
   }
 
+  public HaxeModuleModel getDeclaringModule() {
+    return getMemberModel().getDeclaringModule();
+  }
+
+
   @Override
   public ResultHolder getResultType() {
     final HaxeTypeTag typeTag = getTypeTagPsi();

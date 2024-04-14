@@ -88,7 +88,10 @@ public abstract class HaxeBaseMemberModel implements HaxeModel {
     return null;
   }
 
+  @Nullable
   public abstract HaxeClassModel getDeclaringClass();
+
+  public abstract HaxeModuleModel getDeclaringModule();
 
   @Deprecated
   public ResultHolder getResultType() {

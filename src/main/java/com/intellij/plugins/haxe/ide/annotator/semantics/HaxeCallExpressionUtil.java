@@ -1129,9 +1129,9 @@ public class HaxeCallExpressionUtil {
         HaxeMethodModel methodModel = parentMethod.getModel();
         //if method is not static and is inside a class, use that class as "this" type
         if (!methodModel.isStatic()) {
-          HaxeClassModel aClass = methodModel.getDeclaringClass();
-          if (aClass != null) {
-            return aClass.getInstanceType();
+          HaxeClassModel declaringClass = methodModel.getDeclaringClass();
+          if (declaringClass != null) {
+            return declaringClass.getInstanceType();
           }
         }
       }

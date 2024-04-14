@@ -49,17 +49,19 @@ public class HaxeMethodAnnotator implements Annotator {
     if (!MISSING_TYPE_TAG_ON_EXTERN_AND_INTERFACE.isEnabled(currentMethod.getBasePsi())) return;
 
     HaxeClassModel currentClass = currentMethod.getDeclaringClass();
-    if (currentClass.isExtern() || currentClass.isInterface()) {
-      if (currentMethod.getReturnTypeTagPsi() == null && !currentMethod.isConstructor()) {
-        holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.type.required"))
-          .range(currentMethod.getNameOrBasePsi())
-          .create();
-      }
-      for (final HaxeParameterModel param : currentMethod.getParameters()) {
-        if (param.getTypeTagPsi() == null) {
-          holder.newAnnotation(HighlightSeverity.ERROR,HaxeBundle.message("haxe.semantic.type.required"))
-            .range(param.getBasePsi())
+    if (currentClass != null) { //make sure it's not a module method
+      if (currentClass.isExtern() || currentClass.isInterface()) {
+        if (currentMethod.getReturnTypeTagPsi() == null && !currentMethod.isConstructor()) {
+          holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.type.required"))
+            .range(currentMethod.getNameOrBasePsi())
             .create();
+        }
+        for (final HaxeParameterModel param : currentMethod.getParameters()) {
+          if (param.getTypeTagPsi() == null) {
+            holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.type.required"))
+              .range(param.getBasePsi())
+              .create();
+          }
         }
       }
     }
@@ -289,39 +291,42 @@ public class HaxeMethodAnnotator implements Annotator {
         final boolean removeOptional = currentParam.hasOptionalPsi();
 
         String errorMessage;
-        if (parentMethod.getDeclaringClass().isInterface()) {
-          errorMessage = removeOptional ? "haxe.semantic.implemented.method.parameter.required"
-                                        : "haxe.semantic.implemented.method.parameter.optional";
-        }
-        else {
-          errorMessage = removeOptional ? "haxe.semantic.overwritten.method.parameter.required"
-                                        : "haxe.semantic.overwritten.method.parameter.optional";
-        }
+        HaxeClassModel declaringClass = parentMethod.getDeclaringClass();
+        if (declaringClass != null) {
+          if (declaringClass.isInterface()) {
+            errorMessage = removeOptional ? "haxe.semantic.implemented.method.parameter.required"
+                                          : "haxe.semantic.implemented.method.parameter.optional";
+          }
+          else {
+            errorMessage = removeOptional ? "haxe.semantic.overwritten.method.parameter.required"
+                                          : "haxe.semantic.overwritten.method.parameter.optional";
+          }
 
-        errorMessage = HaxeBundle.message(errorMessage, parentParam.getPresentableText(scopeResolver),
-                                          parentMethod.getDeclaringClass().getName() + "." + parentMethod.getName());
+          errorMessage = HaxeBundle.message(errorMessage, parentParam.getPresentableText(scopeResolver),
+                                            declaringClass.getName() + "." + parentMethod.getName());
 
 
-        final String localFixName = HaxeBundle.message(removeOptional ? "haxe.semantic.method.parameter.optional.remove"
-                                                                      : "haxe.semantic.method.parameter.optional.add");
+          final String localFixName = HaxeBundle.message(removeOptional ? "haxe.semantic.method.parameter.optional.remove"
+                                                                        : "haxe.semantic.method.parameter.optional.add");
 
-        holder.newAnnotation(HighlightSeverity.ERROR, errorMessage)
-          .range(currentParam.getBasePsi())
-          .withFix(
-            new HaxeFixer(localFixName) {
-              @Override
-              public void run() {
-                if (removeOptional) {
-                  currentParam.getOptionalPsi().delete();
-                }
-                else {
-                  PsiElement element = currentParam.getBasePsi();
-                  document.addTextBeforeElement(element.getFirstChild(), "?");
+          holder.newAnnotation(HighlightSeverity.ERROR, errorMessage)
+            .range(currentParam.getBasePsi())
+            .withFix(
+              new HaxeFixer(localFixName) {
+                @Override
+                public void run() {
+                  if (removeOptional) {
+                    currentParam.getOptionalPsi().delete();
+                  }
+                  else {
+                    PsiElement element = currentParam.getBasePsi();
+                    document.addTextBeforeElement(element.getFirstChild(), "?");
+                  }
                 }
               }
-            }
-          )
-          .create();
+            )
+            .create();
+        }
       }
     }
 

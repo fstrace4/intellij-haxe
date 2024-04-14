@@ -72,6 +72,8 @@ public class HaxeFieldAnnotator implements Annotator {
     if (FIELD_REDEFINITION.isEnabled(var)) {
       HashSet<HaxeClassModel> classSet = new HashSet<>();
       HaxeClassModel fieldDeclaringClass = field.getDeclaringClass();
+      // TODO  add support for module as parent ?
+      if (fieldDeclaringClass == null) return;
       if (fieldDeclaringClass.isInterface() || fieldDeclaringClass.isAnonymous()) {
         return;
       }
@@ -225,18 +227,22 @@ public class HaxeFieldAnnotator implements Annotator {
       return;
     }
 
-    if (field.getDeclaringClass().isInterface()) {
+    HaxeClassModel declaringClass = field.getDeclaringClass();
+
+    if (declaringClass != null && declaringClass.isInterface()) {
       return;
     }
+
+    HaxeCommonMembersModel membersModel = declaringClass != null ? declaringClass : field.getDeclaringModule();
 
     if (field.getGetterType() == HaxeAccessorType.GET) {
       final String methodName = "get_" + field.getName();
 
-      HaxeMethodModel method = field.getDeclaringClass().getMethod(methodName, null);
+      HaxeMethodModel method = membersModel.getMethod(methodName, null);
       if (method == null && field.getGetterPsi() != null) {
         holder.newAnnotation(HighlightSeverity.ERROR, "Can't find method " + methodName)
           .range(field.getGetterPsi())
-          .withFix(new CreateGetterSetterQuickfix(field.getDeclaringClass(), field, true))
+          .withFix(new CreateGetterSetterQuickfix(membersModel, field, true))
           .create();
       }
     }
@@ -244,11 +250,11 @@ public class HaxeFieldAnnotator implements Annotator {
     if (field.getSetterType() == HaxeAccessorType.SET) {
       final String methodName = "set_" + field.getName();
 
-      HaxeMethodModel method = field.getDeclaringClass().getMethod(methodName, null);
+      HaxeMethodModel method = membersModel.getMethod(methodName, null);
       if (method == null && field.getSetterPsi() != null) {
         holder.newAnnotation(HighlightSeverity.ERROR, "Can't find method " + methodName)
           .range(field.getSetterPsi())
-          .withFix(new CreateGetterSetterQuickfix(field.getDeclaringClass(), field, false))
+          .withFix(new CreateGetterSetterQuickfix(membersModel, field, false))
           .create();
       }
     }

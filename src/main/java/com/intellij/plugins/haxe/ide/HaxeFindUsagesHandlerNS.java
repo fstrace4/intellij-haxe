@@ -26,10 +26,7 @@ import com.intellij.plugins.haxe.lang.psi.HaxeFieldDeclaration;
 import com.intellij.plugins.haxe.lang.psi.HaxeMethodDeclaration;
 import com.intellij.plugins.haxe.lang.psi.HaxeNewExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeType;
-import com.intellij.plugins.haxe.model.HaxeClassModel;
-import com.intellij.plugins.haxe.model.HaxeFieldModel;
-import com.intellij.plugins.haxe.model.HaxeMemberModel;
-import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -140,15 +137,16 @@ public abstract class HaxeFindUsagesHandlerNS extends FindUsagesHandler {
   @Nullable
   private static PsiElement[] tryGetProperty(HaxeMethodDeclaration method) {
     final HaxeMethodModel methodModel = method.getModel();
-    final HaxeClassModel declaringClass = methodModel.getDeclaringClass();
+    final HaxeCommonMembersModel parentModel = methodModel.getDeclaringClass();
+    if (parentModel == null) methodModel.getDeclaringModule();
     final String methodName = method.getName();
 
     HaxeMemberModel classField = null;
 
     if (StringUtils.startsWith(methodName, GETTER_PREFIX)) {
-      classField = declaringClass.getField(methodName.substring(GETTER_PREFIX.length()), null);
+      classField = parentModel.getField(methodName.substring(GETTER_PREFIX.length()), null);
     } else if (StringUtils.startsWith(methodName, SETTER_PREFIX)) {
-      classField = declaringClass.getField(methodName.substring(SETTER_PREFIX.length()), null);
+      classField = parentModel.getField(methodName.substring(SETTER_PREFIX.length()), null);
     }
     return classField == null ? null : new PsiElement[]{classField.getBasePsi()};
   }

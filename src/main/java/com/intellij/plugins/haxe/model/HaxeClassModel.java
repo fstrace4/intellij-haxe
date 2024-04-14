@@ -45,7 +45,7 @@ import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.getUnderly
 import static com.intellij.plugins.haxe.util.HaxeGenericUtil.*;
 import static com.intellij.plugins.haxe.util.HaxeMetadataUtil.getMethodsWithMetadata;
 
-public class HaxeClassModel implements HaxeExposableModel {
+public class HaxeClassModel implements HaxeCommonMembersModel {
   public final HaxeClass haxeClass;
 
   private HaxeModifiersModel _modifiers;

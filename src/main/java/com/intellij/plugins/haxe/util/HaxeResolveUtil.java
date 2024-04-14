@@ -399,6 +399,11 @@ public class HaxeResolveUtil {
     return result;
   }
 
+  public static List<HaxeNamedComponent> getAllNamedSubComponentsFromModule(HaxeModule haxeModule) {
+    return getNamedSubComponents(haxeModule);
+
+  }
+
   public static List<HaxeNamedComponent> getAllNamedSubComponentsFromClassType(HaxeClass haxeClass, HaxeComponentType... fromTypes) {
     return getAllNamedSubComponentsFromClassType(haxeClass, fromTypes, null);
   }
@@ -427,20 +432,22 @@ public class HaxeResolveUtil {
   /**
    * Gets all elements defined in a class' body.  This does NOT check superTypes for named elements.
    *
-   * @param haxeClass to inspect
+   * @param element to inspect
    * @return a list of all named components declared in the class' body.
    */
-  public static List<HaxeNamedComponent> getNamedSubComponents(HaxeClass haxeClass) {
+  public static List<HaxeNamedComponent> getNamedSubComponents(HaxePsiCompositeElement element) {
     PsiElement body = null;
-    final HaxeComponentType type = HaxeComponentType.typeOf(haxeClass);
-    if (type == HaxeComponentType.CLASS) {
-      body = PsiTreeUtil.getChildOfAnyType(haxeClass, HaxeClassBody.class, HaxeExternClassDeclarationBody.class);
+    final HaxeComponentType type = HaxeComponentType.typeOf(element);
+    if (type == HaxeComponentType.MODULE) {
+      body = element;
+    } else if (type == HaxeComponentType.CLASS) {
+      body = PsiTreeUtil.getChildOfAnyType(element, HaxeClassBody.class, HaxeExternClassDeclarationBody.class);
     } else if (type == HaxeComponentType.INTERFACE) {
-      body = PsiTreeUtil.getChildOfType(haxeClass, HaxeInterfaceBody.class);
+      body = PsiTreeUtil.getChildOfType(element, HaxeInterfaceBody.class);
     } else if (type == HaxeComponentType.ENUM) {
-      body = PsiTreeUtil.getChildOfType(haxeClass, HaxeEnumBody.class);
-    } else if (haxeClass instanceof HaxeTypedefDeclaration) {
-      final HaxeTypeOrAnonymous typeOrAnonymous = ((HaxeTypedefDeclaration)haxeClass).getTypeOrAnonymous();
+      body = PsiTreeUtil.getChildOfType(element, HaxeEnumBody.class);
+    } else if (element instanceof HaxeTypedefDeclaration) {
+      final HaxeTypeOrAnonymous typeOrAnonymous = ((HaxeTypedefDeclaration)element).getTypeOrAnonymous();
       if (typeOrAnonymous != null && typeOrAnonymous.getAnonymousType() != null) {
         HaxeAnonymousType anonymous = typeOrAnonymous.getAnonymousType();
         if (anonymous != null) {
@@ -448,13 +455,13 @@ public class HaxeResolveUtil {
         }
       } else if (typeOrAnonymous != null) {
         final HaxeClass typeClass = getHaxeClassResolveResult(typeOrAnonymous.getType()).getHaxeClass();
-        assert typeClass != haxeClass;
+        assert typeClass != element;
         return getNamedSubComponents(typeClass);
       }
     }
 
     final List<HaxeNamedComponent> result = new ArrayList<>();
-    if (haxeClass instanceof HaxeTypeParameterMultiType multiType) {
+    if (element instanceof HaxeTypeParameterMultiType multiType) {
       HaxeTypeParameterMultiTypeModel model = (HaxeTypeParameterMultiTypeModel) multiType.getModel();
       List<ResultHolder> types = model.getCompositeTypes();
       for (ResultHolder holder : types) {
@@ -463,7 +470,7 @@ public class HaxeResolveUtil {
           result.addAll(components);
         }
       }
-    } else if (haxeClass instanceof HaxeAnonymousType anonymousType) {
+    } else if (element instanceof HaxeAnonymousType anonymousType) {
       HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel)anonymousType.getModel();
       result.addAll(model.getAnonymousMethodDeclarations());
       result.addAll(model.getAnonymousFieldDeclarations());

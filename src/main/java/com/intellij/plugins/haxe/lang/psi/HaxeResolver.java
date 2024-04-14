@@ -491,8 +491,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         HaxeModel model = fieldDeclaration.getModel();
         if (model instanceof HaxeFieldModel fieldModel) {
           HaxeClassModel declaringClass = fieldModel.getDeclaringClass();
-          List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
-          return findTypeParameterPsi(reference, params);
+          if (declaringClass != null) {
+            List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
+            return findTypeParameterPsi(reference, params);
+          }
         }
       }
 
@@ -504,8 +506,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           return methodTypeParameter;
         }
         HaxeClassModel declaringClass = methodDeclaration.getModel().getDeclaringClass();
-        List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
-        return findTypeParameterPsi(reference, params);
+        if (declaringClass != null) {
+          List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
+          return findTypeParameterPsi(reference, params);
+        }
       }
 
       HaxeConstructorDeclaration constructorDeclaration = PsiTreeUtil.getParentOfType(typeTag, HaxeConstructorDeclaration.class);
@@ -513,17 +517,20 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         // reference is a type tag in constructor, we should check  owning class type parameters
         // so we won't resolve this to a type outside the class if its a type parameter
         HaxeClassModel declaringClass = constructorDeclaration.getModel().getDeclaringClass();
-        List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
-        return findTypeParameterPsi(reference, params);
+        if (declaringClass != null) {
+          List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
+          return findTypeParameterPsi(reference, params);
+        }
 
       }
       HaxeEnumValueDeclaration enumDeclaration = PsiTreeUtil.getParentOfType(typeTag, HaxeEnumValueDeclaration.class);
       if (enumDeclaration != null) {
         // EnumValueDeclarations does not define TypeParameters, only the parent EnumType can have these.
         HaxeClassModel declaringClass = ((HaxeEnumValueModel)enumDeclaration.getModel()).getDeclaringClass();
-        List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
-        return findTypeParameterPsi(reference, params);
-
+        if (declaringClass != null) {
+          List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
+          return findTypeParameterPsi(reference, params);
+        }
       }
     }
     return null;

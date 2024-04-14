@@ -28,11 +28,14 @@ public class TypeParameterUtil {
         ResultHolder constraint = model.getConstraint(resolver);
         typeParamMap.put(model.getName(), constraint);
       }
-      if(method.isConstructor()) {
-        params = method.getModel().getDeclaringClass().getGenericParams();
-        for (HaxeGenericParamModel model : params) {
-          ResultHolder constraint = model.getConstraint(resolver);
-          typeParamMap.put(model.getName(), constraint);
+      if (method.isConstructor()) {
+        HaxeClassModel declaringClass = method.getModel().getDeclaringClass();
+        if (declaringClass != null) {
+          params = declaringClass.getGenericParams();
+          for (HaxeGenericParamModel model : params) {
+            ResultHolder constraint = model.getConstraint(resolver);
+            typeParamMap.put(model.getName(), constraint);
+          }
         }
       }
 

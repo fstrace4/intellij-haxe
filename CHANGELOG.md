@@ -1,4 +1,7 @@
 # Changelog
+## 1.5.2
+* Fixed: Methods and properties in module scope are now resolved correctly.
+
 ## 1.5.1
 * Fixed: Issue setting up Haxe SDK in intelliJ 2024.1
 ## 1.5.0

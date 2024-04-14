@@ -67,6 +67,6 @@ public class GetterSetterMethodBuilder {
       result.append(name);
       result.append("= value;");
     }
-    result.append("\n}");
+    result.append("\n}\n\n");
   }
 }

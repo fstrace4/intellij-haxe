@@ -22,8 +22,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.ide.generation.GetterSetterMethodBuilder;
 import com.intellij.plugins.haxe.lang.psi.HaxeNamedComponent;
-import com.intellij.plugins.haxe.model.HaxeClassModel;
-import com.intellij.plugins.haxe.model.HaxeFieldModel;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -35,12 +34,21 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class CreateGetterSetterQuickfix extends BaseIntentionAction {
+  private final HaxeModuleModel moduleModel;
   private final HaxeClassModel classModel;
   private final HaxeFieldModel field;
   private final Boolean generateGetter;
 
-  public CreateGetterSetterQuickfix(HaxeClassModel classModel, HaxeFieldModel field, Boolean generateGetter) {
-    this.classModel = classModel;
+  public CreateGetterSetterQuickfix(HaxeCommonMembersModel parentModel, HaxeFieldModel field, Boolean generateGetter) {
+    if (parentModel instanceof HaxeClassModel classModel) {
+      this.classModel = classModel;
+      this.moduleModel = null;
+    }else if (parentModel instanceof HaxeModuleModel moduleModel) {
+      this.classModel = null;
+      this.moduleModel = moduleModel;
+    }else {
+      throw new RuntimeException("Unknown parent for field : " + field.getName());
+    }
     this.field = field;
     this.generateGetter = generateGetter;
   }
@@ -66,7 +74,8 @@ public class CreateGetterSetterQuickfix extends BaseIntentionAction {
   @Override
   public void invoke(@NotNull final Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
     ApplicationManager.getApplication().invokeLater(() -> {
-        if (classModel.getBodyPsi() == null) return;
+        if (classModel == null && moduleModel == null) return;
+        if (classModel != null && classModel.getBodyPsi() == null) return;
 
         final StringBuilder builder = new StringBuilder();
         GetterSetterMethodBuilder.build(builder, field, generateGetter);
@@ -75,11 +84,15 @@ public class CreateGetterSetterQuickfix extends BaseIntentionAction {
             List<HaxeNamedComponent> elements =
               HaxeElementGenerator.createNamedSubComponentsFromText(project, builder.toString());
 
-            PsiElement body = classModel.getBodyPsi();
-            PsiElement anchor = body.getLastChild().getPrevSibling();
+            //PsiElement body = classModel != null ? classModel.getBodyPsi() : moduleModel.getBasePsi();
+          PsiElement body = field.getBasePsi();
+          PsiElement anchor = body.getLastChild();
+
+          PsiElement newLine =  PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
+          anchor = body.addAfter(newLine, anchor);
 
             for (PsiElement element : elements) {
-              PsiElement newLine =  PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
+              newLine =  PsiParserFacade.getInstance(project).createWhiteSpaceFromText("\n\n");
               anchor = body.addAfter(element, anchor);
               anchor = body.addBefore(newLine, anchor);
             }

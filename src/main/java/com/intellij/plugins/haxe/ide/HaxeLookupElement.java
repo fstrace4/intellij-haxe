@@ -24,10 +24,7 @@ import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.HaxeMemberModel;
-import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
-import com.intellij.plugins.haxe.model.HaxeMethodContext;
-import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import org.jetbrains.annotations.NotNull;
 
@@ -130,7 +127,8 @@ public class HaxeLookupElement extends LookupElement {
 
       // Check for non-inherited members to highlight them as intellij-java does
       if (leftReference != null) {
-        if (model.getDeclaringClass().getPsi() == leftReference.getHaxeClass()) {
+        HaxeClassModel declaringClass = model.getDeclaringClass();
+        if (declaringClass!= null && declaringClass.getPsi() == leftReference.getHaxeClass()) {
           bold = true;
         }
       }

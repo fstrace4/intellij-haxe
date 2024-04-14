@@ -338,14 +338,10 @@ externInterfaceDeclaration ::= externAndMaybePrivate? 'interface' componentName 
 moduleMemberModifier::= privateKeyWord | inlineKeyWord
 
 private moduleBody ::= embeddedMeta* moduleBodyPart+  {pin=2}
-private moduleBodyPart ::=  topLevelDeclaration |  moduleVarDeclarationList |  moduleMethodDeclaration  {recoverWhile="class_body_part_recover"}
+private moduleBodyPart ::=  topLevelDeclaration |  moduleFieldDeclaration |  moduleMethodDeclaration  {recoverWhile="class_body_part_recover"}
 
-moduleVarDeclaration ::=  componentName typeTag? varInit?
-{pin=3 extends=localVarDeclaration} // TODO this "extends" solution is probably not the best solution for this, but it works as a quick fix
-
-moduleVarDeclarationList ::= moduleMemberModifier*  mutabilityModifier moduleVarDeclaration (',' moduleVarDeclaration)* <<semicolonUnlessPrecededByStatement>>
-{pin=3 extends=localVarDeclarationList} // TODO this "extends" solution is probably not the best solution for this, but it works as a quick fix
-
+moduleFieldDeclaration ::= moduleMemberModifier* mutabilityModifier componentName propertyDeclaration? typeTag? varInit? <<semicolonUnlessPrecededByStatement>>
+{extends=fieldDeclaration}
 
 classDeclaration ::= classModifierList? 'class' componentName genericParam? inheritList? classBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
@@ -430,7 +426,7 @@ private lambdaBody ::= blockStatement
                        | expression
 
 private localFunctionDeclarationAttribute ::= inlineKeyWord;
-moduleMethodDeclaration ::= moduleMemberModifier*  methodHeader untypedKeyword? functionCommonBody {pin=2}
+moduleMethodDeclaration ::= moduleMemberModifier*  methodHeader untypedKeyword? functionCommonBody {pin=2 extends=methodDeclaration}
 
 methodDeclaration ::= methodModifier* methodHeader untypedKeyword? functionCommonBody
 {pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeMethod"}

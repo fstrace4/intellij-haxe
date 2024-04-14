@@ -106,6 +106,7 @@ public class HaxeElementGenerator {
     final HaxeModule haxeModule = PsiTreeUtil.getChildOfType(dummyFile, HaxeModule.class);
     final HaxeClass haxeClass = PsiTreeUtil.getChildOfType(haxeModule, HaxeClass.class);
     assert haxeClass != null;
+    reformat(haxeClass);
     return sortNamedSubComponents(HaxeResolveUtil.findNamedSubComponents(null, haxeClass));
   }
 
