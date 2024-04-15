@@ -1,6 +1,8 @@
 # Changelog
 ## 1.5.2
 * Fixed: Methods and properties in module scope are now resolved correctly.
+* Fixed: Issue with reification parsing
+* Fixed: incorrect type parameter use in some cases where Method typeParameter and classParameter was the same name.
 
 ## 1.5.1
 * Fixed: Issue setting up Haxe SDK in intelliJ 2024.1

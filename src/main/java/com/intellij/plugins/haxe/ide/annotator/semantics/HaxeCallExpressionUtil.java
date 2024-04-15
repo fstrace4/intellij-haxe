@@ -7,6 +7,7 @@ import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodDeclarationImpl;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
+import com.intellij.plugins.haxe.model.type.resolver.ResolverEntry;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -92,13 +93,8 @@ public class HaxeCallExpressionUtil {
     }
     HaxeGenericResolver resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, classTypeResolver);
 
-
-
-
     int parameterCounter = 0;
     int argumentCounter = 0;
-
-
 
     boolean isRestArg = false;
     HaxeParameterModel parameter = null;
@@ -107,13 +103,16 @@ public class HaxeCallExpressionUtil {
     ResultHolder parameterType = null;
     ResultHolder argumentType = null;
 
+    resolver.addAll(methodModel.getGenericResolver(resolver));
+    // we dont want Class type parameters to interfere with method  type parameters
+    resolver = resolver.removeClassScopeIfMethodIsPresent();
+
     HaxeGenericResolver argumentResolver = resolver.withoutUnknowns();
     // methods might have typeParameters with same name as a parent so we need to make sure we are not resolving parents type
     // when resolving parameters
     HaxeGenericResolver parameterResolver = resolver.withoutUnknowns();
-    resolver.addAll(methodModel.getGenericResolver(resolver));
 
-    Map<String, ResultHolder> typeParamMap = createTypeParameterConstraintMap(method, resolver);
+    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(method, resolver);
 
     if (validation.isStaticExtension) {
       // this might not work for literals, need to handle those in a different way
@@ -131,12 +130,13 @@ public class HaxeCallExpressionUtil {
           argumentResolver.addAll(remappedResolver);
           resolver.addAll(remappedResolver);
 
-          applyCallieConstraints(typeParamMap, remappedResolver);
+          applyCallieConstraints(typeParamTable, remappedResolver);
 
         }
       }
     }else {
-      applyCallieConstraints(typeParamMap, callieType.getClassType().getGenericResolver());
+      applyCallieConstraints(typeParamTable, callieType.getClassType().getGenericResolver());
+
     }
 
 
@@ -187,8 +187,8 @@ public class HaxeCallExpressionUtil {
       }
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
-      if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, resolver, typeParamMap);
+      if (containsTypeParameter(parameterType, typeParamTable)) {
+        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, resolver, typeParamTable);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, argumentResolver);
       }
@@ -201,7 +201,7 @@ public class HaxeCallExpressionUtil {
       }
 
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamTable);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -343,19 +343,10 @@ public class HaxeCallExpressionUtil {
       if (argumentList.size() > maxArgAllowed) {
         String message = HaxeBundle.message("haxe.semantic.method.parameter.too.many", maxArgAllowed, argumentList.size());
         validation.errors.add(new ErrorRecord(callExpressionList.getTextRange(), message));
-        //holder.newAnnotation(HighlightSeverity.ERROR, message).range(callExpressionList).create();
         return validation;
       }
 
-      // generics and type parameter
-      //HaxeGenericSpecialization specialization = specificFunction.getSpecialization();
-      HaxeGenericResolver resolver = null;
-
-
-      //if (resolver == null && specialization != null) {
-      //  resolver = specialization.toGenericResolver(callExpression);
-      //}
-      if (resolver == null) resolver = new HaxeGenericResolver();
+      HaxeGenericResolver resolver  = new HaxeGenericResolver();
 
       resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, resolver);
 
@@ -479,21 +470,18 @@ public class HaxeCallExpressionUtil {
             PsiElement second = UsefulPsiTreeUtil.getNextSiblingSkipWhiteSpacesAndComments(first);
             if (second != null) {
               TextRange range = TextRange.create(first.getTextOffset(), second.getTextOffset() + 1);
-              //holder.newAnnotation(HighlightSeverity.ERROR, message).range(range).create();
               validation.errors.add(new ErrorRecord(range, message));
               return validation;
             }
           }
         }
       }
-      //holder.newAnnotation(HighlightSeverity.ERROR, message).range(resolvedNewExpression).create();
       validation.errors.add(new ErrorRecord(newExpression.getTextRange(), message));
       return validation;
     }
     //max arg check
     if (argumentList.size() > maxArgAllowed) {
       String message = HaxeBundle.message("haxe.semantic.method.parameter.too.many", maxArgAllowed, argumentList.size());
-      //holder.newAnnotation(HighlightSeverity.ERROR, message).range(resolvedNewExpression).create();
       validation.errors.add(new ErrorRecord(newExpression.getTextRange(), message));
       return validation;
     }
@@ -510,7 +498,7 @@ public class HaxeCallExpressionUtil {
 
     resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(newExpression, resolver);
 
-    Map<String, ResultHolder> typeParamMap = createTypeParameterConstraintMap(constructor.getMethod(), resolver);
+    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(constructor.getMethod(), resolver);
 
 
     int parameterCounter = 0;
@@ -558,8 +546,8 @@ public class HaxeCallExpressionUtil {
       parameterType = resolveParameterType(parameter, parameterResolver);
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
-      if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamMap);
+      if (containsTypeParameter(parameterType, typeParamTable)) {
+        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamTable);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }
@@ -574,7 +562,7 @@ public class HaxeCallExpressionUtil {
 
       //TODO mlo: note to self , when argument function, can assign to "Function"
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamTable);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -662,14 +650,12 @@ public class HaxeCallExpressionUtil {
           }
         }
       }
-      //holder.newAnnotation(HighlightSeverity.ERROR, message).range(expression).create();
       validation.errors.add(new ErrorRecord(expression.getTextRange(), message));
       return validation;
     }
     //max arg check
     if (argumentList.size() > maxArgAllowed) {
       String message = HaxeBundle.message("haxe.semantic.method.parameter.too.many", maxArgAllowed, argumentList.size());
-      //holder.newAnnotation(HighlightSeverity.ERROR, message).range(expression).create();
       validation.errors.add(new ErrorRecord(expression.getTextRange(), message));
       return validation;
     }
@@ -679,14 +665,14 @@ public class HaxeCallExpressionUtil {
     HaxeGenericResolver resolver = null;
 
 
-    if (resolver == null && specialization != null) {
+    if (specialization != null) {
       resolver = specialization.toGenericResolver(expression);
     }
     if (resolver == null) resolver = new HaxeGenericResolver();
 
     resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(expression, resolver);
 
-    Map<String, ResultHolder> typeParamMap = createTypeParameterConstraintMap(declaringClass.getHaxeClassModel().getGenericParams(), resolver);
+    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(declaringClass.getHaxeClassModel().getGenericParams(), resolver);
 
 
     int parameterCounter = 0;
@@ -731,8 +717,8 @@ public class HaxeCallExpressionUtil {
       parameterType = resolveParameterType(parameter, localResolver);
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
-      if (containsTypeParameter(parameterType, typeParamMap)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamMap);
+      if (containsTypeParameter(parameterType, typeParamTable)) {
+        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamTable);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }
@@ -747,7 +733,7 @@ public class HaxeCallExpressionUtil {
 
       //TODO mlo: note to self , when argument function, can assign to "Function"
 
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamMap);
+      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamTable);
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
@@ -811,39 +797,33 @@ public class HaxeCallExpressionUtil {
   private static void inheritTypeParametersFromArgument(ResultHolder parameterType,
                                                         ResultHolder argumentType,
                                                         HaxeGenericResolver argumentResolver,
-                                                        HaxeGenericResolver parentResolver, Map<String, ResultHolder> typeParamMap) {
+                                                        HaxeGenericResolver parentResolver, TypeParameterTable typeParamTable) {
     if (argumentType == null) return; // this should not happen, we should have an argument
-    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType().withoutConstantValue(), new HaxeGenericResolver(), typeParamMap);
-    for (String name : inherit.names()) {
+    HaxeGenericResolver inherit = findTypeParametersToInherit(parameterType.getType(), argumentType.getType().withoutConstantValue(), new HaxeGenericResolver(), typeParamTable);
+    for (ResolverEntry entry : inherit.entries()) {
+      String name = entry.name();
+      //ResolveSource source = entry.resolveSource();
       // make sure any inherited types conforms with constraints
-      if (typeParamMap.containsKey(name)) {
-        ResultHolder constraint = typeParamMap.get(name);
-        ResultHolder type = inherit.resolve(name);
-        if (type == null) continue;
-        // if TypeParameter without constraint
-        if (constraint == null) {
-          typeParamMap.put(name, type);
-        }else if (constraint.canAssign(type)) {
-          typeParamMap.put(name, type);
+
+      // TODO needs clean up
+      for(ResolveSource resolveSource : List.of(ResolveSource.METHOD_TYPE_PARAMETER, ResolveSource.CLASS_TYPE_PARAMETER)) {
+        if (typeParamTable.contains(name, resolveSource)) {
+          ResultHolder constraint = typeParamTable.get(name);
+          ResultHolder type = inherit.resolve(name);
+          if (type == null) continue;
+          // if TypeParameter without constraint
+          if (constraint == null) {
+            typeParamTable.put(name, type, resolveSource);
+          }
+          else if (constraint.canAssign(type)) {
+            typeParamTable.put(name, type, resolveSource);
+          }
+          argumentResolver.add(name, type, resolveSource);
+          parentResolver.add(name, type, resolveSource);
+          break;
         }
-        argumentResolver.add(name, type, ResolveSource.ARGUMENT_TYPE);
-        parentResolver.add(name, type, ResolveSource.ARGUMENT_TYPE);
       }
     }
-
-    //argumentResolver.addAll(inherit);
-    //parentResolver.addAll(inherit);
-    //if (parameterType.getClassType() != null) {
-    //  // parameter is a typeParameter type, we can just add it to resolver
-    //  // TODO check if it exists
-    //  if (parameterType.getClassType().isTypeParameter()) {
-    //    String className = parameterType.getClassType().getClassName();
-    //    argumentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-    //    // adding inherited value to parent resolver (the one returned with validation result so we can use it in other evaluations)
-    //    parentResolver.add(className, argumentType, ResolveSource.ARGUMENT_TYPE);
-    //    typeParamMap.put(className, argumentType);
-    //  }
-    //}
   }
 
   private static ResultHolder resolveArgumentType(HaxeExpression argument, HaxeGenericResolver resolver) {
@@ -920,7 +900,7 @@ public class HaxeCallExpressionUtil {
 
   private static HaxeGenericResolver findTypeParametersToInherit(SpecificTypeReference parameter,
                                                                  SpecificTypeReference argument,
-                                                                 HaxeGenericResolver resolver, Map<String, ResultHolder> map) {
+                                                                 HaxeGenericResolver resolver, TypeParameterTable typeParamTable) {
 
     //fully resolving to make sure we dont have issues with Null<T> vs just T etc.
     if (parameter instanceof SpecificHaxeClassReference parameterReference) {
@@ -943,7 +923,7 @@ public class HaxeCallExpressionUtil {
           if (resolve != null && resolve.isClassType()) {
             String className = resolve.getClassType().getClassName();
 
-            if (className != null && map.containsKey(className)) {
+            if (className != null && typeParamTable.contains(className)) {
               ResultHolder argResolved = argResolver.resolve(className);
               if (argResolved != null) {
                 resolver.add(className, argResolved, ResolveSource.ARGUMENT_TYPE);
@@ -961,14 +941,14 @@ public class HaxeCallExpressionUtil {
         for (int i = 0; i < parameterFnArguments.size(); i++) {
           SpecificTypeReference functionArgument = argumentFnArguments.get(i).getType().getType();
           SpecificTypeReference parameterArgument = parameterFnArguments.get(i).getType().getType();
-          findTypeParametersToInherit(parameterArgument, functionArgument, resolver, map);
+          findTypeParametersToInherit(parameterArgument, functionArgument, resolver, typeParamTable);
         }
       }
 
       ResultHolder parameterReturnType = parameterReference.getReturnType();
       ResultHolder argumentReturnType = argumentReference.getReturnType();
 
-      findTypeParametersToInherit(parameterReturnType.getType(), argumentReturnType.getType(), resolver, map);
+      findTypeParametersToInherit(parameterReturnType.getType(), argumentReturnType.getType(), resolver, typeParamTable);
     }
     if (parameter.isTypeParameter() && !argument.isTypeParameter() && !argument.isUnknown()) {
       if (parameter instanceof  SpecificHaxeClassReference classReference) {

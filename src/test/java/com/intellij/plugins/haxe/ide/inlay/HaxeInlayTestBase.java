@@ -1,6 +1,9 @@
 package com.intellij.plugins.haxe.ide.inlay;
 
 import com.intellij.codeInsight.hints.declarative.InlayHintsProvider;
+import com.intellij.openapi.diagnostic.DefaultLogger;
+import com.intellij.openapi.diagnostic.LogLevel;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.LanguageLevelProjectExtension;
 import com.intellij.openapi.util.RecursionManager;
@@ -24,6 +27,17 @@ public abstract class HaxeInlayTestBase extends DeclarativeInlayHintsProviderTes
 
   private final IdeaTestFixtureFactory testFixtureFactory = IdeaTestFixtureFactory.getFixtureFactory();
   private ModuleFixtureBuilder moduleFixtureBuilder;
+
+
+  protected HaxeInlayTestBase() {
+    super();
+    Logger.setUnitTestMode();
+    Logger.setFactory(category -> {
+      DefaultLogger logger = new DefaultLogger(category);
+      logger.setLevel(LogLevel.WARNING);
+      return logger;
+    });
+  }
 
   @Override
   protected abstract String getBasePath();

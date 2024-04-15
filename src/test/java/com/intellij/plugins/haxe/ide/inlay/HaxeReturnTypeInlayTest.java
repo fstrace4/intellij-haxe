@@ -27,5 +27,10 @@ public class HaxeReturnTypeInlayTest extends HaxeInlayTestBase {
     doTest(hintsProvider);
   }
 
+  @Test
+  public void testReturnTypeGenerics() throws Exception {
+    doTest(hintsProvider);
+  }
+
 
 }

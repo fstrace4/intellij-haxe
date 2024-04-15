@@ -26,6 +26,10 @@ public class HaxeForLoopInlayTest extends HaxeInlayTestBase {
   public void testPreview() throws Exception {
     doTest(hintsProvider);
   }
+  @Test
+  public void testLoopGenerics() throws Exception {
+    doTest(hintsProvider);
+  }
 
 
 }

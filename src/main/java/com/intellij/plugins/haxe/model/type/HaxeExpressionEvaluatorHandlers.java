@@ -240,7 +240,12 @@ public class HaxeExpressionEvaluatorHandlers {
 
             if (haxeClass.isGeneric()) {
               @NotNull ResultHolder[] specifics = resolver.getSpecificsFor(classReference);
-              typeHolder = SpecificHaxeClassReference.withGenerics(classReference, specifics).createHolder();
+              SpecificHaxeClassReference specificReference = SpecificHaxeClassReference.withGenerics(classReference, specifics);
+              // hackish way to ignore typeParameters for dynamic if not in expression
+              if (specificReference.isDynamic() && element.textMatches("Dynamic")) {
+                specificReference = SpecificHaxeClassReference.getDynamic(element);
+              }
+              typeHolder = specificReference.createHolder();
             }
             else {
               typeHolder = SpecificHaxeClassReference.withoutGenerics(classReference).createHolder();

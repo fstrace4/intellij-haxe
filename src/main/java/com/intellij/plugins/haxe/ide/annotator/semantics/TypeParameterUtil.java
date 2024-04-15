@@ -18,15 +18,16 @@ import java.util.*;
 public class TypeParameterUtil {
 
   @NotNull
-  public static Map<String, ResultHolder> createTypeParameterConstraintMap(HaxeMethod method, HaxeGenericResolver resolver) {
-    Map<String, ResultHolder> typeParamMap = new HashMap<>();
+  public static TypeParameterTable createTypeParameterConstraintTable(HaxeMethod method, HaxeGenericResolver resolver) {
+
+    TypeParameterTable typeParamTable = new TypeParameterTable();
 
     HaxeMethodModel methodModel = method.getModel();
     if (methodModel != null) {
       List<HaxeGenericParamModel> params = methodModel.getGenericParams();
       for (HaxeGenericParamModel model : params) {
         ResultHolder constraint = model.getConstraint(resolver);
-        typeParamMap.put(model.getName(), constraint);
+        typeParamTable.put(model.getName(), constraint, ResolveSource.METHOD_TYPE_PARAMETER);
       }
       if (method.isConstructor()) {
         HaxeClassModel declaringClass = method.getModel().getDeclaringClass();
@@ -34,7 +35,7 @@ public class TypeParameterUtil {
           params = declaringClass.getGenericParams();
           for (HaxeGenericParamModel model : params) {
             ResultHolder constraint = model.getConstraint(resolver);
-            typeParamMap.put(model.getName(), constraint);
+            typeParamTable.put(model.getName(), constraint, ResolveSource.CLASS_TYPE_PARAMETER);
           }
         }
       }
@@ -44,44 +45,49 @@ public class TypeParameterUtil {
         List<HaxeGenericParamModel> classParams = declaringClass.getGenericParams();
         for (HaxeGenericParamModel model : classParams) {
           ResultHolder constraint = model.getConstraint(resolver);
-          typeParamMap.put(model.getName(), constraint);
+          // make sure we do not add if method type parameter with the same name is present
+          if(!typeParamTable.contains(model.getName(), ResolveSource.METHOD_TYPE_PARAMETER)) {
+            typeParamTable.put(model.getName(), constraint, ResolveSource.CLASS_TYPE_PARAMETER);
+          }
         }
       }
     }
-    return typeParamMap;
+    return typeParamTable;
   }
 
-  public static void applyCallieConstraints(Map<String, ResultHolder> map, HaxeGenericResolver callieResolver) {
+  public static void applyCallieConstraints(TypeParameterTable table, HaxeGenericResolver callieResolver) {
     HaxeGenericResolver resolver = new HaxeGenericResolver();
     resolver.addAll(callieResolver, ResolveSource.CLASS_TYPE_PARAMETER);
 
     for (String name : resolver.names()) {
-      ResultHolder resolve = resolver.resolve(name);
-      map.put(name, resolve);
+      if(table.contains(name, ResolveSource.CLASS_TYPE_PARAMETER)) {
+        ResultHolder resolve = resolver.resolve(name);
+        table.put(name, resolve, ResolveSource.CLASS_TYPE_PARAMETER);
+      }
     }
   }
 
 
   @NotNull
-  static Map<String, ResultHolder> createTypeParameterConstraintMap(List<HaxeGenericParamModel> modelList,
+  static TypeParameterTable  createTypeParameterConstraintTable(List<HaxeGenericParamModel> modelList,
                                                                            HaxeGenericResolver resolver) {
-    Map<String, ResultHolder> typeParamMap = new HashMap<>();
+    TypeParameterTable typeParamTable = new TypeParameterTable();
     for (HaxeGenericParamModel model : modelList) {
       ResultHolder constraint = model.getConstraint(resolver);
       if (constraint != null && constraint.isUnknown()) {
-        typeParamMap.put(model.getName(), constraint);
+        typeParamTable.put(model.getName(), constraint, ResolveSource.CLASS_TYPE_PARAMETER);
       }
     }
-    return typeParamMap;
+    return typeParamTable;
   }
 
-  static boolean containsTypeParameter(@NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
+  static boolean containsTypeParameter(@NotNull ResultHolder parameterType, @NotNull TypeParameterTable typeParamTable) {
     if (parameterType.getClassType() != null) {
       if (parameterType.getClassType().isTypeParameter()) return true;
 
       ResultHolder[] specifics = parameterType.getClassType().getSpecifics();
       if (specifics.length == 0) {
-        return typeParamMap.containsKey(parameterType.getClassType().getClassName());
+        return typeParamTable.contains(parameterType.getClassType().getClassName());
       }
       List<ResultHolder> recursionGuard = new ArrayList<>();
 
@@ -91,7 +97,7 @@ public class TypeParameterUtil {
           List<ResultHolder> list = getSpecificsIfClass(specific, recursionGuard);
           if (list.stream()
             .map(holder -> holder.getClassType().getClassName())
-            .anyMatch(typeParamMap::containsKey)) {
+            .anyMatch(typeParamTable::contains)) {
             return true;
           }
         }
@@ -100,21 +106,21 @@ public class TypeParameterUtil {
       SpecificFunctionReference fn = parameterType.getFunctionType();
       List<SpecificFunctionReference.Argument> arguments = fn.getArguments();
       if (arguments != null) {
-        boolean anyMatch = arguments.stream().anyMatch(argument -> containsTypeParameter(argument.getType(), typeParamMap));
+        boolean anyMatch = arguments.stream().anyMatch(argument -> containsTypeParameter(argument.getType(), typeParamTable));
         if(anyMatch) return true;
       }
-      return containsTypeParameter(fn.getReturnType(), typeParamMap);
+      return containsTypeParameter(fn.getReturnType(), typeParamTable);
     }
 
     return false;
   }
-  static Optional<ResultHolder> findConstraintForTypeParameter(HaxeParameterModel parameter, @NotNull ResultHolder parameterType, @NotNull Map<String, ResultHolder> typeParamMap) {
+  static Optional<ResultHolder> findConstraintForTypeParameter(HaxeParameterModel parameter, @NotNull ResultHolder parameterType, @NotNull TypeParameterTable typeParamTable) {
     if (!parameterType.isClassType()) return Optional.empty();
 
     ResultHolder[] specifics = parameterType.getClassType().getSpecifics();
     if (specifics.length == 0){
       String className = parameterType.getClassType().getClassName();
-      return typeParamMap.containsKey(className) ? Optional.ofNullable(typeParamMap.get(className)) : Optional.empty();
+      return typeParamTable.contains(className) ? Optional.ofNullable(typeParamTable.get(className)) : Optional.empty();
     }
     List<ResultHolder> result = new ArrayList<>();
     List<ResultHolder> recursionGuard = new ArrayList<>();
@@ -129,9 +135,9 @@ public class TypeParameterUtil {
 
 
     result.stream().map(holder -> holder.getClassType().getClassName())
-      .filter(typeParamMap::containsKey)
-      .filter( s ->  typeParamMap.get(s) != null)
-      .forEach( s ->  resolver.addConstraint(s, typeParamMap.get(s), ResolveSource.CLASS_TYPE_PARAMETER));
+      .filter(typeParamTable::contains)
+      .filter( s ->  typeParamTable.get(s) != null)
+      .forEach( s ->  resolver.addConstraint(s, typeParamTable.get(s), ResolveSource.CLASS_TYPE_PARAMETER));
 
     ResultHolder type = HaxeTypeResolver.getTypeFromTypeTag(parameter.getTypeTagPsi(), parameter.getNamePsi());
     if (type.isTypeParameter()) {
@@ -154,14 +160,4 @@ public class TypeParameterUtil {
     }
   return result;
   }
-  //private static Stream<ResultHolder> getSpecificsIfClass(@NotNull ResultHolder holder) {
-  //  List<ResultHolder> proccesed = new ArrayList<>();
-  //  @NotNull ResultHolder[] specifics = holder.getClassType().getSpecifics();
-  //  if (specifics.length == 0) return Stream.of(holder);
-  //  return Arrays.stream(specifics)
-  //    .filter(ResultHolder::isClassType)
-  //    .filter(h -> !proccesed.contains(h) )// avoid recursive loop (classes can have itself as type parameter)
-  //    .peek(proccesed::add)
-  //    .flatMap(TypeParameterUtil::getSpecificsIfClass);
-  //}
 }

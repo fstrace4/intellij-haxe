@@ -808,7 +808,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
                                    ? genericResolver.resolveReturnType(typeHolder)
                                    : genericResolver.resolve(typeParameterName);
 
-      if (possibleValue != null) {
+      if (possibleValue != null && !possibleValue.isUnknown()) {
         // TODO considder?
         //HaxeGenericResolver resolverWithoutCurrentTypeParam = genericResolver.without(typeParameterName);
         //ResultHolder holder = propagateGenericsToType(possibleValue, resolverWithoutCurrentTypeParam);

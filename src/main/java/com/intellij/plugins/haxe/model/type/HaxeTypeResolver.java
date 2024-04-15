@@ -71,6 +71,7 @@ public class HaxeTypeResolver {
       resolver = resolver == null ? null : resolver.withoutUnknowns();
       HaxeGenericResolver methodResolver = method.getModel().getGenericResolver(null);
       methodResolver.addAll(resolver);
+      methodResolver = methodResolver.removeClassScopeIfMethodIsPresent().withoutUnknowns();
       return method.getModel().getFunctionType(methodResolver).createHolder();
     }
     // @TODO: error
@@ -149,6 +150,13 @@ public class HaxeTypeResolver {
       }
       if (result != null) {
         return result;
+      }
+    }
+    if (comp instanceof  HaxeGenericListPart genericListPart) {
+      HaxeComponentName componentName = genericListPart.getComponentName();
+      if(componentName != null) {
+        HaxeClassReference reference = new HaxeClassReference(genericListPart.getName(), componentName, true);
+        return SpecificHaxeClassReference.withoutGenerics(reference).createHolder();
       }
     }
 
@@ -334,16 +342,9 @@ public class HaxeTypeResolver {
       List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> getPsiElementType(statement, resolver)).toList();
       if (returnTypes.isEmpty()) return SpecificHaxeClassReference.getVoid(psi).createHolder();
       ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi);
-      return resolveParameterizedType(holder, resolver);
 
-      ////Performance tweak avoiding  full body evaluation if it does not contain any return statements (no returns = void)
-      //HaxeReturnStatement returnStatement = findReturnStatementForMethod(psi);
-      //if (returnStatement == null || isVoidReturn(returnStatement)) {
-      //  return SpecificHaxeClassReference.getVoid(psi).createHolder();
-      //}
-      //
-      //final HaxeExpressionEvaluatorContext context = getPsiElementType(psi, (AnnotationHolder)null, resolver);
-      //return resolveParameterizedType(context.getReturnType(), resolver);
+      // method typeParameters should have been used when resolving returnTypes, we want to avoid double resolve
+      return resolveParameterizedType(holder, resolver == null ? null : resolver.withoutMethodTypeParameters());
 
     }
     else if (comp instanceof HaxeFunctionLiteral) {

@@ -130,7 +130,7 @@ public class HaxeParameterModel extends HaxeBaseMemberModel implements HaxeModel
 
       if(type instanceof SpecificHaxeClassReference classReference) {
         ResultHolder resolved = resolver.resolve(classReference.getClassName());
-        if (resolved != null) return resolved;
+        if (resolved != null && !resolved.isUnknown()) return resolved;
       }
 
     }

@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.intellij.plugins.haxe.model.type.resolver.ResolveSource.ARGUMENT_TYPE;
+import static com.intellij.plugins.haxe.model.type.resolver.ResolveSource.*;
 
 public class HaxeGenericResolver {
   // This must remain ordered, thus the LinkedHashMap.
@@ -453,6 +453,10 @@ public class HaxeGenericResolver {
   public String[] names() {
     return resolvers.stream().map(ResolverEntry::name).toArray(String[]::new);
   }
+  @NotNull
+  public ResolverEntry[] entries() {
+    return resolvers.toArray(ResolverEntry[]::new);
+  }
 
   /**
    * @return All specific generic types in this resolver in the order of their adding.
@@ -514,6 +518,12 @@ public class HaxeGenericResolver {
         resolver.constaints.add(entry);
       }
     }
+    return resolver;
+  }
+  public HaxeGenericResolver copy() {
+    HaxeGenericResolver resolver = new HaxeGenericResolver();
+    resolver.resolvers.addAll(resolvers);
+    resolver.constaints.addAll(constaints);
     return resolver;
   }
 
@@ -637,5 +647,22 @@ public class HaxeGenericResolver {
       resolvers.removeIf(entry -> entry.name().equals(name));
       constaints.removeIf(entry -> entry.name().equals(name));
     }
+  }
+
+  public HaxeGenericResolver removeClassScopeIfMethodIsPresent() {
+    List<String> methodTypeParameters = new ArrayList<>();
+    methodTypeParameters.addAll(resolvers.stream().filter(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER).map(ResolverEntry::name).toList());
+    methodTypeParameters.addAll(constaints.stream().filter(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER).map(ResolverEntry::name).toList());
+    HaxeGenericResolver copy = copy();
+    copy.resolvers.removeIf(entry ->methodTypeParameters.contains(entry.name())  &&  entry.resolveSource() == CLASS_TYPE_PARAMETER);
+    copy.constaints.removeIf(entry ->methodTypeParameters.contains(entry.name())  &&  entry.resolveSource() == CLASS_TYPE_PARAMETER);
+    return copy;
+  }
+
+  public HaxeGenericResolver withoutMethodTypeParameters() {
+    HaxeGenericResolver copy = copy();
+    copy.resolvers.removeIf(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER);
+    copy.constaints.removeIf(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER);
+    return copy;
   }
 }

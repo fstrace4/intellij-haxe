@@ -26,6 +26,10 @@ public class HaxeUntypedParameterInlayTest extends HaxeInlayTestBase {
   public void testPreview() throws Exception {
     doTest(hintsProvider);
   }
+  @Test
+  public void testUntypedWithGenerics() throws Exception {
+    doTest(hintsProvider);
+  }
 
 
 }
