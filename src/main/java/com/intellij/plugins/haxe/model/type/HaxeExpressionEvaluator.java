@@ -165,6 +165,10 @@ public class HaxeExpressionEvaluator {
         return handleTryStatement(context, resolver, tryStatement);
       }
 
+      if (element instanceof HaxeCatchStatement catchStatement) {
+        return handleCatchStatement(context, resolver, catchStatement);
+      }
+
       if (element instanceof HaxeForStatement forStatement) {
         return handleForStatement(context, resolver, forStatement);
       }

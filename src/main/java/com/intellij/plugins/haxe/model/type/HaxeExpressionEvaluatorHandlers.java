@@ -43,7 +43,6 @@ import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.*;
 public class HaxeExpressionEvaluatorHandlers {
 
 
-  //private static ThreadLocal<HashSet<PsiElement>> resolvesInProcess = new ThreadLocal<>().withInitial(()->new HashSet<PsiElement>());
   private static final RecursionGuard<PsiElement>
     evaluatorHandlersRecursionGuard = RecursionManager.createGuard("EvaluatorHandlersRecursionGuard");
 
@@ -1627,6 +1626,23 @@ public class HaxeExpressionEvaluatorHandlers {
     }
     return HaxeTypeUnifier.unifyHolders(blockResults, tryStatement);
   }
+  @NotNull
+  static ResultHolder handleCatchStatement(HaxeExpressionEvaluatorContext context,
+                                           HaxeGenericResolver resolver,
+                                           HaxeCatchStatement catchStatement) {
+    //  try-catch can be used as a value expression all blocks must be evaluated and unified
+    //  we should also iterate trough so we can pick up any return statements
+    @NotNull PsiElement[] children = catchStatement.getChildren();
+    HaxeParameter parameter = catchStatement.getParameter();
+    List<ResultHolder> blockResults = new ArrayList<>();
+    for (PsiElement child : children) {
+      if (child == parameter) continue;
+      blockResults.add(handle(child, context, resolver));
+    }
+    return HaxeTypeUnifier.unifyHolders(blockResults, catchStatement);
+  }
+
+
 
   static ResultHolder handleReturnStatement(HaxeExpressionEvaluatorContext context,
                                                     HaxeGenericResolver resolver,

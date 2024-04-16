@@ -79,11 +79,31 @@ public class HaxeTypeUnifier {
     if (a.isEnumValue() && b.isEnumValue()) {
       return unifyEnumValues(a, b);
     }
-    if (a.isEnumType() && b.isEnumValue()) {
+    else if (a.isEnumType() && b.isEnumValue()) {
       return unifyEnumValues(a, b);
     }
+    SpecificTypeReference commonEnumClass = tryToFindCommonEnumClass(a, b, context);
+    if (commonEnumClass != null) return commonEnumClass;
 
-    return SpecificTypeReference.getUnknown(a.getElementContext());
+    return SpecificTypeReference.getUnknown(context);
+  }
+
+  private static @Nullable SpecificTypeReference tryToFindCommonEnumClass(SpecificTypeReference a,
+                                                              SpecificTypeReference b,
+                                                              @NotNull PsiElement context) {
+
+    SpecificTypeReference possibleAChange = a;
+    SpecificTypeReference possibleBChange = b;
+    if (a instanceof  SpecificEnumValueReference valueReference) {
+      possibleAChange = valueReference.getEnumClass();
+    }
+    if (b instanceof  SpecificEnumValueReference valueReference) {
+      possibleBChange = valueReference.getEnumClass();
+    }
+    if (possibleAChange != a || possibleBChange != b) {
+      return unify(possibleAChange, possibleBChange, context);
+    }
+    return null;
   }
 
   @NotNull
@@ -215,8 +235,8 @@ public class HaxeTypeUnifier {
       if (b.isEnumValueClass()) {
         return a;
       }
-      else if (b instanceof SpecificEnumValueReference) {
-        return ((SpecificEnumValueReference)b).clone();
+      else if (b instanceof SpecificEnumValueReference enumValueReference) {
+        return enumValueReference.clone();
       }
     }
     else if (a instanceof SpecificHaxeClassReference && b instanceof SpecificEnumValueReference bReference) {

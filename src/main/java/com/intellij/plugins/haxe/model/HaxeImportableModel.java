@@ -16,6 +16,8 @@
  */
 package com.intellij.plugins.haxe.model;
 
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.CachedValueProvider;
@@ -29,6 +31,8 @@ import java.util.Objects;
 
 public abstract class HaxeImportableModel implements HaxeExposableModel {
   protected final PsiElement basePsi;
+
+  private static final RecursionGuard<PsiElement> typeDefRecursionGuard = RecursionManager.createGuard("typeDefRecursionGuard");
 
   protected HaxeImportableModel(@NotNull PsiElement element) {
     this.basePsi = element;
@@ -112,6 +116,13 @@ public abstract class HaxeImportableModel implements HaxeExposableModel {
       HaxeType type = typeOrAnonymous.getType();
       if (type != null) {
         PsiElement resolve = type.getReferenceExpression().resolve();
+        if (resolve instanceof HaxeTypedefDeclaration declaration) {
+          HaxeModel haxeModel = typeDefRecursionGuard.doPreventingRecursion(typedefDeclaration, true, () ->
+          {
+             return getExposedMemberFromTypeDefReference(name, declaration.getModel(), declaration);
+          });
+          if (haxeModel != null) return haxeModel;
+        }
         if (resolve instanceof  HaxeEnumDeclaration enumDeclaration) {
           if (enumDeclaration.getModel() instanceof  HaxeEnumModel enumModel) {
             HaxeModel memberFromEnum = getExposedMemberFromEnum(name, model, enumModel);

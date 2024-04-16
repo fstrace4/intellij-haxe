@@ -282,8 +282,14 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   // checks if we are attempting to  assign an enum type, this makes sure we chose the enum value and not competing class names
   private List<? extends PsiElement> checkEnumMemberHints(HaxeReference reference) {
+    if (reference.getParent() instanceof HaxeEnumValueReference) {
     HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class, true);
     if (switchCaseExpr != null) {
+      HaxeExtractorMatchExpression matchExpression = PsiTreeUtil.getParentOfType(reference, HaxeExtractorMatchExpression.class);
+      if (matchExpression != null) {
+        List<HaxeComponentName> names = evaluateAndFindEnumMember(reference, matchExpression.getExpression());
+        if (names!= null && !names.isEmpty()) return names;
+      }
       HaxeSwitchStatement parentSwitch = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
       if (parentSwitch != null) {
         HaxeExpression expression = parentSwitch.getExpression();
@@ -306,7 +312,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         if (components != null) return  components;
       }
     }
-
+}
 
     PsiElement referenceParent = reference.getParent();
 

@@ -910,6 +910,7 @@ objectLiteral ::= nonEmptyObjectLiteral | emptyObjectLiteral
 
 private objectLiteralElementList ::= objectLiteralElement (',' objectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
 private object_literal_list_recover ::= !('}')
-
-objectLiteralElement ::= (identifier | stringLiteralExpression) ':' expression {pin=2 recoverWhile="object_literal_part_recover"}
+// extractor match expression can contain ObjectLiterals and we need to allow extractors inside these expressions
+private expressionOrExtractorMatchExpression ::= switchCaseExtractor | expression  {extends=expression}
+objectLiteralElement ::= (identifier | stringLiteralExpression) ':' expressionOrExtractorMatchExpression {pin=2 recoverWhile="object_literal_part_recover"}
 private object_literal_part_recover ::= !(',' | '}')
