@@ -483,7 +483,7 @@ functionReturnType ::= typeWrapper
 // to avoid normal types from consume tokens from function type we add should not end with function type check ( !'->')
 private typeWrapper ::=  typeOrAnonymous !'->' | functionType
 
-private newFunctionType ::= '(' functionArgumentsList ')' '->' functionReturnType {pin=3}
+private newFunctionType ::= '(' functionArgumentsList ')' '->' functionReturnType {pin=4}
 private functionArgumentsList ::= [!')' functionArgument (',' functionArgument)*]
 functionArgument ::=  optionalFunctionTypeWithoutName  | namedFunctionType | namedTypeOrAnonymous
 private namedTypeOrAnonymous ::= ([optionalMark] [componentName ':'] (restArgumentType | typeOrAnonymous  ))
@@ -492,7 +492,7 @@ private optionalFunctionTypeWithoutName ::= [optionalMark] '(' functionType ')' 
 restArgumentType ::= '...' typeWrapper
 private oldFunctionType ::= oldFunctionTypeArgumentsList ('(' functionReturnType ')' | functionReturnType) {pin=2}
 private oldFunctionTypeArgumentsList ::= ( oldFunctionTypeArgument '->')+
-oldFunctionTypeArgument ::=   (optionalMark? ('(' functionType ')' |  typeOrAnonymous )) {elementType="functionArgument" pin(".*")=3}
+oldFunctionTypeArgument ::=   (optionalMark? ('(' functionType ')' |  ('(' typeOrAnonymous ')'  | typeOrAnonymous ))) {elementType="functionArgument" pin(".*")=3}
 
 // /////////////////////////////////////////////////////////////////////////////////////////
 /*

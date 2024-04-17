@@ -1,4 +1,7 @@
 # Changelog
+## 1.5.3
+* Improvement: changed parser so it can handle parenthesis in the middle of functionTypes (ex. `Int->(Array<String>->void)`) 
+
 ## 1.5.2
 * Fixed: Methods and properties in module scope are now resolved correctly.
 * Fixed: Issue with reification parsing
