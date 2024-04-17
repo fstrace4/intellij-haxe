@@ -246,7 +246,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
             }
             return matchesInImport.isEmpty() ? null : matchesInImport;
           }
-        PsiElement target = HaxeResolveUtil.searchInSamePackage(fileModel, referenceText);
+        PsiElement target = HaxeResolveUtil.searchInSamePackage(fileModel, referenceText, true);
 
         if (target != null) {
           LogResolution(reference, "via import.");
@@ -1219,7 +1219,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     HaxeClassModel model = typedef.getModel();
     while (null != model && model.isTypedef() && !recursionGuard.contains(model.getName())) {
       recursionGuard.add(model.getName());
-      final HaxeTypeOrAnonymous toa = model.getUnderlyingType();
+      final HaxeTypeOrAnonymous toa = model.getUnderlyingTypeOrAnonymous();
       if (toa != null) {
         final HaxeType type = toa.getType();
         if (null == type) {

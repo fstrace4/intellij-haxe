@@ -29,6 +29,8 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
@@ -63,6 +65,8 @@ import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
  */
 @CustomLog
 public class HaxeResolveUtil {
+
+  private static final RecursionGuard<PsiElement> typeDefRecursionGuard = RecursionManager.createGuard("typeDefRecursionGuard");
 
   static {
     log.setLevel(LogLevel.INFO);
@@ -1179,13 +1183,13 @@ public class HaxeResolveUtil {
         result = searchInSameFile(fileModel, className, isType);
         if (result == null) {
           List<PsiElement> matchesInImport = searchInImports(fileModel, className);
-          if (isType) {// typeTags should not contain EnumValues only parent enum type
-            matchesInImport = matchesInImport.stream()
-              .filter(element -> !(element instanceof HaxeEnumValueDeclaration))
-              .filter(element -> !(element instanceof HaxeFieldDeclaration)) // @:enum abstracts have EnumValues as fields
-              .toList();
-          }
-          if(!matchesInImport.isEmpty()) {
+          if (!matchesInImport.isEmpty()) {
+            if (isType) {// typeTags should not contain EnumValues only parent enum type
+              matchesInImport = matchesInImport.stream()
+                .filter(element -> !(element instanceof HaxeEnumValueDeclaration))
+                .filter(element -> !(element instanceof HaxeFieldDeclaration)) // @:enum abstracts have EnumValues as fields
+                .toList();
+            }
             // one file may contain multiple enums and have enumValues with the same name; trying to match any argument list
             if(matchesInImport.size()> 1 &&  type.getParent() instanceof  HaxeCallExpression callExpression) {
               int expectedSize = Optional.ofNullable(callExpression.getExpressionList()).map(e -> e.getExpressionList().size()).orElse(0);
@@ -1202,7 +1206,7 @@ public class HaxeResolveUtil {
             if (result == null) result = matchesInImport.get(0);
           }
         }
-        if (result == null) result = searchInSamePackage(fileModel, className);
+        if (result == null) result = searchInSamePackage(fileModel, className, false);
       }
     } else {
       className = tryResolveFullyQualifiedHaxeReferenceExpression(type);
@@ -1314,16 +1318,50 @@ public class HaxeResolveUtil {
   }
 
   @Nullable
-  public static PsiElement searchInSamePackage(@NotNull HaxeFileModel file, @NotNull String name) {
+  public static PsiElement searchInSamePackage(@NotNull HaxeFileModel file, @NotNull String name, boolean checkForEnumValues) {
     final HaxePackageModel packageModel = file.getPackageModel();
     if (packageModel != null) {
-      for (HaxeModel model : packageModel.getExposedMembers()) {
+      List<HaxeModel> exposedMembers = packageModel.getExposedMembers();
+      for (HaxeModel model : exposedMembers) {
         if (name.equals(model.getName())) {
           return model.getBasePsi();
+        }else if (checkForEnumValues) {
+          if (model instanceof HaxeClassModel classModel) {
+            HaxeModel possibleModel = typeDefRecursionGuard.doPreventingRecursion(classModel.getPsi(), true, () -> tryResolveTypeDefClass(classModel));
+            if (possibleModel != null )model = possibleModel;
+          }
+          if (model instanceof HaxeEnumModel enumModel) {
+            Optional<HaxeEnumValueModel> match = enumModel.getValues().stream().filter(m -> name.equals(m.getName())).findFirst();
+            if (match.isPresent()) return match.get().getNamedComponentPsi().getComponentName();
+          }
         }
       }
     }
     return null;
+  }
+
+  private static @Nullable HaxeModel tryResolveTypeDefClass(HaxeClassModel classModel) {
+    if (classModel.isTypedef()) {
+      SpecificTypeReference resolved = classModel.getUnderlyingType();
+      while (resolved instanceof  SpecificHaxeClassReference haxeClassReference) {
+        HaxeClassModel resolvedModel = haxeClassReference.getHaxeClassModel();
+        if (resolvedModel != null && resolvedModel.isTypedef()) {
+          SpecificTypeReference underlyingType = resolvedModel.getUnderlyingType();
+          if (underlyingType != null) {
+            resolved = underlyingType;
+          }else {
+            break;
+          }
+        }else {
+          break;
+        }
+      }
+
+      if (resolved instanceof SpecificHaxeClassReference classReference) {
+        return classReference.getHaxeClassModel();
+      }
+    }
+    return classModel;
   }
 
   public static String getQName(PsiFile file, final String result, boolean searchInSamePackage) {

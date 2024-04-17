@@ -194,7 +194,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   }
 
   @Nullable
-  public HaxeTypeOrAnonymous getUnderlyingType() {
+  public HaxeTypeOrAnonymous getUnderlyingTypeOrAnonymous() {
     if (isAbstractType()) {
       HaxeAbstractTypeDeclaration abstractDeclaration = (HaxeAbstractTypeDeclaration)haxeClass;
       HaxeUnderlyingType underlyingType = abstractDeclaration.getUnderlyingType();
@@ -207,7 +207,19 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     }
 
     // TODO: What about function types?
-
+    return null;
+  }
+  @Nullable
+  public SpecificTypeReference getUnderlyingType() {
+    if (!isAbstractType() && !isTypedef()) return null;
+    HaxeTypeOrAnonymous typeOrAnon = getUnderlyingTypeOrAnonymous();
+    if (typeOrAnon != null) {
+      HaxeType type = typeOrAnon.getType();
+      if (type != null) {
+        ResultHolder resultHolder = HaxeTypeResolver.getTypeFromType(type);
+        if (!resultHolder.isUnknown()) return resultHolder.getType();
+      }
+    }
     return null;
   }
 
@@ -216,7 +228,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     if (!isAbstractType() && !isTypedef()) return null;
 
     PsiElement element = getBasePsi();
-    HaxeTypeOrAnonymous typeOrAnon = getUnderlyingType();
+    HaxeTypeOrAnonymous typeOrAnon = getUnderlyingTypeOrAnonymous();
     if (typeOrAnon != null) {
       HaxeType type = typeOrAnon.getType();
       if (type != null) {
@@ -259,7 +271,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   public SpecificFunctionReference getUnderlyingFunctionReference(HaxeGenericResolver resolver) {
     if (!isAbstractType() && !isTypedef()) return null;
     PsiElement element = getBasePsi();
-    HaxeTypeOrAnonymous typeOrAnon = getUnderlyingType();
+    HaxeTypeOrAnonymous typeOrAnon = getUnderlyingTypeOrAnonymous();
     if (typeOrAnon != null) {
       // TODO mlo handle abstracts with functions as type ?
     } else {
@@ -933,6 +945,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
                           ? (HaxeClass) element
                           : PsiTreeUtil.getParentOfType(element, HaxeClass.class);
 
+    //TODO  cache in element ?
     if (haxeClass != null) {
       return new HaxeClassModel(haxeClass);
     }

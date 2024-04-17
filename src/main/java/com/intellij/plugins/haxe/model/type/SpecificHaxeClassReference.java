@@ -602,6 +602,8 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     }
     return null;
   }
+
+  //  TODO recursion guard (typdef A = B; typedef B = A;)
   public SpecificTypeReference fullyResolveTypeDefReference() {
     if (isTypeDefOfFunction()) {
       return  resolveTypeDefFunction();

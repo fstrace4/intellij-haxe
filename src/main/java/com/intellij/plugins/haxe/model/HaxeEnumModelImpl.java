@@ -74,7 +74,7 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @Nullable
   @Override
-  public HaxeTypeOrAnonymous getUnderlyingType() {
+  public HaxeTypeOrAnonymous getUnderlyingTypeOrAnonymous() {
     return null;
   }
 

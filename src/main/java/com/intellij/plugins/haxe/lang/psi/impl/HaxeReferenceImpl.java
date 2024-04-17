@@ -412,7 +412,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
       HaxeClass clazz = PsiTreeUtil.getParentOfType(this, HaxeClass.class);
       // this has different semantics on abstracts
       if (clazz != null && clazz.getModel().isAbstractType()) {
-        HaxeTypeOrAnonymous type = clazz.getModel().getUnderlyingType();
+        HaxeTypeOrAnonymous type = clazz.getModel().getUnderlyingTypeOrAnonymous();
         if (type != null) {
           return HaxeResolveResult.create(HaxeResolveUtil.tryResolveClassByQName(type));
         }
