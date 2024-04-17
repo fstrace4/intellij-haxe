@@ -9,8 +9,6 @@ import com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +21,7 @@ public class HaxeInlayUntypedParameterHintsProvider implements InlayHintsProvide
     return new TypeCollector();
   }
 
-  private static class TypeCollector implements SharedBypassCollector {
+  private static class TypeCollector extends HaxeSharedBypassCollector {
 
     @Override
     public void collectFromElement(@NotNull PsiElement element, @NotNull InlayTreeSink sink) {
@@ -47,14 +45,6 @@ public class HaxeInlayUntypedParameterHintsProvider implements InlayHintsProvide
           );
         }
       }
-    }
-
-    @NotNull
-    private static Function1<PresentationTreeBuilder, Unit> appendTypeTextToBuilder(ResultHolder type) {
-      return builder -> {
-        builder.text(":" + type.toPresentationString(), null);
-        return null;
-      };
     }
   }
 }

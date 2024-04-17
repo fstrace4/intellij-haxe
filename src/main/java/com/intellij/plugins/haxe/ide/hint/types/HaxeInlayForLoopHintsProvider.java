@@ -3,12 +3,9 @@ package com.intellij.plugins.haxe.ide.hint.types;
 import com.intellij.codeInsight.hints.declarative.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.HaxeMethodModel;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +17,7 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
     return new TypeCollector();
   }
 
-  private static class TypeCollector implements SharedBypassCollector {
+  private static class TypeCollector extends HaxeSharedBypassCollector {
 
     @Override
     public void collectFromElement(@NotNull PsiElement element, @NotNull InlayTreeSink sink) {
@@ -68,14 +65,6 @@ public class HaxeInlayForLoopHintsProvider implements InlayHintsProvider {
         sink.addPresentation(position, null, null, false, appendTypeTextToBuilder(type)
         );
       }
-    }
-
-    @NotNull
-    private static Function1<PresentationTreeBuilder, Unit> appendTypeTextToBuilder(ResultHolder type) {
-      return builder -> {
-        builder.text( ":"+type.toPresentationString(), null);
-        return null;
-      };
     }
   }
 }

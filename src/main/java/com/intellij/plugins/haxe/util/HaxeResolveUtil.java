@@ -1203,7 +1203,7 @@ public class HaxeResolveUtil {
                 }
               }
             }
-            if (result == null) result = matchesInImport.get(0);
+            if (result == null && !matchesInImport.isEmpty()) result = matchesInImport.get(0);
           }
         }
         if (result == null) result = searchInSamePackage(fileModel, className, false);
