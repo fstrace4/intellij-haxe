@@ -19,6 +19,7 @@ package com.intellij.plugins.haxe.lang.psi.impl;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.plugins.haxe.lang.psi.HaxeExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeFieldDeclaration;
 import com.intellij.plugins.haxe.lang.psi.HaxeRegularExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeVarInit;
@@ -143,6 +144,11 @@ public class HaxeRegularExpressionImpl extends HaxeReferenceImpl implements Haxe
   public String[][] getKnownCharacterClasses() {
     return myPropertiesProvider.getKnownCharacterClasses();
   }
+
+  //@Override
+  //public @Nullable HaxeExpression getExpression() {
+  //  return null; //TODO ?
+  //}
 
   // HaxeLiteralExpression
   //@Nullable

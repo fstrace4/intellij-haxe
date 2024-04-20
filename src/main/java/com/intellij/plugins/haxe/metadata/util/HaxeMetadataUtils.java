@@ -15,7 +15,7 @@
  */
 package com.intellij.plugins.haxe.metadata.util;
 
-import com.intellij.plugins.haxe.lang.psi.HaxeCompileTimeMetaArg;
+import com.intellij.plugins.haxe.lang.psi.HaxeCompiletimeMetaArg;
 import com.intellij.plugins.haxe.lang.psi.HaxeExpression;
 import com.intellij.plugins.haxe.metadata.HaxeMetadataList;
 import com.intellij.plugins.haxe.metadata.lexer.HaxeMetadataTokenTypes;
@@ -204,8 +204,7 @@ public class HaxeMetadataUtils {
       PsiElement metaArgs = UsefulPsiTreeUtil.getChild(content, HaxeMetadataTokenTypes.CT_META_ARGS);
       if (null != metaArgs) {
         for (PsiElement arg : metaArgs.getChildren()) {
-          if (arg instanceof HaxeCompileTimeMetaArg) {
-            HaxeCompileTimeMetaArg metaArg = (HaxeCompileTimeMetaArg)arg;
+          if (arg instanceof HaxeCompiletimeMetaArg metaArg) {
             HaxeExpression expression = metaArg.getExpression();
             if (null == expressions) {
               expressions = new ArrayList<>();

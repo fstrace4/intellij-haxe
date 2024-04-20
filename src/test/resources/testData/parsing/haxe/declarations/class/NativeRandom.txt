@@ -49,7 +49,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   REFERENCE_EXPRESSION
                     IDENTIFIER
                       HaxePsiToken:ID('something')

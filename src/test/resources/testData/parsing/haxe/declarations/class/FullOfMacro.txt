@@ -22,7 +22,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('my.real.Path')
@@ -36,7 +36,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('namespace')
@@ -50,7 +50,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             CALL_EXPRESSION
               REFERENCE_EXPRESSION
                 IDENTIFIER
@@ -88,7 +88,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('myfile.png')
@@ -102,7 +102,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             CALL_EXPRESSION
               REFERENCE_EXPRESSION
                 REFERENCE_EXPRESSION
@@ -122,17 +122,17 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             REFERENCE_EXPRESSION
               IDENTIFIER
                 HaxePsiToken:ID('dep1')
           HaxePsiToken:,(',')
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             REFERENCE_EXPRESSION
               IDENTIFIER
                 HaxePsiToken:ID('dep2')
           HaxePsiToken:,(',')
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             REFERENCE_EXPRESSION
               IDENTIFIER
                 HaxePsiToken:ID('dep3')
@@ -145,7 +145,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             COMPARE_EXPRESSION
               REFERENCE_EXPRESSION
                 IDENTIFIER
@@ -163,13 +163,13 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(RT_META_ARGS)
-          RUN_TIME_META_ARG
+          RUNTIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('user name')
               HaxePsiToken:CLOSING_QUOTE('"')
           HaxePsiToken:,(',')
-          RUN_TIME_META_ARG
+          RUNTIME_META_ARG
             OBJECT_LITERAL
               HaxePsiToken:{('{')
               OBJECT_LITERAL_ELEMENT
@@ -190,7 +190,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('something')
@@ -224,7 +224,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   REFERENCE_EXPRESSION
                     IDENTIFIER
                       HaxePsiToken:ID('_value')
@@ -255,7 +255,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   REFERENCE_EXPRESSION
                     IDENTIFIER
                       HaxePsiToken:ID('_value')
@@ -293,7 +293,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   FUNCTION_LITERAL
                     HaxePsiToken:function('function')
                     HaxePsiToken:(('(')
@@ -375,7 +375,7 @@ Haxe File
         HaxePsiToken:(('(')
         CONTENT
           PsiElement(CT_META_ARGS)
-            COMPILE_TIME_META_ARG
+            COMPILETIME_META_ARG
               CALL_EXPRESSION
                 REFERENCE_EXPRESSION
                   REFERENCE_EXPRESSION

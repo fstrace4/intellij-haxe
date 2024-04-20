@@ -23,7 +23,7 @@ public class HaxeBinaryExpressionAnnotator implements Annotator {
     if (element instanceof HaxeBinaryExpression expression
         // TODO mlo, make a better check to see if element is part of @:op(...)
 
-        && !(expression.getParent() instanceof HaxeCompileTimeMetaArg )) {
+        && !(expression.getParent() instanceof HaxeCompiletimeMetaArg )) {
       //  ignore if part of switch case expression
       if (PsiTreeUtil.getParentOfType(element, HaxeSwitchCaseExpr.class) == null) {
 

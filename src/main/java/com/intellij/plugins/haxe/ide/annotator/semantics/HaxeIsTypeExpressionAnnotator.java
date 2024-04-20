@@ -93,6 +93,8 @@ public class HaxeIsTypeExpressionAnnotator implements Annotator, DumbAware {
                || parent instanceof HaxeMapInitializerExpression
                || parent instanceof HaxeBlockStatement
                || parent instanceof HaxeThrowStatement
+               || parent instanceof HaxeUntypedStatement
+               || parent instanceof HaxeMacroStatement
       ) {
         annotateIs(holder, expr, HaxeBundle.message("haxe.semantic.unparenthesized.is.expression.cannot.be.used.here.pre.4.2.semantics"));
       }

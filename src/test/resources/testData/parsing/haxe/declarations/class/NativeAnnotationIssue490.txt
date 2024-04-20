@@ -7,7 +7,7 @@ Haxe File
       HaxePsiToken:(('(')
       CONTENT
         PsiElement(CT_META_ARGS)
-          COMPILE_TIME_META_ARG
+          COMPILETIME_META_ARG
             STRING_LITERAL_EXPRESSION
               HaxePsiToken:OPEN_QUOTE('"')
               HaxePsiToken:REGULAR_STRING_PART('Test')
@@ -32,7 +32,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   STRING_LITERAL_EXPRESSION
                     HaxePsiToken:OPEN_QUOTE('"')
                     HaxePsiToken:REGULAR_STRING_PART('foo')
@@ -63,7 +63,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   STRING_LITERAL_EXPRESSION
                     HaxePsiToken:OPEN_QUOTE('"')
                     HaxePsiToken:REGULAR_STRING_PART('a')

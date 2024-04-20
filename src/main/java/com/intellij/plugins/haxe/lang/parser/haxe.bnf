@@ -261,10 +261,11 @@ private topLevel ::= importStatement | usingStatement |  module {recoverWhile="t
 private top_level_recover ::= !(ppToken | '@' | 'abstract' | 'class'  | 'enum' | 'extern' | 'import' | 'using' | 'interface' | 'private' | 'typedef' | 'final' | 'var'| 'inline')
 
 // These are top-level parsing entry points for metadata.
-compileTimeMetaArg ::= expression
-private compileTimeMetaArgList ::= compileTimeMetaArg (',' compileTimeMetaArg)*
-runTimeMetaArg ::= arrayLiteral | objectLiteral | constantExpression
-private runTimeMetaArgList ::= runTimeMetaArg (',' runTimeMetaArg)*
+compiletimeMetaArg ::= expression
+private compileTimeMetaArgList ::= compiletimeMetaArg (',' compiletimeMetaArg)*
+// runtime macros can be crated by macros so reunification must be accept
+runtimeMetaArg ::= arrayLiteral | objectLiteral | constantExpression | macroDynamicReification
+private runTimeMetaArgList ::= runtimeMetaArg (',' runtimeMetaArg)*
 //
 
 private aliasKeyword ::= ('in' | 'as')
@@ -397,7 +398,7 @@ localVarDeclarationList ::='static'? mutabilityModifier localVarDeclaration (','
 localVarDeclaration ::= 'static'? componentName typeTag? varInit?
   {recoverWhile="local_var_declaration_part_recover" mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
 private localVarDeclarationWithInit ::= componentName typeTag? varInit {extends=localVarDeclaration}
-private local_var_declaration_part_recover ::= !('!' | ppToken | '(' | ')' | '++' | ',' | '-' | '--' | ';' | '[' | 'break' | 'case' | 'cast' | 'continue' | 'default' | 'do' | 'else' | 'false' | 'final' | 'for' | 'function' | 'if' | 'new' | 'null' | 'return' | 'super' | 'switch' | 'this' | 'throw' | 'true' | 'try' | 'untyped' | 'var' | 'while' | '{' | '}' | '~' | ID | OPEN_QUOTE | LITFLOAT | LITHEX | LITINT | LITOCT | REG_EXP)
+private local_var_declaration_part_recover ::= !(!<<isSemicolonRuleEnabled>> | '!' | ppToken | '(' | ')' | '++' | ',' | '-' | '--' | ';' | '[' | 'break' | 'case' | 'cast' | 'continue' | 'default' | 'do' | 'else' | 'false' | 'final' | 'for' | 'function' | 'if' | 'new' | 'null' | 'return' | 'super' | 'switch' | 'this' | 'throw' | 'true' | 'try' | 'untyped' | 'var' | 'while' | '{' | '}' | '~' | ID | OPEN_QUOTE | LITFLOAT | LITHEX | LITINT | LITOCT | REG_EXP)
 
 propertyDeclaration ::= '(' propertyAccessor ',' propertyAccessor ')'
 
@@ -469,10 +470,10 @@ private arrowFunctionLiteral ::= arrowFunctionDeclaration
 private keywordFunctionLiteral ::= 'function' componentName? parenthesizedParameterList typeTag? untypedKeyword? lambdaBody {pin=2}
 functionLiteral ::= keywordFunctionLiteral | arrowFunctionLiteral // TODO considder extending functionType and implement logic to find arguments and return type
 
-arrayLiteral ::= '[' (expressionList ','?)? ']'
+arrayLiteral ::= <<isInitializersAllowed>> '[' (expressionList ','?)? ']'
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
-mapLiteral ::= '[' (mapInitializerStatement | mapInitializerExpressionList) ']'
-{pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
+mapLiteral ::= <<isInitializersAllowed>> '[' (mapInitializerStatement | mapInitializerExpressionList) ']'
+{pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
 
 optionalMark ::= '?'
 // this order is important, if new is first then  the return value for `(Int->Void)->(String->Void)->Float` becomes `(String->Void)->Float` and not `Float` as its suppose to be
@@ -570,14 +571,25 @@ complexType ::= (TFunction | TAnonymous | TOptional | TParent | TExtend  | TPath
 macroTypeReification ::= 'macro' ':' complexType {pin=2}
 
 // macro statements can be used as "values" (ex. in method calls) and should not require ";" at the end
-macroValueExpression ::= 'macro' <<disableSemicolonRule>> macroValue <<enableSemicolonRule>>
+macroValueExpression ::= 'macro' <<pushSemicolonRuleDisable>> macroValue  {hooks=[popSemicolonRule]}
 private macroValue ::=   statement | topLevelDeclaration
 
+//private statementWithHook ::= blockStatement | notBlockStatement
+//{hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 private statement ::= blockStatement | notBlockStatement
-{pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 
-private notBlockStatement ::= ('untyped' statement ';'?)
-                            | ('macro' statement ';'?)
+untypedStatement ::=  'untyped'  statement ';'?
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+
+macroStatement ::=  'macro' <<pushSemicolonRuleDisable>> statement ';'?
+{hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+
+private notBlockStatement ::=
+//                            ('untyped' statement ';'?)
+//                            | ('macro' <<pushSemicolonRuleDisable>> statementWithHook ';'?)
+                             untypedStatement
+                             macroStatement
                             | macroClassReification
                             | localVarDeclarationList
                             | localFunctionDeclaration
@@ -637,10 +649,11 @@ switchStatement ::= 'switch' expression switchBlock
 switchBlock ::= '{' (switchCase | defaultCase)* '}'{pin=1}
 
 switchCaseBlock ::=  statementList | (literalExpression <<semicolonUnlessPrecededByStatement>>)
-switchCase ::= 'case' switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
-private switchCaseExprElement ::=  switchExtractorExpression  | expression | switchCaseCaptureVar
-switchCaseExprArray ::= "["   ( switchCaseExprElement ","?)+ "]"
-switchCaseExpr ::= switchCaseExprArray  | switchCaseExprElement {pin=1} // Should NOT be named Expression, because it should not be an expression.
+switchCase ::= 'case'  switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
+private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar |  statement ) {hooks=[popCollectionInitializersRule]}
+switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
+// Should NOT be named Expression, because it should not be an expression.
+switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
 
 ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
 
@@ -791,6 +804,8 @@ literalExpression ::= LITINT | LITHEX | LITOCT | LITFLOAT
                     | regularExpressionLiteral
                     | 'null' | 'true' | 'false'
                     | functionLiteral
+//                    | <<isInitializersAllowed>> mapLiteral
+//                    | <<isInitializersAllowed>> arrayLiteral
                     | mapLiteral
                     | arrayLiteral
                     | objectLiteral

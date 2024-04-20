@@ -23,6 +23,9 @@ import com.intellij.openapi.util.Key;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.psi.tree.IElementType;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Stack;
 
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.*;
 
@@ -118,16 +121,12 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
       so the same way an string or int argument does not need a trailing ; in a method call
       a macro value like  `macro var c = "test"` should not have a ; at the ned either.
      */
-    Integer macroValueExpressionLevel = builder_.getUserData(MACRO_VALUE);
-    if (macroValueExpressionLevel != null) {
-      if (macroValueExpressionLevel <= level) {
-        // we are inside a macro value expression, these should not end with semicolon
-        return true;
-      } else {
-        // if the parser does not roll back this would be cleared by the parser when finishing a macro value expression
-        // but if it does rollback  data will still be stored, this is not a guaranteed way to clear the data,
-        // but it probably would cover most use cases and if we end up skipping a few missing semicolon errors its probably not a big deal.
-        enableSemicolonRule(builder_, 0);
+
+    Stack<Boolean> stack = getFlagStack(builder_, SEMICOLON_RULE_STATE);
+    if (!stack.isEmpty()) {
+      Boolean value = stack.peek();
+      if (value != null) {
+        return !value;
       }
     }
 
@@ -139,13 +138,76 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     IElementType type = builder_.rawLookup(0) ;
     return type == DOLLAR || type == MACRO_ID;
   }
-  public static boolean disableSemicolonRule(PsiBuilder builder_, int level) {
-    builder_.putUserData(MACRO_VALUE, level);
+
+  private static final com.intellij.openapi.util.Key<Stack<Boolean>> SEMICOLON_RULE_STATE = new Key<>("SEMICOLON_RULE_STATE");
+  private static final com.intellij.openapi.util.Key<Stack<Boolean>> COLLECTION_INITIALIZER_STATE = new Key<>("COLLECTION_INITIALIZER_STATE");
+
+  private static @NotNull Stack<Boolean> getFlagStack(PsiBuilder builder_, Key<Stack<Boolean>> flag) {
+    Stack<Boolean> stack = builder_.getUserData(flag);
+    if (stack == null) {
+      stack = new Stack<>();
+      builder_.putUserData(flag, stack);
+    }
+    return stack;
+  }
+
+
+  public static boolean pushSemicolonRuleDisable(PsiBuilder builder, int level) {
+    getFlagStack(builder, SEMICOLON_RULE_STATE).push(Boolean.FALSE);
    return true;
   }
-  public static boolean enableSemicolonRule(PsiBuilder builder_, int level) {
-    builder_.putUserData(MACRO_VALUE, null);
+  public static boolean pushSemicolonRuleEnable(PsiBuilder builder, int level) {
+    getFlagStack(builder, SEMICOLON_RULE_STATE).push(Boolean.TRUE);
    return true;
   }
-  private static com.intellij.openapi.util.Key<Integer> MACRO_VALUE  = new Key<>("MACRO_VALUE_LEVEL");
+
+  public static boolean isSemicolonRuleEnabled(PsiBuilder builder, int level) {
+    Stack<Boolean> stack = getFlagStack(builder, SEMICOLON_RULE_STATE);
+    if (stack.isEmpty())  return true;
+    Boolean peeked = stack.peek();
+    if (peeked != null) {
+      return peeked;
+    }
+    return true;
+  }
+
+
+  public static boolean pushCollectionInitializersDeny(PsiBuilder builder, int level) {
+    getFlagStack(builder, COLLECTION_INITIALIZER_STATE).push(Boolean.FALSE);
+   return true;
+  }
+  public static boolean pushCollectionInitializersAllow(PsiBuilder builder, int level) {
+    getFlagStack(builder, COLLECTION_INITIALIZER_STATE).push(Boolean.TRUE);
+   return true;
+  }
+
+
+  public static boolean isInitializersAllowed(PsiBuilder builder, int level) {
+    Stack<Boolean> stack = getFlagStack(builder, COLLECTION_INITIALIZER_STATE);
+    if (stack.isEmpty())  return true;
+    Boolean peeked = stack.peek();
+    if (peeked != null) {
+      return peeked;
+    }
+   return true;
+  }
+
+  public static final Hook<Boolean> POP_COLLECTION_INITIALIZERS_RULE =
+    (builder, marker, param) -> {
+      if (builder != null) {
+        Stack<Boolean> stack = getFlagStack(builder, COLLECTION_INITIALIZER_STATE);
+        if(!stack.isEmpty()) stack.pop();
+        }
+      return marker;
+    };
+
+  public static final Hook<Boolean> POP_SEMICOLON_RULE =
+    (builder, marker, param) -> {
+      Stack<Boolean> stack = getFlagStack(builder, SEMICOLON_RULE_STATE);
+      if(!stack.isEmpty()) stack.pop();
+      return marker;
+    };
+
+
+
 }
