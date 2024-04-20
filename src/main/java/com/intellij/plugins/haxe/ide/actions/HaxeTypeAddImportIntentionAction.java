@@ -24,6 +24,7 @@ import com.intellij.codeInspection.HintAction;
 import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.lang.injection.InjectedLanguageManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
@@ -106,10 +107,11 @@ public class HaxeTypeAddImportIntentionAction implements HintAction, QuestionAct
         CommandProcessor.getInstance().executeCommand(project, () -> doImport(element), getClass().getName(), this);
         return true;
       };
-
+      ApplicationManager.getApplication().invokeLater(() -> {
       new PsiTargetNavigator<>(psiElements)
         .createPopup(project, HaxeBundle.message("choose.class.to.import.title"), processor)
         .showInBestPositionFor(editor);
+      });
     }
     else {
       doImport(candidates.iterator().next());
