@@ -85,10 +85,6 @@ public class HaxeProjectModel {
     return getRootsCache().stdPackageModel;
   }
   @NotNull
-  public HaxePackageModel getExprPackage() {
-    return getRootsCache().exprPackageModel;
-  }
-  @NotNull
   public HaxeLogPackageModel getLogPackage() {
     return getRootsCache().logPackageModel;
   }
@@ -113,11 +109,6 @@ public class HaxeProjectModel {
 
     if (result.isEmpty()) {
       resolvedValue = getStdPackage().resolve(info);
-      if (resolvedValue != null) result.add(resolvedValue);
-    }
-
-    if (result.isEmpty()) {
-      resolvedValue = getExprPackage().resolve(info);
       if (resolvedValue != null) result.add(resolvedValue);
     }
 
@@ -170,7 +161,6 @@ class RootsCache {
   final List<HaxeSourceRootModel> roots;
   final HaxeSourceRootModel sdkRoot;
   final HaxeStdPackageModel stdPackageModel;
-  final HaxeExprPackageModel exprPackageModel;
 
   final HaxeLogPackageModel logPackageModel;
 
@@ -178,7 +168,6 @@ class RootsCache {
     this.roots = roots;
     this.sdkRoot = sdkRoot;
     this.stdPackageModel = new HaxeStdPackageModel(sdkRoot);
-    this.exprPackageModel = new HaxeExprPackageModel(sdkRoot);
     this.logPackageModel = new HaxeLogPackageModel(sdkRoot);
   }
 

@@ -6,8 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 
 /**
- * in haxe Expr and ExprOf can be used without declaring imports.
- * this class and HaxeExprFileModel helps the resolver resolve these
+ * Trace is available to call anywhere without import statement
+ * this class helps resolve to the actual method in std
  */
 
 public class HaxeLogPackageModel extends HaxePackageModel {
