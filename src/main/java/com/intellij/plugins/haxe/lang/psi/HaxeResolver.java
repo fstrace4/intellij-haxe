@@ -316,6 +316,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     PsiElement referenceParent = reference.getParent();
 
     if (!(referenceParent instanceof HaxeType)) {
+      HaxeParameter parameterFromReferenceExpression = null;
       HaxePsiField fieldFromReferenceExpression = null;
       HaxeAssignExpression assignExpression = PsiTreeUtil.getParentOfType(reference, HaxeAssignExpression.class);
       if (assignExpression != null) {
@@ -326,6 +327,9 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
             PsiElement resolve = referenceExpression.resolve();
             if (resolve instanceof HaxePsiField psiField) {
               fieldFromReferenceExpression = psiField;
+            }
+            if (resolve instanceof HaxeParameter parameter) {
+              parameterFromReferenceExpression = parameter;
             }
           }
         }
@@ -343,34 +347,29 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
 
       HaxePsiField field = fieldFromReferenceExpression != null ? fieldFromReferenceExpression :  PsiTreeUtil.getParentOfType(reference, HaxePsiField.class);
+      HaxeParameter parameter = parameterFromReferenceExpression != null ? parameterFromReferenceExpression :  PsiTreeUtil.getParentOfType(reference, HaxeParameter.class);
+      HaxeTypeTag tag = null;
+      HaxeVarInit init = null;
       if (field != null) {
-        HaxeTypeTag tag = field.getTypeTag();
-        if (tag != null && tag.getTypeOrAnonymous() != null) {
-          ResultHolder type = HaxeTypeResolver.getTypeFromTypeOrAnonymous(tag.getTypeOrAnonymous());
-          if (type.getClassType() != null) {
-            SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
-            return findEnumMember(reference, typeReference);
-          }
-        }
-        HaxeVarInit init = field.getVarInit();
-        if (init != null) {
-          // check if reference is part of init expression and if so skip to avoid circular resolve
-          HaxeVarInit referenceInitParent = PsiTreeUtil.getParentOfType(reference, HaxeVarInit.class);
-          if (referenceInitParent == null || referenceInitParent != init) {
-            ResultHolder type = HaxeTypeResolver.getPsiElementType(init, null);
-            if (type.getClassType() != null) {
-              SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
-              return findEnumMember(reference, typeReference);
-            }
-          }
-        }
+        tag = field.getTypeTag();
+        init = field.getVarInit();
+      } else if (parameter != null) {
+        tag = parameter.getTypeTag();
+        init = parameter.getVarInit();
       }
 
-      HaxeParameter parameter = PsiTreeUtil.getParentOfType(reference, HaxeParameter.class);
-      if (parameter != null) {
-        HaxeTypeTag tag = parameter.getTypeTag();
-        if (tag != null && tag.getTypeOrAnonymous() != null) {
-          ResultHolder type = HaxeTypeResolver.getTypeFromTypeOrAnonymous(tag.getTypeOrAnonymous());
+      if (tag != null && tag.getTypeOrAnonymous() != null) {
+        ResultHolder type = HaxeTypeResolver.getTypeFromTypeOrAnonymous(tag.getTypeOrAnonymous());
+        if (type.getClassType() != null) {
+          SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+          return findEnumMember(reference, typeReference);
+        }
+      }
+      if (init != null) {
+        // check if reference is part of init expression and if so skip to avoid circular resolve
+        HaxeVarInit referenceInitParent = PsiTreeUtil.getParentOfType(reference, HaxeVarInit.class);
+        if (referenceInitParent == null || referenceInitParent != init) {
+          ResultHolder type = HaxeTypeResolver.getPsiElementType(init, null);
           if (type.getClassType() != null) {
             SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
             return findEnumMember(reference, typeReference);

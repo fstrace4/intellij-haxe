@@ -1422,9 +1422,17 @@ public class HaxeExpressionEvaluatorHandlers {
         }
       }
     }
-
+    result = tryGetEnumValuesDeclaringClass(result);
     context.setLocal(name.getText(), result);
     return result != null ? result : createUnknown(varDeclaration);
+  }
+
+  private static @Nullable ResultHolder tryGetEnumValuesDeclaringClass(ResultHolder result) {
+    if (result != null && result.isEnumValueType()) {
+      //TODO check if typeParams need to be copied over
+      result = result.getEnumValueType().getEnumClass().createHolder();
+    }
+    return result;
   }
 
   private static boolean isUnknownLiteralArray(ResultHolder result) {

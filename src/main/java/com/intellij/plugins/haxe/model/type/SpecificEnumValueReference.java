@@ -28,10 +28,11 @@ import java.util.List;
 
 public class SpecificEnumValueReference extends SpecificTypeReference {
 
-  HaxeEnumValueDeclaration declaration;
-  SpecificHaxeClassReference enumClass;
-  HaxeGenericResolver resolver;
-  Object constantValue;
+  final HaxeEnumValueDeclaration declaration;
+  final SpecificHaxeClassReference enumClass;
+  final HaxeGenericResolver resolver;
+  final Object constantValue;
+
   HaxeEnumValueModel model;
 
   SpecificFunctionReference constructor;
@@ -68,6 +69,7 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
     return new SpecificEnumValueReference(this.declaration, this.context, this.resolver, this.constantValue);
   }
 
+  @NotNull
   public SpecificHaxeClassReference getEnumClass() {
     return enumClass;
   }
