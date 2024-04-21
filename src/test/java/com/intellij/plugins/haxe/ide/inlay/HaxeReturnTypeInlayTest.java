@@ -31,6 +31,10 @@ public class HaxeReturnTypeInlayTest extends HaxeInlayTestBase {
   public void testReturnTypeGenerics() throws Exception {
     doTest(hintsProvider);
   }
+  @Test
+  public void testReturnTypeMacros() throws Exception {
+    doTest(hintsProvider);
+  }
 
 
 }

@@ -395,7 +395,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
   private boolean isMacroIdentifier() {
     PsiElement[] children = this.getChildren();
     if(children.length == 1) {
-      if (children[0] instanceof HaxeIdentifier identifier) {
+      if (children[0] instanceof HaxeMacroIdentifier identifier) {
         if (identifier.getMacroId() != null) return true;
       }
     }

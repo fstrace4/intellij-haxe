@@ -7,9 +7,9 @@ class MacroTest {
         return ($a{ inputArray });
     }
 
-    macro public function macroDynamicReification():Expr {
-        var dynamicType = null;
-        return macro { $v{ dynamicType } };
+    macro public function macroValueReification():Expr<Int> {
+        var value = 1;
+        return macro { $v{ value } };
     }
 
     static public function macroBlockReification(a:Array<Expr>) {

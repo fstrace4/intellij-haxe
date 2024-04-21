@@ -157,26 +157,27 @@ Haxe File
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              WHILE_STATEMENT
-                HaxePsiToken:while('while')
-                HaxePsiToken:(('(')
-                REFERENCE_EXPRESSION
-                  IDENTIFIER
-                    HaxePsiToken:MACRO_ID('$cond')
-                HaxePsiToken:)(')')
-                DO_WHILE_BODY
-                  CALL_EXPRESSION
-                    REFERENCE_EXPRESSION
-                      IDENTIFIER
-                        HaxePsiToken:ID('trace')
-                    HaxePsiToken:(('(')
-                    CALL_EXPRESSION_LIST
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                WHILE_STATEMENT
+                  HaxePsiToken:while('while')
+                  HaxePsiToken:(('(')
+                  REFERENCE_EXPRESSION
+                    IDENTIFIER
+                      HaxePsiToken:MACRO_ID('$cond')
+                  HaxePsiToken:)(')')
+                  DO_WHILE_BODY
+                    CALL_EXPRESSION
                       REFERENCE_EXPRESSION
                         IDENTIFIER
-                          HaxePsiToken:MACRO_ID('$e')
-                    HaxePsiToken:)(')')
-                HaxePsiToken:;(';')
+                          HaxePsiToken:ID('trace')
+                      HaxePsiToken:(('(')
+                      CALL_EXPRESSION_LIST
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:MACRO_ID('$e')
+                      HaxePsiToken:)(')')
+                  HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         PsiElement(EMBEDDED_META)
           COMPILE_TIME_META
@@ -1512,7 +1513,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   ADDITIVE_EXPRESSION
                     REFERENCE_EXPRESSION
                       IDENTIFIER
@@ -1581,7 +1582,7 @@ Haxe File
             HaxePsiToken:(('(')
             CONTENT
               PsiElement(CT_META_ARGS)
-                COMPILE_TIME_META_ARG
+                COMPILETIME_META_ARG
                   MULTIPLICATIVE_EXPRESSION
                     REFERENCE_EXPRESSION
                       IDENTIFIER

@@ -7,6 +7,7 @@ import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
+import com.intellij.plugins.haxe.lang.lexer.HaxeEmbeddedElementType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -19,6 +20,7 @@ import com.intellij.plugins.haxe.util.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiPackage;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.source.tree.LazyParseablePsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.CachedValueProvider;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil.tryGetCallieType;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.ONLY_COMMENTS;
@@ -36,6 +39,7 @@ import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.KUNTYPED;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.getLiteralClassName;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.tryToFindTypeFromCallExpression;
 import static com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil.createInheritedClassResolver;
+import static com.intellij.plugins.haxe.model.type.HaxeMacroUtil.resolveMacroTypesForFunction;
 import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.*;
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.*;
 
@@ -333,12 +337,49 @@ public class HaxeExpressionEvaluatorHandlers {
     }
 
     if (typeHolder != null) {
+      if (isReificationReference(element)) {
+        ResultHolder specifics = tryExtractTypeFormExprOf(element, typeHolder);
+        if (specifics != null) return specifics;
+      }
+
+      if (isReificationExpression(element)) {
+        return HaxeMacroTypeUtil.getExpr(element).createHolder();
+      }
+
       if (subelement instanceof HaxeImportAlias) return typeHolder;
       // overriding  context  to avoid problems with canAssign thinking this is a "Pure" class reference
       return typeHolder.withElementContext(element);
-    }else {
-     return SpecificTypeReference.getDynamic(element).createHolder();
     }
+
+    return SpecificTypeReference.getDynamic(element).createHolder();
+  }
+
+  private static boolean isReificationExpression(HaxeReferenceExpression element) {
+    return false;
+  }
+
+  private static @Nullable ResultHolder tryExtractTypeFormExprOf(HaxeReferenceExpression element, ResultHolder typeHolder) {
+    SpecificHaxeClassReference type = typeHolder.getClassType();
+    if (type != null && type.getHaxeClass() != null) {
+      String qualifiedName = type.getHaxeClass().getQualifiedName();
+      if (qualifiedName.equals("haxe.macro.Expr.ExprOf")){
+        @NotNull ResultHolder[] specifics = type.getSpecifics();
+        if (specifics.length == 1) return specifics[0];
+      }else if (qualifiedName.equals("haxe.macro.Expr")){
+        SpecificTypeReference.getDynamic(element).createHolder();
+      }
+    }
+    return null;
+  }
+
+  private static boolean isReificationReference(HaxeReferenceExpression element) {
+    @NotNull PsiElement[] children = element.getChildren();
+    if (children.length == 1) {
+      if (children[0] instanceof HaxeMacroIdentifier identifier) {
+        return identifier.getMacroId() != null;
+      }
+    }
+    return false;
   }
 
   static ResultHolder handleValueIterator(HaxeExpressionEvaluatorContext context,
@@ -938,6 +979,23 @@ public class HaxeExpressionEvaluatorHandlers {
     if (valueExpression.getExpression() != null){
       return handle(valueExpression.getExpression(), context, resolver);
     }
+    if (valueExpression.getMacroTypeReification() != null){
+       return HaxeMacroTypeUtil.getComplexType(valueExpression.getMacroTypeReification()).createHolder();
+    }
+
+    if(valueExpression.getMacroExpressionReification() != null) {
+      HaxeMacroExpressionReification reification = valueExpression.getMacroExpressionReification();
+
+      HaxeMacroValueReification valueReification = reification.getMacroValueReification();
+      if (valueReification != null) {
+        return handle(valueReification, context, resolver);
+      }
+
+      HaxeMacroArrayReification arrayReification = reification.getMacroArrayReification();
+      if (arrayReification != null) {
+        return handle(arrayReification.getExpression(), context, resolver);
+      }
+    }
     return createUnknown(valueExpression);
   }
 
@@ -1145,6 +1203,12 @@ public class HaxeExpressionEvaluatorHandlers {
     }
 
     SpecificTypeReference functionType = handle(callExpressionRef, context, resolverForMethodDeclaringClass).getType();
+    boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
+    boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
+    if (varIsMacroFunction && !callIsFromMacroContext) {
+      ResultHolder holder = resolveMacroTypesForFunction(functionType.createHolder());
+      functionType = holder.getFunctionType();
+    }
 
     // @TODO: this should be innecessary when code is working right!
     if (functionType.isUnknown()) {
@@ -1279,7 +1343,26 @@ public class HaxeExpressionEvaluatorHandlers {
     return createUnknown(callExpression);
   }
 
+  private static boolean isInMacroFunction(HaxeExpression ref) {
+    HaxeMethodDeclaration type = PsiTreeUtil.getParentOfType(ref, HaxeMethodDeclaration.class);
+    if (type != null && type.getModel() != null) {
+      return type.getModel().isMacro();
+    }
+    return false;
+  }
 
+  private static boolean isCallExpressionToMacroMethod(HaxeExpression callExpressionRef) {
+    if (callExpressionRef instanceof HaxeReference) {
+      PsiReference reference = callExpressionRef.getReference();
+      if (reference != null) {
+        PsiElement subelement = reference.resolve();
+        if (subelement instanceof HaxeMethod haxeMethod) {
+          return haxeMethod.getModel().isMacro();
+        }
+      }
+    }
+    return false;
+  }
 
 
   static ResultHolder handleVarInit(
@@ -1464,9 +1547,10 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
   static ResultHolder handleIdentifier(HaxeExpressionEvaluatorContext context, HaxeIdentifier identifier) {
-    if (isMacroVariable(identifier)) {
-      return SpecificTypeReference.getDynamic(identifier).createHolder();
-    }
+    //if (isMacroVariable(identifier)) {
+    //
+    //  return SpecificTypeReference.getDynamic(identifier).createHolder();
+    //}
     // If it has already been seen, then use whatever type is already known.
     ResultHolder holder = context.get(identifier.getText());
 
@@ -1650,12 +1734,24 @@ public class HaxeExpressionEvaluatorHandlers {
 
     ResultHolder result = SpecificHaxeClassReference.getVoid(returnStatement).createHolder();
     if (isUntypedReturn(returnStatement)) return result;
-    PsiElement[] children = returnStatement.getChildren();
-    if (children.length >= 1) {
-      result = handle(children[0], context, resolver);
+    List<PsiElement> children = withoutMetadata(returnStatement.getChildren());
+    if (!children.isEmpty()) {
+      PsiElement child = children.get(0);
+      result = handle(child, context, resolver);
     }
     context.addReturnType(result, returnStatement);
     return result;
+  }
+
+  private static List<PsiElement> withoutMetadata(PsiElement[] children) {
+    return Stream.of(children).filter(child-> {
+      if (child instanceof LazyParseablePsiElement element) {
+        if (element.getElementType() instanceof HaxeEmbeddedElementType) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
   }
 
   static ResultHolder handleImportAlias(PsiElement element, HaxeImportAlias alias) {
@@ -1746,7 +1842,8 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
   static boolean isMacroVariable(HaxeIdentifier identifier) {
-    return identifier.getMacroId() != null;
+    if (identifier instanceof  HaxeMacroIdentifier macroIdentifier) return macroIdentifier.getMacroId() != null;
+    return false;
   }
 
   @Nullable

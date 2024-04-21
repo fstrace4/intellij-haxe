@@ -51,15 +51,15 @@ public class HaxeTypeUnifier {
     if (a.toStringWithoutConstant().equals(b.toStringWithoutConstant())) {
       return a.withoutConstantValue();
     }
-    // prefer non-void  and non-dynamic, note that void can be is the result of recursive method calls that cant resolve to anything
-    if ((a.isVoid()  || a.isDynamic())
-        && (!b.isVoid() && !b.isUnknown())){
-      return b;
-    }
-    if ((!a.isVoid() && !a.isUnknown())
-        && (b.isVoid() || b.isDynamic())){
-      return a;
-    }
+    // if dynamic and the result is not from constant (ex constant = null) use dynamic
+    if (a.isDynamic() && a.getConstant() == null) return a;
+    if (b.isDynamic() && b.getConstant() == null) return b;
+
+    //TODO if constant is null, we might have to wrap with Null<T> for the other type
+
+    if ((a.isDynamic() || a.isExpr()) && constantIsNullValue(a) && !b.isUnknown()) return b;
+    if ((b.isDynamic() || b.isExpr()) && constantIsNullValue(b) && !a.isUnknown()) return a;
+
 
     if (a instanceof SpecificHaxeClassReference && b instanceof SpecificHaxeClassReference) {
 
@@ -86,6 +86,10 @@ public class HaxeTypeUnifier {
     if (commonEnumClass != null) return commonEnumClass;
 
     return SpecificTypeReference.getUnknown(context);
+  }
+
+  private static boolean constantIsNullValue(SpecificTypeReference b) {
+    return b.getConstant() instanceof HaxeNull;
   }
 
   private static @Nullable SpecificTypeReference tryToFindCommonEnumClass(SpecificTypeReference a,
@@ -272,7 +276,7 @@ public class HaxeTypeUnifier {
   }
   @NotNull
   static public SpecificTypeReference unify(List<SpecificTypeReference> types, @NotNull PsiElement context, @Nullable  SpecificTypeReference suggestedType) {
-    if (types.size() == 0) {
+    if (types.isEmpty()) {
       return SpecificTypeReference.getUnknown(context);
     }
     SpecificTypeReference type = types.get(0);

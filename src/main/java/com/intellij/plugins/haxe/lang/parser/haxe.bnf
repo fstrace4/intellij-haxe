@@ -238,7 +238,11 @@ suffixOperator ::= '!'                { extends=operator }
 // KFROM ('from') and KTO ('to') are only keywords for abstracts and can be used as identifiers elsewhere in the code (KNEVER ('never') is only used for getters/setters)
 private identifierWithKeywordName::= 'from' | 'to' | 'never'
 
-identifier ::= ID | identifierWithKeywordName  |  (<<canBeReification>> macroIdentifierReification | MACRO_ID)
+macroIdentifier ::=   (<<canBeReification>> macroIdentifierReification | MACRO_ID)
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeIdentifierPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeIdentifierPsiMixin" extends="identifier"}
+private normalIdentifier ::= ID | identifierWithKeywordName
+
+identifier ::= macroIdentifier | normalIdentifier
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeIdentifierPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeIdentifierPsiMixin" name="identifier"}
 
 thisExpression ::= 'this'
@@ -264,7 +268,7 @@ private top_level_recover ::= !(ppToken | '@' | 'abstract' | 'class'  | 'enum' |
 compiletimeMetaArg ::= expression
 private compileTimeMetaArgList ::= compiletimeMetaArg (',' compiletimeMetaArg)*
 // runtime macros can be crated by macros so reunification must be accept
-runtimeMetaArg ::= arrayLiteral | objectLiteral | constantExpression | macroDynamicReification
+runtimeMetaArg ::= arrayLiteral | objectLiteral | constantExpression | macroValueReification
 private runTimeMetaArgList ::= runtimeMetaArg (',' runtimeMetaArg)*
 //
 
@@ -546,14 +550,15 @@ macroArrayReification::= "$a" macroStatementWrapper {mixin="com.intellij.plugins
 macroBlockReification::= "$b" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
 macroIdentifierReification::= "$i" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
 macroFieldReification::= "$p" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
-macroDynamicReification::= "$v" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
+macroValueReification::= "$v" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
 
 macroExpReification::= "$e" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
 macroShorthandExpReification::= '$' "{" expression "}" {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"} // shorthand for $e / expression ?
 
 private macroStatementWrapper ::= "{" expression "}"
 
-macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (macroShorthandExpReification | macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroDynamicReification | macroExpReification )
+macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (macroShorthandExpReification | macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroValueReification | macroExpReification )
+
 
 //Class Reification
 macroClassReification ::= 'macro' topLevelDeclaration
@@ -574,22 +579,19 @@ macroTypeReification ::= 'macro' ':' complexType {pin=2}
 macroValueExpression ::= 'macro' <<pushSemicolonRuleDisable>> macroValue  {hooks=[popSemicolonRule]}
 private macroValue ::=   statement | topLevelDeclaration
 
-//private statementWithHook ::= blockStatement | notBlockStatement
-//{hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 private statement ::= blockStatement | notBlockStatement
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 
 untypedStatement ::=  'untyped'  statement ';'?
-{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+{pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 
 macroStatement ::=  'macro' <<pushSemicolonRuleDisable>> statement ';'?
-{hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+//need to pin 3, as it would otherwise pin 1 for some reason, and we dont want that (there are other expressions with macro keyword, like for instance macroTypeReification)
+{pin=3 hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 
 private notBlockStatement ::=
-//                            ('untyped' statement ';'?)
-//                            | ('macro' <<pushSemicolonRuleDisable>> statementWithHook ';'?)
                              untypedStatement
-                             macroStatement
+                            | macroStatement
                             | macroClassReification
                             | localVarDeclarationList
                             | localFunctionDeclaration
@@ -633,7 +635,8 @@ doWhileStatement ::= 'do' doWhileBody 'while' '(' expression ')' ';'
   { methods=[guard="expression" body="doWhileBody"] implements="whileStatement" }
 
 private returnValue ::= objectLiteral
-                      | ("macro"? statement)
+                      | macroStatement
+                      | statement
                       | expression
                       | localVarDeclarationList   // Void value, so allowable, but not useful
 lamdaReturnStatement ::= 'return' (returnValue)? {implements="returnStatement"}

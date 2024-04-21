@@ -180,6 +180,9 @@ public class HaxeExpressionEvaluator {
       if (element instanceof HaxeWhileStatement whileStatement) {
         return handleWhileStatement(context, resolver, whileStatement);
       }
+      if (element instanceof HaxeMacroStatement macroStatement) {
+        return handleMacroStatement(context, macroStatement, resolver);
+      }
 
       if (element instanceof HaxeIfStatement ifStatement) {
         //return handleIfStatement(context, resolver, ifStatement);
@@ -368,10 +371,61 @@ public class HaxeExpressionEvaluator {
     if (element instanceof AbstractHaxeNamedComponent namedComponent) {
       return HaxeTypeResolver.getFieldOrMethodReturnType(namedComponent, resolver);
     }
+    if (element instanceof HaxeMacroValueExpression  macroValueExpression) {
+      if (macroValueExpression.getExpression() != null) {
+        ResultHolder result = handle(macroValueExpression.getExpression(), context, resolver);
+        if (!result.isUnknown()) {
+          return HaxeMacroTypeUtil.getExprOf(element, result).createHolder();
+        }else {
+          return HaxeMacroTypeUtil.getExpr(element).createHolder();
+        }
+      }
+    }
+    if (element instanceof HaxeMacroClassReification classReification) {
+      return HaxeMacroTypeUtil.getTypeDefinition(classReification).createHolder();
+    }
+    if (element instanceof HaxeMacroTypeReification typeReification) {
+      return HaxeMacroTypeUtil.getComplexType(typeReification).createHolder();
+    }
+
+    if (element instanceof HaxeMacroValueReification valueReification) {
+      return handle(valueReification.getExpression(), context, resolver);
+    }
+
+    if (element instanceof HaxeMacroArrayReification arrayReification) {
+      ResultHolder resultHolder = handle(arrayReification.getExpression(), context, resolver);
+      if (!resultHolder.isUnknown()) {
+        return resultHolder;
+      }
+
+    }
     // TODO handle postfix (ex. myVar++ etc)
     // todo handle object literals
+    if (element instanceof HaxeObjectLiteral objectLiteral) {
+      //TODO needs class or model to  extract fields and their corresponding values
+      // TODO we must also be able to do CanAssign
+      //return SpecificHaxeAnonymousReference.withoutGenerics(new HaxeClassReference("{...}", objectLiteral))
+      //  .createHolder();
+    }
+
     if(log.isDebugEnabled()) log.debug("Unhandled " + element.getClass());
     return createUnknown(element);
+  }
+
+  private static ResultHolder handleMacroStatement(HaxeExpressionEvaluatorContext context, HaxeMacroStatement macroStatement, HaxeGenericResolver resolver) {
+    @NotNull PsiElement[] children = macroStatement.getChildren();
+    if (children.length > 0) {
+      PsiElement child = children[0];
+      ResultHolder result = handle(child, context, resolver);
+    if (result.isUnknown() || result.isDynamic()) {
+        // copy constant so we can try to improve unification (ex. null values are dynamic)
+        return HaxeMacroTypeUtil.getExpr(child).withConstantValue(result.getType().getConstant()).createHolder();
+      }else {
+        return HaxeMacroTypeUtil.getExprOf(child, result).createHolder();
+      }
+    }
+    // Unknown type, but since its an expression it should be an Expr right?
+    return HaxeMacroTypeUtil.getExpr(macroStatement).createHolder();
   }
 
   private static ResultHolder resolveWithCache(@NotNull PsiElement element, @NotNull HaxeGenericResolver resolver, Supplier<ResultHolder> resolveLogic) {

@@ -29,5 +29,9 @@ public class HaxeLocalVarInlayTest extends HaxeInlayTestBase {
   public void testSimpleVarHints() throws Exception {
     doTest(hintsProvider);
   }
+  @Test
+  public void testLocalVarMacros() throws Exception {
+    doTest(hintsProvider);
+  }
 
 }

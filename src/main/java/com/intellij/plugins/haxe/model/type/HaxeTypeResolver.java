@@ -339,8 +339,22 @@ public class HaxeTypeResolver {
       final PsiElement methodBody = psi;
       List<HaxeReturnStatement> returnStatementList =
         CachedValuesManager.getCachedValue(methodBody, () -> HaxeTypeResolver.findReturnStatementsForMethod(methodBody));
-      List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> getPsiElementType(statement, resolver)).toList();
-      if (returnTypes.isEmpty()) return SpecificHaxeClassReference.getVoid(psi).createHolder();
+      List<ResultHolder> returnTypes = returnStatementList.stream().map(statement ->  {
+        if (processedElements.get().contains(statement)) {
+          return null; // possible recursion, ignore this return statement
+        }else {
+          return getPsiElementType(statement, resolver);
+        }
+      }).filter(Objects::nonNull)
+        .toList();
+
+      if (returnTypes.isEmpty() && returnStatementList.isEmpty()) {
+        return SpecificHaxeClassReference.getVoid(psi).createHolder();
+      }
+      if (returnStatementList.isEmpty()) {
+        return SpecificHaxeClassReference.getDynamic(psi).createHolder();
+      }
+
       ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi);
 
       // method typeParameters should have been used when resolving returnTypes, we want to avoid double resolve
@@ -385,7 +399,7 @@ public class HaxeTypeResolver {
       // search for ReturnStatements but filter out any that are part of local functions
       Collection<HaxeReturnStatement> returnStatements = PsiTreeUtil.findChildrenOfType(psi, HaxeReturnStatement.class);
       for (HaxeReturnStatement statement : returnStatements) {
-        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class);
+        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class, HaxeMacroClassReification.class);
         // we want to avoid returning return statements that are in a deeper scope / inside a local function, however we might also be
         // searching for the returnType of a local function, so we check if any parent of local function is null or the same as the function
         // we are searching
@@ -687,19 +701,14 @@ public class HaxeTypeResolver {
 
   // @TODO: hack to avoid stack overflow, until a proper non-static fix is done
   //        At least, we've made it thread local, so the threads aren't stomping on each other any more.
-  static private ThreadLocal<? extends Set<PsiElement>> processedElements = new ThreadLocal<HashSet<PsiElement>>() {
-    @Override
-    protected HashSet<PsiElement> initialValue() {
-      return new HashSet<PsiElement>();
-    }
-  };
+  static private ThreadLocal<? extends Set<PsiElement>> processedElements = ThreadLocal.withInitial(HashSet::new);
 
   @NotNull
   static public HaxeExpressionEvaluatorContext evaluateFunction(@NotNull HaxeExpressionEvaluatorContext context,
                                                                 HaxeGenericResolver resolver) {
     PsiElement element = context.root;
     if (processedElements.get().contains(element)) {
-      context.result = SpecificHaxeClassReference.getDynamic(element).createHolder();
+      context.result = SpecificHaxeClassReference.getUnknown(element).createHolder();
       return context;
     }
 

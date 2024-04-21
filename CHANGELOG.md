@@ -1,6 +1,8 @@
 # Changelog
 ## 1.5.3
-* Improvement: changed parser so it can handle parenthesis in the middle of functionTypes (ex. `Int->(Array<String>->void)`) 
+* Fixed: Problem displaying import suggestions in Intellij 2024.1
+* Improvement: changed parser so it can handle parenthesis in the middle of functionTypes (ex. `Int->(Array<String>->void)`)
+* Misc: Initial attempt at resolving types for macro expressions
 
 ## 1.5.2
 * Fixed: Methods and properties in module scope are now resolved correctly.

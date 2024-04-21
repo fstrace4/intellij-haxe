@@ -73,7 +73,7 @@ Haxe File
           HaxePsiToken:function('function')
           COMPONENT_NAME
             IDENTIFIER
-              HaxePsiToken:ID('macroDynamicReification')
+              HaxePsiToken:ID('macroValueReification')
           HaxePsiToken:(('(')
           PARAMETER_LIST
             <empty list>
@@ -85,6 +85,16 @@ Haxe File
                 REFERENCE_EXPRESSION
                   IDENTIFIER
                     HaxePsiToken:ID('Expr')
+                TYPE_PARAM
+                  HaxePsiToken:<('<')
+                  TYPE_LIST
+                    TYPE_LIST_PART
+                      TYPE_OR_ANONYMOUS
+                        TYPE
+                          REFERENCE_EXPRESSION
+                            IDENTIFIER
+                              HaxePsiToken:ID('Int')
+                  HaxePsiToken:>('>')
           BLOCK_STATEMENT
             HaxePsiToken:{('{')
             LOCAL_VAR_DECLARATION_LIST
@@ -93,28 +103,29 @@ Haxe File
               LOCAL_VAR_DECLARATION
                 COMPONENT_NAME
                   IDENTIFIER
-                    HaxePsiToken:ID('dynamicType')
+                    HaxePsiToken:ID('value')
                 VAR_INIT
                   HaxePsiToken:=('=')
                   LITERAL_EXPRESSION
-                    HaxePsiToken:null('null')
+                    HaxePsiToken:LITINT('1')
               HaxePsiToken:;(';')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              BLOCK_STATEMENT
-                HaxePsiToken:{('{')
-                VALUE_EXPRESSION
-                  MACRO_EXPRESSION_REIFICATION
-                    MACRO_DYNAMIC_REIFICATION
-                      HaxePsiToken:MACRO_ID('$v')
-                      HaxePsiToken:{('{')
-                      REFERENCE_EXPRESSION
-                        IDENTIFIER
-                          HaxePsiToken:ID('dynamicType')
-                      HaxePsiToken:}('}')
-                HaxePsiToken:}('}')
-              HaxePsiToken:;(';')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                BLOCK_STATEMENT
+                  HaxePsiToken:{('{')
+                  VALUE_EXPRESSION
+                    MACRO_EXPRESSION_REIFICATION
+                      MACRO_VALUE_REIFICATION
+                        HaxePsiToken:MACRO_ID('$v')
+                        HaxePsiToken:{('{')
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('value')
+                        HaxePsiToken:}('}')
+                  HaxePsiToken:}('}')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         METHOD_DECLARATION
           METHOD_MODIFIER
@@ -153,17 +164,18 @@ Haxe File
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              VALUE_EXPRESSION
-                MACRO_EXPRESSION_REIFICATION
-                  MACRO_BLOCK_REIFICATION
-                    HaxePsiToken:MACRO_ID('$b')
-                    HaxePsiToken:{('{')
-                    REFERENCE_EXPRESSION
-                      IDENTIFIER
-                        HaxePsiToken:ID('a')
-                    HaxePsiToken:}('}')
-              HaxePsiToken:;(';')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                VALUE_EXPRESSION
+                  MACRO_EXPRESSION_REIFICATION
+                    MACRO_BLOCK_REIFICATION
+                      HaxePsiToken:MACRO_ID('$b')
+                      HaxePsiToken:{('{')
+                      REFERENCE_EXPRESSION
+                        IDENTIFIER
+                          HaxePsiToken:ID('a')
+                      HaxePsiToken:}('}')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         METHOD_DECLARATION
           METHOD_MODIFIER
@@ -192,17 +204,18 @@ Haxe File
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              VALUE_EXPRESSION
-                MACRO_EXPRESSION_REIFICATION
-                  MACRO_IDENTIFIER_REIFICATION
-                    HaxePsiToken:MACRO_ID('$i')
-                    HaxePsiToken:{('{')
-                    REFERENCE_EXPRESSION
-                      IDENTIFIER
-                        HaxePsiToken:ID('identifier')
-                    HaxePsiToken:}('}')
-              HaxePsiToken:;(';')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                VALUE_EXPRESSION
+                  MACRO_EXPRESSION_REIFICATION
+                    MACRO_IDENTIFIER_REIFICATION
+                      HaxePsiToken:MACRO_ID('$i')
+                      HaxePsiToken:{('{')
+                      REFERENCE_EXPRESSION
+                        IDENTIFIER
+                          HaxePsiToken:ID('identifier')
+                      HaxePsiToken:}('}')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         METHOD_DECLARATION
           METHOD_MODIFIER
@@ -241,20 +254,21 @@ Haxe File
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              PARENTHESIZED_EXPRESSION
-                HaxePsiToken:(('(')
-                VALUE_EXPRESSION
-                  MACRO_EXPRESSION_REIFICATION
-                    MACRO_FIELD_REIFICATION
-                      HaxePsiToken:MACRO_ID('$p')
-                      HaxePsiToken:{('{')
-                      REFERENCE_EXPRESSION
-                        IDENTIFIER
-                          HaxePsiToken:ID('field')
-                      HaxePsiToken:}('}')
-                HaxePsiToken:)(')')
-              HaxePsiToken:;(';')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                PARENTHESIZED_EXPRESSION
+                  HaxePsiToken:(('(')
+                  VALUE_EXPRESSION
+                    MACRO_EXPRESSION_REIFICATION
+                      MACRO_FIELD_REIFICATION
+                        HaxePsiToken:MACRO_ID('$p')
+                        HaxePsiToken:{('{')
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('field')
+                        HaxePsiToken:}('}')
+                  HaxePsiToken:)(')')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         METHOD_DECLARATION
           METHOD_MODIFIER
@@ -290,21 +304,22 @@ Haxe File
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              HaxePsiToken:macro('macro')
-              PARENTHESIZED_EXPRESSION
-                HaxePsiToken:(('(')
-                FUNCTION_LITERAL
-                  HaxePsiToken:function('function')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
+                PARENTHESIZED_EXPRESSION
                   HaxePsiToken:(('(')
-                  PARAMETER_LIST
-                    <empty list>
+                  FUNCTION_LITERAL
+                    HaxePsiToken:function('function')
+                    HaxePsiToken:(('(')
+                    PARAMETER_LIST
+                      <empty list>
+                    HaxePsiToken:)(')')
+                    LAMDA_RETURN_STATEMENT
+                      HaxePsiToken:return('return')
+                      REFERENCE_EXPRESSION
+                        IDENTIFIER
+                          HaxePsiToken:MACRO_ID('$e')
                   HaxePsiToken:)(')')
-                  LAMDA_RETURN_STATEMENT
-                    HaxePsiToken:return('return')
-                    REFERENCE_EXPRESSION
-                      IDENTIFIER
-                        HaxePsiToken:MACRO_ID('$e')
-                HaxePsiToken:)(')')
-              HaxePsiToken:;(';')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         HaxePsiToken:}('}')

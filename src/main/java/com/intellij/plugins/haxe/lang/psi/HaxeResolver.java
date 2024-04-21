@@ -459,7 +459,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private List<? extends PsiElement> checkMacroIdentifier(HaxeReference reference) {
     @NotNull PsiElement[] children = reference.getChildren();
     if (children.length == 1) {
-      if (children[0] instanceof  HaxeIdentifier identifier) {
+      if (children[0] instanceof  HaxeMacroIdentifier identifier) {
         PsiElement macroId = identifier.getMacroId();
         if (macroId != null) {
           String substring = macroId.getText().substring(1);
