@@ -268,16 +268,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
     if (result == null) {
       LogResolution(reference, "failed after exhausting all options.");
+      return EMPTY_LIST; // empty list means cache not found
     }
-    if (result == null || result.isEmpty()) {
-        return null;
-    }else {
-      if (log.isTraceEnabled()){
-        String message = "caching result for :" + referenceText;
-        traceAs(log, HaxeDebugUtil.getCallerStackFrame(), message);
-      }
-      return result;
+
+    if (log.isTraceEnabled()) {
+      String message = "caching result for :" + referenceText;
+      traceAs(log, HaxeDebugUtil.getCallerStackFrame(), message);
     }
+    return result;
+
   }
 
   // checks if we are attempting to  assign an enum type, this makes sure we chose the enum value and not competing class names

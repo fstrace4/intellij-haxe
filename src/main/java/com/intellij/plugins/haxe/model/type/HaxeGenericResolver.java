@@ -28,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.intellij.plugins.haxe.model.type.resolver.ResolveSource.*;
 
@@ -331,16 +330,25 @@ public class HaxeGenericResolver {
     if (!resultHolder.getType().isTypeParameter()) {
       Optional<ResolverEntry> assign = findAssignToType();
       if (assign.isPresent()) { // if we got expected return type we want to pass along expected typeParameter values when resolving
-        SpecificHaxeClassReference expectedType = assign.get().type().getClassType();
+        ResultHolder assignHint = assign.get().type();
+        SpecificHaxeClassReference expectedType = assignHint.getClassType();
         if (expectedType != null) {
-          // hack for null<T>  return types
-          if (resultHolder.getType().isNullType()) {
-            resultHolder.getClassType().getSpecifics()[0] = expectedType.createHolder();
-          }else {
+          //TODO clean up this hack
+
+          // if hint is null type and resolve target is not wrap resolve target
+          if (expectedType.isNullType() && !resultHolder.getType().isNullType()) {
+            SpecificTypeReference type = resultHolder.getType();
+            resultHolder = SpecificTypeReference.getNull(type.getElementContext(), resultHolder).createHolder();
+
+          }
+          //else if target is nullType and assignHint is not wrap target
+          if (!expectedType.isNullType() && resultHolder.getType().isNullType()) {
+            expectedType = SpecificTypeReference.getNull(expectedType.getElementContext(), assignHint);
+          }
+          
             ResultHolder holder = HaxeTypeResolver.resolveParameterizedType(resultHolder, this, true);
             replaceSpecifics(holder, expectedType);
             return holder;
-          }
 
         }
       }

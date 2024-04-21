@@ -1197,12 +1197,13 @@ public class HaxeExpressionEvaluatorHandlers {
           SpecificHaxeClassReference type = callie.getClassType();
           if (type != null && type.getHaxeClass() != null) {
             resolverForMethodDeclaringClass = createInheritedClassResolver(aClass.haxeClass, type.getHaxeClass(), resolverForMethodDeclaringClass);
+            localResolver.addAll(resolverForMethodDeclaringClass);
           }
         }
       }
     }
 
-    SpecificTypeReference functionType = handle(callExpressionRef, context, resolverForMethodDeclaringClass).getType();
+    SpecificTypeReference functionType = handle(callExpressionRef, context, localResolver).getType();
     boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
     boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
     if (varIsMacroFunction && !callIsFromMacroContext) {

@@ -37,7 +37,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Stack;
 
 @CustomLog
 public abstract class SpecificTypeReference {
@@ -222,6 +221,10 @@ public abstract class SpecificTypeReference {
 
   public static SpecificHaxeClassReference primitive(String name, @NotNull PsiElement context, Object constant) {
     return SpecificHaxeClassReference.withoutGenerics(getStdClassReference(name, context), constant);
+  }
+
+  public static SpecificHaxeClassReference getNull(@NotNull PsiElement context, @NotNull ResultHolder specific) {
+    return SpecificHaxeClassReference.withGenerics(getStdClassReference(NULL, context), new ResultHolder[]{specific});
   }
 
   public SpecificTypeReference withRangeConstraint(HaxeRange range) {

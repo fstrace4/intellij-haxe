@@ -574,7 +574,7 @@ public class HaxeTypeResolver {
       for (HaxeTypeListPart part : param.getTypeList().getTypeListPartList()) {
         ResultHolder partResult = null;
         if (resolver != null && !resolver.isEmpty()) {
-          partResult = resolver.resolve(part);
+          partResult = resolver.resolve(part, useAssignHint);
         }
         if (null == partResult) {
           HaxeFunctionType fnType = part.getFunctionType();

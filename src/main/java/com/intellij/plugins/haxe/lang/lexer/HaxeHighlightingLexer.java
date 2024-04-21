@@ -24,7 +24,6 @@ public class HaxeHighlightingLexer extends LayeredLexer {
 
   public HaxeHighlightingLexer(Project project) {
     super(new HaxeLexer(project));
-
     registerLayer(new HaxeMetaHighlighterLexer(project), HaxeTokenTypes.EMBEDDED_META);
   }
 
