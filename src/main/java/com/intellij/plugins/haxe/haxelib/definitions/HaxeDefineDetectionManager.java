@@ -74,9 +74,12 @@ public class HaxeDefineDetectionManager implements Disposable {
       .forEach( e -> map.put(e.getKey(), e.getValue()));
 
     if (instance.getAutoDetectDefinitions()) {
-      for (Module module : moduleDefinitionsMap.keySet()) {
+
         // add  all auto detected values
-        moduleDefinitionsMap.values().stream()
+
+        moduleDefinitionsMap.entrySet().stream()
+          .filter(e -> e.getKey().getProject() == myProject)
+          .map(Map.Entry::getValue)
           .flatMap(map1 -> map1.entrySet().stream())
           .filter(not(HaxeDefineDetectionManager::isUnsetFlag))
           .forEach( e -> map.put(e.getKey(), e.getValue()));
@@ -84,7 +87,7 @@ public class HaxeDefineDetectionManager implements Disposable {
         //TODO move project defines to module level settings
         //HaxeModuleSettings moduleSettings = HaxeModuleSettings.getInstance(module);
         //HaxeTarget target = moduleSettings.getHaxeTarget();
-      }
+
       // remove any value marked with unset flag (*UNSET*)
       projectUserDefineMap.entrySet().stream()
         .filter(HaxeDefineDetectionManager::isUnsetFlag)
