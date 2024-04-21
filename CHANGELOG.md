@@ -4,6 +4,7 @@
 * Improvement: Syntax highlighting for metadata arguments
 * Improvement: Changed parser so it can handle parenthesis in the middle of functionTypes (ex. `Int->(Array<String>->void)`)
 * Misc: Initial attempt at resolving types for macro expressions
+* Misc: Bugfixes
 
 ## 1.5.2
 * Fixed: Methods and properties in module scope are now resolved correctly.
