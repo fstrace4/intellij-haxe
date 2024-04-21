@@ -18,18 +18,23 @@ package com.intellij.plugins.haxe.lang.lexer;
 import com.intellij.lexer.LayeredLexer;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.metadata.lexer.HaxeMetadataLexer;
-import com.intellij.psi.tree.IElementType;
+import com.intellij.plugins.haxe.metadata.lexer.HaxeMetadataTokenTypes;
 
 public class HaxeHighlightingLexer extends LayeredLexer {
 
   public HaxeHighlightingLexer(Project project) {
     super(new HaxeLexer(project));
 
-    // This hands off lexing for the highlight to the given lexer.  It will
-    // return the token types that the sub-lexer returns back to the main highlighter.
-    registerSelfStoppingLayer(new HaxeMetadataLexer(),
-                              new IElementType[]{HaxeTokenTypes.EMBEDDED_META},
-                              IElementType.EMPTY_ARRAY);
+    registerLayer(new HaxeMetaHighlighterLexer(project), HaxeTokenTypes.EMBEDDED_META);
   }
 
+  // it looks like its not allowed to stop parsing in the middle of a token (EMBEDDED_META) and switch to another parser
+  // so we need to make a second LayeredLexer that can handle Haxe code in EMBEDDED_META tokens.
+  static class HaxeMetaHighlighterLexer extends LayeredLexer {
+
+    public HaxeMetaHighlighterLexer(Project project) {
+      super(new HaxeMetadataLexer());
+      registerLayer(new HaxeLexer(project), HaxeMetadataTokenTypes.CT_META_ARGS, HaxeMetadataTokenTypes.RT_META_ARGS);
+    }
+  }
 }
