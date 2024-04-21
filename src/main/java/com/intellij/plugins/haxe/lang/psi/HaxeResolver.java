@@ -79,6 +79,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   private final RecursionGuard<PsiElement> resolveInnerRecursionGuard = RecursionManager.createGuard("resolveInnerRecursionGuard");
 
+  public static void prohibitResultCaching(@NotNull PsiElement element) {
+    INSTANCE.resolveInnerRecursionGuard.prohibitResultCaching(element);
+  }
+
   @Override
   public List<? extends PsiElement> resolve(@NotNull HaxeReference reference, boolean incompleteCode) {
        /** See docs on {@link HaxeDebugUtil#isCachingDisabled} for how to set this flag. */
