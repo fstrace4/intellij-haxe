@@ -626,8 +626,8 @@ public class HaxeResolveUtil {
     }
 
     if (stack.search(element) > 0) {
-      // just to be sure we dont end up caching something incorrectly when unable to resolve type
-      HaxeResolver.prohibitResultCaching(element);
+      //TODO this breaks tests, should probably make a RecursionGuard for this  instead of using
+      //HaxeResolver.prohibitResultCaching(element);
 
       // We're already trying to resolve this element.  Prevent stack overflow.
       String msg = "Cannot resolve recursive/cyclic definition of " + element.getText()
