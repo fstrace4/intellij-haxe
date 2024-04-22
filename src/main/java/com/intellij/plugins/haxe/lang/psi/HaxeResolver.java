@@ -24,7 +24,9 @@ import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
+import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceExpressionImpl;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
@@ -285,98 +287,166 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   // checks if we are attempting to  assign an enum type, this makes sure we chose the enum value and not competing class names
   private List<? extends PsiElement> checkEnumMemberHints(HaxeReference reference) {
-    if (reference.getParent() instanceof HaxeEnumValueReference) {
-    HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class, true);
-    if (switchCaseExpr != null) {
-      HaxeExtractorMatchExpression matchExpression = PsiTreeUtil.getParentOfType(reference, HaxeExtractorMatchExpression.class);
-      if (matchExpression != null) {
-        List<HaxeComponentName> names = evaluateAndFindEnumMember(reference, matchExpression.getExpression());
-        if (names!= null && !names.isEmpty()) return names;
-      }
-      HaxeSwitchStatement parentSwitch = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
-      if (parentSwitch != null) {
-        HaxeExpression expression = parentSwitch.getExpression();
-        if (expression instanceof HaxeParenthesizedExpression parenthesizedExpression) {
-          expression = parenthesizedExpression.getExpression();
-        }
-          HaxeSwitchCaseExprArray exprArray = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExprArray.class);
-          // TODO: if necessary support array inside array ?
-          int index = findSwitchArrayIndex(exprArray, reference);
-          if (expression instanceof  HaxeArrayLiteral arrayLiteral) {
-            HaxeExpressionList list = arrayLiteral.getExpressionList();
-            if (list != null && index > -1) {
-              HaxeExpression haxeExpression = list.getExpressionList().get(index);
-              List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, haxeExpression);
-              if (components != null) return  components;
-            }
+    if (reference instanceof HaxeReferenceExpressionImpl) {
+      PsiElement referenceParent = reference.getParent();
+      if (referenceParent instanceof HaxeEnumValueReference) {
+        HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class, true);
+        if (switchCaseExpr != null) {
+          HaxeExtractorMatchExpression matchExpression = PsiTreeUtil.getParentOfType(reference, HaxeExtractorMatchExpression.class);
+          if (matchExpression != null) {
+            List<HaxeComponentName> names = evaluateAndFindEnumMember(reference, matchExpression.getExpression());
+            if (names != null && !names.isEmpty()) return names;
           }
-
-        List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, expression);
-        if (components != null) return  components;
-      }
-    }
-}
-
-    PsiElement referenceParent = reference.getParent();
-
-    if (!(referenceParent instanceof HaxeType)) {
-      HaxeParameter parameterFromReferenceExpression = null;
-      HaxePsiField fieldFromReferenceExpression = null;
-      HaxeAssignExpression assignExpression = PsiTreeUtil.getParentOfType(reference, HaxeAssignExpression.class);
-      if (assignExpression != null) {
-        HaxeExpression left = assignExpression.getLeftExpression();
-        //guard to avoid another resolve of the same reference, and attempts to check assignExpression for only part of a reference expression
-        if (left != reference && !(referenceParent instanceof  HaxeReferenceExpression)) {
-          if (left instanceof HaxeReferenceExpression referenceExpression) {
-            PsiElement resolve = referenceExpression.resolve();
-            if (resolve instanceof HaxePsiField psiField) {
-              fieldFromReferenceExpression = psiField;
+          HaxeSwitchStatement parentSwitch = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
+          if (parentSwitch != null) {
+            HaxeExpression expression = parentSwitch.getExpression();
+            if (expression instanceof HaxeParenthesizedExpression parenthesizedExpression) {
+              expression = parenthesizedExpression.getExpression();
             }
-            if (resolve instanceof HaxeParameter parameter) {
-              parameterFromReferenceExpression = parameter;
+            HaxeSwitchCaseExprArray exprArray = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExprArray.class);
+            // TODO: if necessary support array inside array ?
+            int index = findSwitchArrayIndex(exprArray, reference);
+            if (expression instanceof HaxeArrayLiteral arrayLiteral) {
+              HaxeExpressionList list = arrayLiteral.getExpressionList();
+              if (list != null && index > -1) {
+                HaxeExpression haxeExpression = list.getExpressionList().get(index);
+                List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, haxeExpression);
+                if (components != null) return components;
+              }
             }
-          }
-        }
-      }
-      if (referenceParent instanceof HaxeCompareExpression compareExpression ) {
-        if (compareExpression.getLeftExpression() instanceof HaxeReferenceExpression referenceExpression) {
-          if (referenceExpression != reference) {//guard to avoid another resolve of the same reference
-            PsiElement resolve = referenceExpression.resolve();
-            if (resolve instanceof HaxePsiField psiField) {
-              fieldFromReferenceExpression = psiField;
-            }
+
+            List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, expression);
+            if (components != null) return components;
           }
         }
       }
 
-
-      HaxePsiField field = fieldFromReferenceExpression != null ? fieldFromReferenceExpression :  PsiTreeUtil.getParentOfType(reference, HaxePsiField.class);
-      HaxeParameter parameter = parameterFromReferenceExpression != null ? parameterFromReferenceExpression :  PsiTreeUtil.getParentOfType(reference, HaxeParameter.class);
-      HaxeTypeTag tag = null;
-      HaxeVarInit init = null;
-      if (field != null) {
-        tag = field.getTypeTag();
-        init = field.getVarInit();
-      } else if (parameter != null) {
-        tag = parameter.getTypeTag();
-        init = parameter.getVarInit();
+      if (referenceParent instanceof HaxeCallExpression) {
+        List<HaxeComponentName> member = checkParameterListFromCallExpressions(reference, referenceParent);
+        if (member != null) return member;
       }
 
-      if (tag != null && tag.getTypeOrAnonymous() != null) {
-        ResultHolder type = HaxeTypeResolver.getTypeFromTypeOrAnonymous(tag.getTypeOrAnonymous());
-        if (type.getClassType() != null) {
-          SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
-          return findEnumMember(reference, typeReference);
+
+      if (!(referenceParent instanceof HaxeType)) {
+        HaxeParameter parameterFromReferenceExpression = null;
+        HaxePsiField fieldFromReferenceExpression = null;
+        HaxeAssignExpression assignExpression = PsiTreeUtil.getParentOfType(reference, HaxeAssignExpression.class);
+        if (assignExpression != null) {
+          HaxeExpression left = assignExpression.getLeftExpression();
+          //guard to avoid another resolve of the same reference, and attempts to check assignExpression for only part of a reference expression
+          if (left != reference && !(referenceParent instanceof HaxeReferenceExpression)) {
+            if (left instanceof HaxeReferenceExpression referenceExpression) {
+              PsiElement resolve = referenceExpression.resolve();
+              if (resolve instanceof HaxePsiField psiField) {
+                fieldFromReferenceExpression = psiField;
+              }
+              if (resolve instanceof HaxeParameter parameter) {
+                parameterFromReferenceExpression = parameter;
+              }
+            }
+          }
         }
-      }
-      if (init != null) {
-        // check if reference is part of init expression and if so skip to avoid circular resolve
-        HaxeVarInit referenceInitParent = PsiTreeUtil.getParentOfType(reference, HaxeVarInit.class);
-        if (referenceInitParent == null || referenceInitParent != init) {
-          ResultHolder type = HaxeTypeResolver.getPsiElementType(init, null);
+        if (referenceParent instanceof HaxeCompareExpression compareExpression) {
+          if (compareExpression.getLeftExpression() instanceof HaxeReferenceExpression referenceExpression) {
+            if (referenceExpression != reference) {//guard to avoid another resolve of the same reference
+              PsiElement resolve = referenceExpression.resolve();
+              if (resolve instanceof HaxePsiField psiField) {
+                fieldFromReferenceExpression = psiField;
+              }
+            }
+          }
+        }
+
+        boolean isEnumConstructor = reference.getParent() instanceof HaxeCallExpression;
+        PsiElement element = isEnumConstructor ? reference.getParent().getParent() : reference.getParent();
+        HaxePsiField field =
+          fieldFromReferenceExpression != null ? fieldFromReferenceExpression : PsiTreeUtil.getParentOfType(element, HaxePsiField.class, true, HaxeCallExpression.class, HaxeNewExpression.class);
+        HaxeParameter parameter = parameterFromReferenceExpression != null
+                                  ? parameterFromReferenceExpression
+                                  : PsiTreeUtil.getParentOfType(element, HaxeParameter.class, true, HaxeCallExpression.class, HaxeNewExpression.class);
+        HaxeTypeTag tag = null;
+        HaxeVarInit init = null;
+        if (field != null) {
+          tag = field.getTypeTag();
+          init = field.getVarInit();
+        } else if (parameter != null) {
+          tag = parameter.getTypeTag();
+          init = parameter.getVarInit();
+        }
+
+        if (tag != null && tag.getTypeOrAnonymous() != null) {
+          ResultHolder type = HaxeTypeResolver.getTypeFromTypeOrAnonymous(tag.getTypeOrAnonymous());
           if (type.getClassType() != null) {
             SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
             return findEnumMember(reference, typeReference);
+          }
+        }
+        if (init != null) {
+          // check if reference is part of init expression and if so skip to avoid circular resolve
+          HaxeVarInit referenceInitParent = PsiTreeUtil.getParentOfType(reference, HaxeVarInit.class);
+          if (referenceInitParent == null || referenceInitParent != init) {
+            ResultHolder type = HaxeTypeResolver.getPsiElementType(init, null);
+            if (type.getClassType() != null) {
+              SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+              return findEnumMember(reference, typeReference);
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  private static @Nullable List<HaxeComponentName> checkParameterListFromCallExpressions(HaxeReference reference, PsiElement referenceParent) {
+    @NotNull PsiElement[] children = referenceParent.getChildren();
+    HaxeNewExpression constructorCall;
+    HaxeCallExpression methodCallCall;
+    PsiElement argument;
+    // if this is an enum constructor then we should be the first child in the callExpression
+    // this means we have to go at least one level up to check for method calls
+    if (children.length > 0  && children[0] == reference) {
+      argument = referenceParent;
+       constructorCall = PsiTreeUtil.getParentOfType(referenceParent, HaxeNewExpression.class);
+       methodCallCall = PsiTreeUtil.getParentOfType(referenceParent, HaxeCallExpression.class);
+    }else {
+      argument = reference;
+      constructorCall = PsiTreeUtil.getParentOfType(reference, HaxeNewExpression.class);
+      methodCallCall = PsiTreeUtil.getParentOfType(reference, HaxeCallExpression.class);
+    }
+    if (methodCallCall != null) {
+      if (methodCallCall.getExpression() instanceof HaxeReference callerReference) {
+        if (callerReference.resolve() instanceof HaxeMethod haxeMethod) {
+          HaxeCallExpressionList argumentList = methodCallCall.getExpressionList();
+          if (argumentList != null) {
+            int argumentIndex = argumentList.getExpressionList().indexOf(argument);
+            if (argumentIndex > -1) {
+            HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(methodCallCall, haxeMethod);
+              Integer parameter = validation.getArgumentToParameterIndex().get(argumentIndex);
+              ResultHolder holder = validation.getParameterIndexToType().get(parameter);
+              if (holder != null) {
+                SpecificHaxeClassReference possibleType = holder.getClassType();
+                if (possibleType != null && possibleType.isEnumType()) {
+                  List<HaxeComponentName> member = findEnumMember(reference, possibleType);
+                  if (member != null) return member;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if (constructorCall != null) {
+      List<HaxeExpression> argumentList = constructorCall.getExpressionList();
+      int argumentIndex = argumentList.indexOf(argument);
+      if (argumentIndex> -1) {
+        HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkConstructor(constructorCall);
+        Integer parameter = validation.getArgumentToParameterIndex().get(argumentIndex);
+        ResultHolder holder = validation.getParameterIndexToType().get(parameter);
+        if (holder != null) {
+          SpecificHaxeClassReference possibleType = holder.getClassType();
+          if (possibleType != null && possibleType.isEnumType()) {
+            List<HaxeComponentName> member = findEnumMember(reference, possibleType);
+            if (member != null) return member;
           }
         }
       }

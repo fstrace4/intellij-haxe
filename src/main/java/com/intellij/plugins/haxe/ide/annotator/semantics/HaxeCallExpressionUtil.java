@@ -547,7 +547,7 @@ public class HaxeCallExpressionUtil {
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
       if (containsTypeParameter(parameterType, typeParamTable)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamTable);
+        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, resolver, typeParamTable);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }
@@ -718,7 +718,7 @@ public class HaxeCallExpressionUtil {
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
       if (containsTypeParameter(parameterType, typeParamTable)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, resolver, resolver, typeParamTable);
+        inheritTypeParametersFromArgument(parameterType, argumentType, localResolver, resolver, typeParamTable);
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, resolver);
       }

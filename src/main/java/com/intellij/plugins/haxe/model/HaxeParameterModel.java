@@ -122,6 +122,10 @@ public class HaxeParameterModel extends HaxeBaseMemberModel implements HaxeModel
     if (resolver != null) {
       SpecificTypeReference type = typeResult.getType();
       if(type instanceof SpecificHaxeClassReference classReference) {
+        if (type.isTypeParameter()) {
+          ResultHolder resolve = resolver.resolve(classReference.getClassName());
+          if (resolve != null && !resolve.isUnknown()) return resolve;
+        }
         type = propagateGenericsToType(classReference.createHolder(), resolver).getType();
       }
       else if(type instanceof SpecificFunctionReference functionReference) {
