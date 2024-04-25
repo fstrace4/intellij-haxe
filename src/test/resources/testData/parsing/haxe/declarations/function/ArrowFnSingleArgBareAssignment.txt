@@ -62,9 +62,10 @@ Haxe File
                   HaxePsiToken:=('=')
                   FUNCTION_LITERAL
                     OPEN_PARAMETER_LIST
-                      COMPONENT_NAME
-                        IDENTIFIER
-                          HaxePsiToken:ID('a')
+                      UNTYPED_PARAMETER
+                        COMPONENT_NAME
+                          IDENTIFIER
+                            HaxePsiToken:ID('a')
                     HaxePsiToken:->('->')
                     CALL_EXPRESSION
                       REFERENCE_EXPRESSION

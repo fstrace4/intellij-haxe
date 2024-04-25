@@ -978,18 +978,34 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
           ResultHolder type = model.getType();
           if (type.isFunctionType()) {
             SpecificFunctionReference functionType = type.getFunctionType();
-            HaxeParameterList parameterList = literal.getParameterList();
-            if (parameterList == null || functionType == null) return null;
-            int parameterMappedToArgument = parameterList.getParameterList().indexOf(parameter);
-            List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
-            SpecificFunctionReference.Argument argument = arguments.get(parameterMappedToArgument);
+            if (functionType == null) return null;
+            int index = findParameterIndex(literal, parameter);
+            if (index > -1 ) {
+              List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
+              SpecificFunctionReference.Argument argument = arguments.get(index);
 
-            ResultHolder resolved = validation.getResolver().withoutUnknowns().resolve(argument.getType());
-            if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
+              ResultHolder resolved = validation.getResolver().withoutUnknowns().resolve(argument.getType());
+              if (resolved != null && !resolved.isUnknown()) return resolved.getType().createHolder();
+            }
           }
         }
       return null;
     });
+  }
+
+  private static int findParameterIndex(@NotNull HaxeFunctionLiteral literal, @NotNull PsiElement parameter) {
+    HaxeParameterList parameterList = literal.getParameterList();
+    if (parameterList != null) {
+      return parameterList.getParameterList().indexOf(parameter);
+    }
+
+    HaxeOpenParameterList openParameterList = literal.getOpenParameterList();
+    if (openParameterList != null) {
+      if(openParameterList.getUntypedParameter() == parameter) {
+        return 0;
+      }
+    }
+    return -1;
   }
 
   private static final RecursionGuard<PsiElement> genericResolverRecursionGuard = RecursionManager.createGuard("genericResolverRecursionGuard");

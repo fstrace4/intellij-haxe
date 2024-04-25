@@ -5,7 +5,8 @@ class Untypedgenerics<T> {
         // function literal
         myArr.filter(function(arg/*<# :String #>*/) {return true;});
         // lambda
-        myArr.filter((arg/*<# :String #>*/) ->  true);
+        myArr.filter((arg/*<# :String #>*/) -> arg.length > 0);
+        myArr.filter(arg/*<# :String #>*/ ->  arg.length < 0);
         myArr.sort((s1/*<# :String #>*/,s2/*<# :String #>*/)-> -1);
 
         testMethodGenericPassing("", (arg/*<# :String #>*/)-> {});

@@ -1490,8 +1490,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
       else if (element instanceof HaxeNamedComponent) {
         componentName = ((HaxeNamedComponent)element).getComponentName();
       }
-      else if (element instanceof HaxeOpenParameterList) {
-        componentName = ((HaxeOpenParameterList)element).getComponentName();
+      else if (element instanceof HaxeOpenParameterList parameterList) {
+        componentName = parameterList.getUntypedParameter().getComponentName();
       }
       else if (element instanceof HaxeSwitchCaseExpr expr) {
         if (!executeForSwitchCase(expr)) return false;

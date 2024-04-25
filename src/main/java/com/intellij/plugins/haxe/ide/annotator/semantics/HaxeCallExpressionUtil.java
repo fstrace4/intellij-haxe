@@ -192,6 +192,13 @@ public class HaxeCallExpressionUtil {
         // attempt re-resolve after adding inherited type parameters
         parameterType = resolveParameterType(parameter, argumentResolver);
       }
+      // heck if functionType has untyped open parameterlist, if so inherit type
+      if (parameterType.isFunctionType() &&  argumentType.isFunctionType()
+         &&  argument instanceof HaxeFunctionLiteral literal && literal.getOpenParameterList() != null) {
+        SpecificFunctionReference paramFn = parameterType.getFunctionType();
+        SpecificFunctionReference argFn = argumentType.getFunctionType();
+        argumentType = new SpecificFunctionReference(paramFn.getArguments(), argFn.getReturnType(),  null, literal, literal).createHolder();
+      }
 
       //TODO properly resolve typedefs
       SpecificHaxeClassReference argumentClass = argumentType.getClassType();

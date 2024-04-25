@@ -348,7 +348,8 @@ public class HaxeExpressionEvaluatorHandlers {
 
       if (subelement instanceof HaxeImportAlias) return typeHolder;
       // overriding  context  to avoid problems with canAssign thinking this is a "Pure" class reference
-      return typeHolder.withElementContext(element);
+      if (!typeHolder.isFunctionType())  return typeHolder.withElementContext(element);
+      return typeHolder;
     }
 
     return SpecificTypeReference.getDynamic(element).createHolder();
@@ -734,25 +735,26 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
     HaxeFunctionLiteral function) {
-    HaxeParameterList params = function.getParameterList(); // TODO mlo: get expected type to use if signature/parameters are without types
-    if (params == null) {
-      return SpecificHaxeClassReference.getInvalid(function).createHolder();
-    }
+    //HaxeParameterList params = function.getParameterList(); // TODO mlo: get expected type to use if signature/parameters are without types
+    //if (params == null) {
+    //  return SpecificHaxeClassReference.getInvalid(function).createHolder();
+    //}
     LinkedList<SpecificFunctionReference.Argument> arguments = new LinkedList<>();
     ResultHolder returnType = null;
     context.beginScope();
     try {
-      if (params instanceof HaxeOpenParameterList openParamList) {
+      HaxeOpenParameterList openParamList = function.getOpenParameterList();
+      HaxeParameterList parameterList = function.getParameterList();
+      if (openParamList != null) {
         // Arrow function with a single, unparenthesized, parameter.
-
         // TODO: Infer the type from first usage in the function body.
         ResultHolder argumentType = SpecificTypeReference.getUnknown(function).createHolder();
-        String argumentName = openParamList.getComponentName().getName();
+        String argumentName = openParamList.getUntypedParameter().getComponentName().getName();
         context.setLocal(argumentName, argumentType);
         // TODO check if rest param?
         arguments.add(new SpecificFunctionReference.Argument(0, false, false, argumentType, argumentName));
-      } else {
-        List<HaxeParameter> list = params.getParameterList();
+      } else if (parameterList != null) {
+        List<HaxeParameter> list = parameterList.getParameterList();
         for (int i = 0; i < list.size(); i++) {
           HaxeParameter parameter = list.get(i);
           //ResultHolder argumentType = HaxeTypeResolver.getTypeFromTypeTag(parameter.getTypeTag(), function);
