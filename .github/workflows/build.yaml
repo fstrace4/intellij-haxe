@@ -28,12 +28,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 17
-          architecture: x64
 
       - name: Set up Haxe
         uses: krdlab/setup-haxe@v1
         with:
-          haxe-version: 4.3.0
+          haxe-version: 4.3.4
 
       - name: Test haxe
         run: haxe -version
