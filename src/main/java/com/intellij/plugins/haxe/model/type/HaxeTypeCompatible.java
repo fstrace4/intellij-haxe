@@ -706,14 +706,17 @@ public class HaxeTypeCompatible {
                 if (toSpecific.isEnumValueClass() && fromSpecific.isEnumType()) return true;
               }
             }
-
+            boolean toSpecIsEnum = false;
             if(toSpecific != null ) {
-              SpecificHaxeClassReference specific = wrapType(toHolder, to.context, toSpecific.isEnumType());
+              toSpecIsEnum = toSpecific.isEnumType();
+              SpecificHaxeClassReference specific = wrapType(toHolder, to.context, toSpecIsEnum);
               // recursive protection
               if(referencesAreDifferent(to, specific)) toSpecific = specific;
             }
             if(fromSpecific != null ) {
-              SpecificHaxeClassReference specific = wrapType(fromHolder, from.context, fromSpecific.isEnumType());
+              boolean useEnumWrapper = fromSpecific.isEnumType();
+              if (toSpecIsEnum && fromSpecific.isTypeParameter()) useEnumWrapper = true;
+              SpecificHaxeClassReference specific = wrapType(fromHolder, from.context, useEnumWrapper);
               // recursive protection
               if(referencesAreDifferent(from, specific)) fromSpecific = specific;
             }
