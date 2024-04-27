@@ -1071,7 +1071,7 @@ public class HaxeCallExpressionUtil {
     List<ErrorRecord> errors = new ArrayList<>();
     List<WarningRecord> warnings = new ArrayList<>();
 
-    HaxeGenericResolver resolver = null;
+    HaxeGenericResolver resolver = new HaxeGenericResolver();
 
     boolean completed = false;
     boolean memberMacroFunction = false;
