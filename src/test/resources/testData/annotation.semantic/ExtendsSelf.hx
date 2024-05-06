@@ -15,7 +15,7 @@ typedef TExtendSelf = {
 }
 
 typedef TBar = {
-  >test.TBar
+  >test.TBar,
 }
 
 class BarBase {}
