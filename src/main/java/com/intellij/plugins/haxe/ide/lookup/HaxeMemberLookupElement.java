@@ -15,17 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.ide;
+package com.intellij.plugins.haxe.ide.lookup;
 
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.completion.JavaCompletionUtil;
+import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.navigation.ItemPresentation;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
+import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.util.HaxePresentableUtil;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -34,30 +37,33 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.intellij.plugins.haxe.metadata.psi.HaxeMeta.NO_COMPLETION;
-import static com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil.getResolverSkipAbstractNullScope;
 
 /**
  * @author: Fedor.Korotkov
  */
-public class HaxeLookupElement extends LookupElement {
+public class HaxeMemberLookupElement extends LookupElement  implements HaxeLookupElement {
+  @Getter private final HaxeCompletionPriorityData priority = new HaxeCompletionPriorityData();
   private final HaxeComponentName myComponentName;
   private final HaxeResolveResult leftReference;
   private final HaxeMethodContext context;
 
   private final HaxeGenericResolver resolver;
+  @Getter
   private HaxeBaseMemberModel model;
 
   private String presentableText;
   private String tailText;
+  private String typeText;
   private boolean strikeout = false;
   private boolean bold = false;
   private Icon icon = null;
 
-  public static Collection<HaxeLookupElement> convert(HaxeResolveResult leftReferenceResolveResult,
-                                                      @NotNull Collection<HaxeComponentName> componentNames,
-                                                      @NotNull Collection<HaxeComponentName> componentNamesExtension,
-                                                      HaxeGenericResolver resolver) {
-    final List<HaxeLookupElement> result = new ArrayList<>(componentNames.size());
+  @NotNull
+  public static Collection<HaxeMemberLookupElement> convert(HaxeResolveResult leftReferenceResolveResult,
+                                                            @NotNull Collection<HaxeComponentName> componentNames,
+                                                            @NotNull Collection<HaxeComponentName> componentNamesExtension,
+                                                            HaxeGenericResolver resolver) {
+    final List<HaxeMemberLookupElement> result = new ArrayList<>(componentNames.size());
     for (HaxeComponentName componentName : componentNames) {
       HaxeMethodContext context = null;
       boolean shouldBeIgnored = false;
@@ -75,18 +81,24 @@ public class HaxeLookupElement extends LookupElement {
       if(componentName.getParent() instanceof HaxeMethodDeclaration methodDeclaration) {
         shouldBeIgnored = methodDeclaration.hasCompileTimeMetadata(NO_COMPLETION) ;
       }
+      // ignore constructors for now, (completion creates `new()`)
+      if (componentName.textMatches("new")) {
+        shouldBeIgnored = true;
+      }
       if (!shouldBeIgnored) {
-        result.add(new HaxeLookupElement(leftReferenceResolveResult, componentName, context, resolver));
+        result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver));
       }
     }
     return result;
   }
 
-  public HaxeLookupElement(HaxeResolveResult leftReference, HaxeComponentName name, HaxeMethodContext context, HaxeGenericResolver resolver) {
+
+  public HaxeMemberLookupElement(HaxeResolveResult leftReference, HaxeComponentName name, HaxeMethodContext context, HaxeGenericResolver resolver) {
     this.leftReference = leftReference;
     this.myComponentName = name;
     this.context = context;
     this.resolver = resolver;
+
 
 
     calculatePresentation();
@@ -104,53 +116,69 @@ public class HaxeLookupElement extends LookupElement {
     presentation.setStrikeout(strikeout);
     presentation.setItemTextBold(bold);
     presentation.setIcon(icon);
-    presentation.setTailText(tailText, true);
+    presentation.setTypeText(typeText);
+
+    if (tailText != null) presentation.setTailText(tailText, true);
 
   }
 
   public void calculatePresentation() {
     final ItemPresentation myComponentNamePresentation = myComponentName.getPresentation();
-    if (myComponentNamePresentation == null) {
-      presentableText = getLookupString();
-      return;
-    }
+    presentableText = getLookupString();
 
-    model = HaxeBaseMemberModel.fromPsi(myComponentName);
-    if (model == null) {
-      presentableText = myComponentNamePresentation.getPresentableText();
-    }else {
-      presentableText = model.getPresentableText(context, resolver);
-      // Check deprecated modifiers
-      if (model instanceof HaxeMemberModel && ((HaxeMemberModel)model).getModifiers().hasModifier(HaxePsiModifier.DEPRECATED)) {
-        strikeout = true;
-      }
-
-      // Check for non-inherited members to highlight them as intellij-java does
-      if (leftReference != null) {
-        HaxeClassModel declaringClass = model.getDeclaringClass();
-        if (declaringClass!= null && declaringClass.getPsi() == leftReference.getHaxeClass()) {
-          bold = true;
-        }
-      }
-    }
+    if (myComponentNamePresentation == null) return;
 
     icon = myComponentNamePresentation.getIcon(true);
-    final String pkg = myComponentNamePresentation.getLocationString();
-    if (StringUtil.isNotEmpty(pkg)) {
-      tailText =" " + pkg;
+    model = HaxeBaseMemberModel.fromPsi(myComponentName);
+
+    if (model != null) {
+      determineStriketrough();
+      determineBold();
+
+      evaluateTailText();
+      evaluateTypeText();
     }
   }
 
+  private void evaluateTypeText() {
+    ResultHolder type = model.getResultType(null);
+    if (type != null && !type.isUnknown()) {
+      typeText = type.toPresentationString();
+    }
+  }
+
+  private void evaluateTailText() {
+    if (model instanceof  HaxeMethodModel) {
+      String parameterListAsText = HaxePresentableUtil.getPresentableParameterList(model.getNamedComponentPsi());
+      tailText = "(" + parameterListAsText + ")";
+    }
+  }
+
+  private void determineBold() {
+    // Check for non-inherited members to highlight them as intellij-java does
+    if (leftReference != null) {
+      HaxeClassModel declaringClass = model.getDeclaringClass();
+      if (declaringClass!= null && declaringClass.getPsi() == leftReference.getHaxeClass()) {
+        bold = true;
+      }
+    }
+  }
+
+  private void determineStriketrough() {
+    if (model instanceof HaxeMemberModel && ((HaxeMemberModel)model).getModifiers().hasModifier(HaxePsiModifier.DEPRECATED)) {
+          strikeout = true;
+        }
+  }
+
   @Override
-  public void handleInsert(InsertionContext context) {
+  public void handleInsert(@NotNull InsertionContext context) {
     HaxeBaseMemberModel memberModel = HaxeBaseMemberModel.fromPsi(myComponentName);
     boolean hasParams = false;
     boolean isMethod = false;
     if (memberModel != null) {
-      if (memberModel instanceof HaxeMethodModel) {
-        isMethod = true;
-        HaxeMethodModel methodModel = (HaxeMethodModel)memberModel;
+      if (memberModel instanceof HaxeMethodModel methodModel)  {
         hasParams = !methodModel.getParametersWithContext(this.context).isEmpty();
+        isMethod = true;
       }
     }
 
@@ -159,6 +187,11 @@ public class HaxeLookupElement extends LookupElement {
       final boolean overloadsMatter = allItems.length == 1 && getUserData(JavaCompletionUtil.FORCE_SHOW_SIGNATURE_ATTR) == null;
       JavaCompletionUtil.insertParentheses(context, this, overloadsMatter, hasParams);
     }
+  }
+
+  @Override
+  public PrioritizedLookupElement<LookupElement> toPrioritized() {
+    return (PrioritizedLookupElement<LookupElement>)PrioritizedLookupElement.withPriority(this, priority.calculate());
   }
 
 
@@ -172,9 +205,9 @@ public class HaxeLookupElement extends LookupElement {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof HaxeLookupElement)) return false;
+    if (!(o instanceof HaxeMemberLookupElement)) return false;
 
-    return myComponentName.equals(((HaxeLookupElement)o).myComponentName);
+    return myComponentName.equals(((HaxeMemberLookupElement)o).myComponentName);
   }
 
   @Override

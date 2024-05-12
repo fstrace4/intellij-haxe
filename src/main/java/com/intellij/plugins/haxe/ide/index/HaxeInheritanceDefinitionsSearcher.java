@@ -21,6 +21,7 @@ package com.intellij.plugins.haxe.ide.index;
 import com.intellij.openapi.application.QueryExecutorBase;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.HaxeComponentType;
+import com.intellij.plugins.haxe.ide.lookup.lookupItemImportUtil;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
 import com.intellij.plugins.haxe.lang.psi.HaxeNamedComponent;
@@ -118,7 +119,8 @@ public class HaxeInheritanceDefinitionsSearcher extends QueryExecutorBase<PsiEle
       files.addAll(FileBasedIndex.getInstance().getValues(HaxeTypeDefInheritanceIndex.HAXE_TYPEDEF_INHERITANCE_INDEX, name, scope));
       for (List<HaxeClassInfo> subClassInfoList : files) {
         for (HaxeClassInfo subClassInfo : subClassInfoList) {
-          final HaxeClass subClass = HaxeResolveUtil.findClassByQName(subClassInfo.getValue(), context.getManager(), scope);
+          String qname = lookupItemImportUtil.createQname(subClassInfo.getName(), subClassInfo.getPath());
+          final HaxeClass subClass = HaxeResolveUtil.findClassByQName( qname , context.getManager(), scope);
           if (subClass != null) {
             if (!consumer.process(subClass)) {
               return;

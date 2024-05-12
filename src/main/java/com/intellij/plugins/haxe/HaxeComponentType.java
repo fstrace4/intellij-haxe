@@ -38,7 +38,7 @@ public enum HaxeComponentType {
     }
     @Override
     public Icon getCompletionIcon() {
-      return AllIcons.Nodes.Class;
+      return HaxeIcons.Class;
     }
   }, ENUM(1) {
     @Override
@@ -47,7 +47,7 @@ public enum HaxeComponentType {
     }
     @Override
     public Icon getCompletionIcon() {
-      return AllIcons.Nodes.Enum;
+      return HaxeIcons.Enum;
     }
   }, INTERFACE(2) {
     @Override
@@ -56,7 +56,7 @@ public enum HaxeComponentType {
     }
     @Override
     public Icon getCompletionIcon() {
-      return AllIcons.Nodes.Interface;
+      return HaxeIcons.Interface;
     }
   }, FUNCTION(3) {
     @Override

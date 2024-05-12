@@ -153,35 +153,45 @@ public class HaxeImportUtil {
 
             boolean qualified = reference.isQualified();
             if (!(qualified || referencedElement instanceof PsiPackage)){
-              result.put(referencedElement, workElement);
-              names.add(qualifiedName);
+              addToResult(referencedElement, workElement, qualifiedName);
             }
             if (qualified) {
               if (referencedElement instanceof HaxePsiField) {
-                result.put(referencedElement, workElement);
-                names.add(qualifiedName);
+                addToResult(referencedElement, workElement, qualifiedName);
               }
               if (referencedElement instanceof HaxeMethod) {
-                result.put(referencedElement, workElement);
-                names.add(qualifiedName);
+                addToResult(referencedElement, workElement, qualifiedName);
               }
               else if (referencedElement instanceof HaxeClass) {
-                result.put(referencedElement, workElement);
-                names.add(qualifiedName);
+                addToResult(referencedElement, workElement, qualifiedName);
               }
               else  if (referencedElement instanceof HaxeIdentifier) {
-                result.put(referencedElement, workElement);
-                names.add(qualifiedName);
+                addToResult(referencedElement, workElement, qualifiedName);
               }
               else  if (referencedElement instanceof HaxeImportAlias) {
-                result.put(referencedElement, workElement);
-                names.add(qualifiedName);
+                addToResult(referencedElement, workElement, qualifiedName);
               }
             }
           }
         }
 
         super.visitElement(element);
+      }
+
+      private void addToResult(PsiElement referencedElement, PsiElement workElement, String qualifiedName) {
+        if (!result.containsKey(referencedElement)) {
+          result.put(referencedElement, workElement);
+        }else {
+          PsiElement element = result.get(referencedElement);
+          // hackish solution to keep the least qualified reference in map
+          // we do this to avoid that one single fully qualified reference as the last reference  takes Precedence and
+          // makes it looks like dont need the import statement even though we got other references needing it.
+          if (workElement.getTextLength()< element.getTextLength()) {
+            result.put(referencedElement, workElement);
+          }
+        }
+        names.add(qualifiedName);
+
       }
 
       private boolean inSameFile(PsiElement reference) {

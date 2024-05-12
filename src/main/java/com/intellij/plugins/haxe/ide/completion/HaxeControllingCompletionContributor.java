@@ -26,12 +26,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.plugins.haxe.config.sdk.HaxeSdkAdditionalDataBase;
 import com.intellij.plugins.haxe.config.sdk.HaxeSdkUtil;
+import com.intellij.plugins.haxe.ide.lookup.HaxeLookupElement;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
-import com.intellij.plugins.haxe.lang.psi.HaxeClass;
-import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
-import com.intellij.plugins.haxe.lang.psi.HaxeIdentifier;
-import com.intellij.plugins.haxe.lang.psi.HaxeReferenceExpression;
-
+import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +38,7 @@ import java.util.*;
 /**
  * Runs all of the completion contributors and filters/massages the results.  Note that this
  * should be loaded first, before all other Haxe contributors.
- *
+ * <p>
  * Created by ebishton on 2/23/17.
  */
 public class HaxeControllingCompletionContributor extends CompletionContributor {
@@ -61,10 +58,14 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
                LinkedHashSet<CompletionResult> unfilteredCompletions = result.runRemainingContributors(parameters, false);
                // Now filter out duplicates, etc.
                Set<CompletionResult> filteredCompletions = filter(parameters, unfilteredCompletions);
-               // Add everything we want to keep to the result set.
-               for (CompletionResult keeper : filteredCompletions) {
-                 result.passResult(keeper);
-               }
+               filteredCompletions =  HaxeCompletionPriorityUtil.calculatePriority(filteredCompletions, parameters);
+               filteredCompletions.stream()
+                 .map(HaxeCompletionPriorityUtil::convertToPrioritized)
+                 .forEach(result::passResult); // Add everything we want to keep to the result set.
+
+
+               //TODO mlo: mechanism for filtering getters and setters ( get_X / set_x)  when properties exists
+
                // Since we've already run all of the providers, don't let them be repeated.
                result.stopHere();
              }
@@ -95,9 +96,10 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
     // for now we try use fully Qualified name for classes but this might break de-duping for compiler completion
     if (el.getObject() instanceof HaxeComponentName element) {
       if (element.getParent() instanceof HaxeClass haxeClass) {
-        return  haxeClass.getQualifiedName();
+        return haxeClass.getQualifiedName();
       }
-    }else if (el.getObject() instanceof  String stringValue) {
+    }
+    else if (el.getObject() instanceof String stringValue) {
       return stringValue;
     }
     return el.getLookupString();
@@ -148,11 +150,19 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
     // Now remove duplicates by looping over the list, dropping any that match the entry prior.
     ArrayList<CompletionResult> deduped = new ArrayList<CompletionResult>();
     String lastName = null;
-    for (CompletionResult next: sorted) {
+    for (CompletionResult next : sorted) {
+
       String nextName = getDedupeName(next);
       // In the long run, it's probably not good enough just to check the name.  Multiple argument types may
       // be present, and we may be able to filter based on the local variables available.
       if (null == lastName || !lastName.equals(nextName)) {
+        deduped.add(next);
+      }
+      //TODO
+      // avoiding de-duping HaxeLookupElement here, its primarily results from  compiler that needs to be removed
+      // de-duping only based on name here will remove classes with same name different package, and we want to avoid that.
+      // we need a better way to solve the compiler results issue
+      if (next.getLookupElement() instanceof HaxeLookupElement) {
         deduped.add(next);
       }
       lastName = nextName;

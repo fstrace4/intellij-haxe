@@ -113,7 +113,7 @@ public class HaxeTypeAddImportIntentionAction implements HintAction, QuestionAct
         .showInBestPositionFor(editor);
       });
     }
-    else {
+    else if (!candidates.isEmpty())  {
       doImport(candidates.iterator().next());
     }
   }

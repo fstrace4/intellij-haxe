@@ -20,6 +20,8 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeTypeDefImpl;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeTypeParameterMultiType;
@@ -629,7 +631,12 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     }
     return reference;
   }
+
+  private static RecursionGuard<PsiElement> fullyresolveRecursionGuard = RecursionManager.createGuard("fullyresolveRecursionGuard");
+
   public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference() {
+    return fullyresolveRecursionGuard.computePreventingRecursion(this.context, false, () ->
+    {
     if (isTypeParameter()) return this;
     if (isNullType()) {
       SpecificTypeReference typeReference = unwrapNullType();
@@ -678,6 +685,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
       return reference;
     }
     return this;
+    });
   }
 
   public SpecificTypeReference unwrapNullType() {

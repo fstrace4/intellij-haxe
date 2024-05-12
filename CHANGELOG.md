@@ -1,4 +1,16 @@
 # Changelog
+## 1.5.4
+* Bugfix: import would be displayed as unused if last reference in a file was a fully qualified reference.
+* Improvement: major rework of completion suggestions
+  - Added completion for constructors
+  - Added public static members to completion suggestions
+  - Added auto insertion of import statement if missing
+  - Fixed documentation lookup for indexed items 
+  - Fixed issue for classes with identical names
+  - Ignoring files in platform specific implementations of standard library (_std) 
+  - Changed the rendering of the completion elements to look more like the intellij default.
+  - initial attempt at prioritizing lookup elements by relevance.
+
 ## 1.5.3
 * Fixed: Problem displaying import suggestions in Intellij 2024.1
 * Improvement: Syntax highlighting for metadata arguments

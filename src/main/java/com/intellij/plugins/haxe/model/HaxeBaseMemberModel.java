@@ -108,9 +108,8 @@ public abstract class HaxeBaseMemberModel implements HaxeModel {
 
   public String getPresentableText(HaxeMethodContext context, @Nullable HaxeGenericResolver resolver) {
     PsiElement basePsi = getBasePsi();
-    if (basePsi instanceof HaxeNamedComponent) {
-      AbstractHaxeNamedComponent nc = (AbstractHaxeNamedComponent)basePsi;
-      return nc.getPresentation().getPresentableText();
+    if (basePsi instanceof AbstractHaxeNamedComponent namedComponent) {
+      return namedComponent.getPresentation().getPresentableText();
     }
     return this.getName();
   }

@@ -33,12 +33,7 @@ import java.util.List;
  */
 public class HaxeClassInfoListExternalizer implements DataExternalizer<List<HaxeClassInfo>> {
   // private final byte[] buffer = IOUtil.allocReadWriteUTFBuffer();
-  private final ThreadLocal<byte[]> buffer = new ThreadLocal<byte[]>() {
-    @Override
-    protected byte[] initialValue() {
-      return IOUtil.allocReadWriteUTFBuffer();
-    }
-  };
+  private final ThreadLocal<byte[]> buffer = ThreadLocal.withInitial(IOUtil::allocReadWriteUTFBuffer);
 
   @Override
   public void save(@NotNull DataOutput out, List<HaxeClassInfo> value) throws IOException {
@@ -47,7 +42,8 @@ public class HaxeClassInfoListExternalizer implements DataExternalizer<List<Haxe
       final HaxeComponentType haxeComponentType = classInfo.getType();
       final int key = haxeComponentType == null ? -1 : haxeComponentType.getKey();
       out.writeInt(key);
-      IOUtil.writeUTFFast(buffer.get(), out, classInfo.getValue());
+      IOUtil.writeUTFFast(buffer.get(), out, classInfo.getName());
+      IOUtil.writeUTFFast(buffer.get(), out, classInfo.getPath());
     }
   }
 
@@ -57,8 +53,9 @@ public class HaxeClassInfoListExternalizer implements DataExternalizer<List<Haxe
     final List<HaxeClassInfo> result = new ArrayList<HaxeClassInfo>(size);
     for (int i = 0; i < size; ++i) {
       final int key = in.readInt();
-      final String value = IOUtil.readUTFFast(buffer.get(), in);
-      result.add(new HaxeClassInfo(value, HaxeComponentType.valueOf(key)));
+      final String name = IOUtil.readUTFFast(buffer.get(), in);
+      final String path = IOUtil.readUTFFast(buffer.get(), in);
+      result.add(new HaxeClassInfo(name, path,  HaxeComponentType.valueOf(key)));
     }
     return result;
   }

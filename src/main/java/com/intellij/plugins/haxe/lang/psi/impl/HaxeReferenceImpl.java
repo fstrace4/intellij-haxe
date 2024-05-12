@@ -28,8 +28,11 @@ import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.plugins.haxe.ide.HaxeLookupElement;
+import com.intellij.plugins.haxe.ide.lookup.HaxeClassLookupElement;
+import com.intellij.plugins.haxe.ide.lookup.HaxeLookupElement;
+import com.intellij.plugins.haxe.ide.lookup.HaxeMemberLookupElement;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
+import com.intellij.plugins.haxe.ide.lookup.HaxePackageLookupElement;
 import com.intellij.plugins.haxe.ide.refactoring.move.HaxeFileMoveHandler;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -45,7 +48,6 @@ import com.intellij.psi.infos.CandidateInfo;
 import com.intellij.psi.scope.PsiScopeProcessor;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.ArrayUtil;
 import com.intellij.util.IncorrectOperationException;
 import lombok.CustomLog;
 import org.jetbrains.annotations.Contract;
@@ -131,7 +133,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
         }
         else {
           SpecificHaxeClassReference typeReference = SpecificTypeReference.getUnknown(newExpression);
-          haxeClass = null != typeReference ? typeReference.getHaxeClass() : null;
+          haxeClass = typeReference.getHaxeClass();
         }
         final HaxeResolveResult result = HaxeResolveResult.create(haxeClass);
         result.specializeByParameters(newExpression.getType().getTypeParam());
@@ -1253,20 +1255,22 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
       }
     }
 
-    Object[] variants = HaxeLookupElement.convert(result, suggestedVariants, suggestedVariantsExtensions, resolver).toArray();
+    List<HaxeLookupElement> variants = new ArrayList<>();
+    variants.addAll(HaxeMemberLookupElement.convert(result, suggestedVariants, suggestedVariantsExtensions, resolver));
     PsiElement leftTarget = leftReference != null ? leftReference.resolve() : null;
 
-    if (leftTarget instanceof PsiPackage) {
-      return ArrayUtil.mergeArrays(variants, ((PsiPackage)leftTarget).getSubPackages());
+    if (leftTarget instanceof PsiPackage psiPackage) {
+      variants.addAll(HaxePackageLookupElement.convert(psiPackage.getSubPackages()));
     }
-    else if (leftTarget instanceof HaxeFile) {
-      return ArrayUtil.mergeArrays(variants, ((HaxeFile)leftTarget).getClasses());
+    else if (leftTarget instanceof HaxeFile haxeFile) {
+      variants.addAll(HaxeClassLookupElement.convert(haxeFile.getClasses()));
     }
     else if (leftReference == null) {
       PsiPackage rootPackage = JavaPsiFacade.getInstance(getElement().getProject()).findPackage("");
-      return rootPackage == null ? variants : ArrayUtil.mergeArrays(variants, rootPackage.getSubPackages());
+      if (rootPackage != null) variants.addAll(HaxePackageLookupElement.convert(rootPackage.getSubPackages()));
     }
-    return variants;
+
+    return variants.toArray();
   }
 
   private boolean isInUsingStatement() {

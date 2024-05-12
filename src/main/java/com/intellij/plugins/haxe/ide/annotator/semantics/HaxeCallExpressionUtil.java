@@ -217,6 +217,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -242,6 +243,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -415,6 +417,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         }else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -578,6 +581,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -596,6 +600,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         }
         else {
           if (parameter.isOptional()) {
@@ -749,6 +754,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -767,6 +773,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          validation.ParameterNames.add(parameter.getName());
         }
         else {
           if (parameter.isOptional()) {
@@ -1066,6 +1073,7 @@ public class HaxeCallExpressionUtil {
     Map<Integer, Integer> argumentToParameterIndex = new HashMap<>();
     Map<Integer, ResultHolder> argumentIndexToType = new HashMap<>();
     Map<Integer, ResultHolder> ParameterIndexToType = new HashMap<>();
+    List<String> ParameterNames = new ArrayList<>();
     ResultHolder returnType;
 
     List<ErrorRecord> errors = new ArrayList<>();

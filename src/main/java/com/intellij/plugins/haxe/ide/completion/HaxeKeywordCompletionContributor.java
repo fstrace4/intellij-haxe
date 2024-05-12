@@ -34,6 +34,7 @@ import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.plugins.haxe.model.type.SpecificTypeReference;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
+import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.TreeUtil;
 import com.intellij.psi.tree.IElementType;
@@ -189,6 +190,12 @@ public class HaxeKeywordCompletionContributor extends CompletionContributor {
       addKeywords(lookupElements, MISC_KEYWORDS, -0.1f);
 
     }
+    // Remove keyword if if previous sibling is the same keyword (ex. "new new" or "switch switch" does not make sense)
+    PsiElement prevSibling = UsefulPsiTreeUtil.getPrevSiblingSkipWhiteSpacesAndComments(completionElementAsComment, false);
+    if (prevSibling!= null) {
+      lookupElements.removeIf(element -> prevSibling.textMatches(element.getObject().toString()));
+    }
+
     result.addAllElements(lookupElements);
   }
 

@@ -16,7 +16,6 @@
  */
 package com.intellij.plugins.haxe.ide.completion;
 
-import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.patterns.*;
 import com.intellij.plugins.haxe.lang.psi.*;
 
@@ -52,6 +51,11 @@ public class HaxeCommonCompletionPattern {
   public static final PsiElementPattern.Capture<PsiElement> inImportOrUsing =
     elementPattern("inImportOrUsing")
       .withSuperParent(3, matchUsingAndImport);
+
+  public static final PsiElementPattern.Capture<PsiElement> identifierInNewExpression =
+    elementPattern("nextToNewKeyword")
+      .inside(HaxeIdentifier.class)
+      .withSuperParent(4, psiElement(HaxeNewExpression.class));
 
   public static final PsiElementPattern.Capture<PsiElement> skippableWhitespace =
     elementPattern("skippableWhitespace")

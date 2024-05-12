@@ -18,6 +18,7 @@
 package com.intellij.plugins.haxe.ide.index;
 
 import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.Pair;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeModule;
@@ -107,7 +108,12 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
       final Map<String, List<HaxeClassInfo>> result = new HashMap<String, List<HaxeClassInfo>>(classes.size());
       final Map<String, String> qNameCache = new HashMap<String, String>();
       for (HaxeClass haxeClass : classes) {
-        final HaxeClassInfo value = new HaxeClassInfo(haxeClass.getQualifiedName(), HaxeComponentType.typeOf(haxeClass));
+        //TODO
+        String qualifiedName = haxeClass.getQualifiedName();
+        final Pair<String, String> packageAndName = HaxeResolveUtil.splitQName(qualifiedName);
+        String packageString = packageAndName.getFirst();
+        String classString = packageAndName.getSecond();
+        final HaxeClassInfo value = new HaxeClassInfo(classString, packageString, HaxeComponentType.typeOf(haxeClass));
         for (HaxeType haxeType : haxeClass.getHaxeExtendsList()) {
           if (haxeType == null) continue;
           final String classNameCandidate = haxeType.getText();
@@ -138,11 +144,7 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
     }
 
     private static void put(Map<String, List<HaxeClassInfo>> map, String key, HaxeClassInfo value) {
-      List<HaxeClassInfo> infos = map.get(key);
-      if (infos == null) {
-        infos = new ArrayList<HaxeClassInfo>();
-        map.put(key, infos);
-      }
+      List<HaxeClassInfo> infos = map.computeIfAbsent(key, k -> new ArrayList<>());
       infos.add(value);
     }
   }

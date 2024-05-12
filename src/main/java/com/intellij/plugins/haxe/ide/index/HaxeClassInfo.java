@@ -18,6 +18,8 @@
 package com.intellij.plugins.haxe.ide.index;
 
 import com.intellij.plugins.haxe.HaxeComponentType;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,51 +28,23 @@ import javax.swing.*;
 /**
  * @author: Fedor.Korotkov
  */
+@Getter
+@EqualsAndHashCode
 public class HaxeClassInfo {
-  @NotNull private final String value;
+  @NotNull private final String path;
+  @NotNull private final String name;
   @Nullable private final HaxeComponentType type;
 
-  public HaxeClassInfo(@NotNull String name, @Nullable HaxeComponentType type) {
-    value = name;
+  public HaxeClassInfo(@NotNull String name, @NotNull String path, @Nullable HaxeComponentType type) {
+    this.name = name;
+    this.path = path;
     this.type = type;
   }
 
-  @NotNull
-  public String getValue() {
-    return value;
-  }
-
-  @Nullable
-  public HaxeComponentType getType() {
-    return type;
-  }
 
   @Nullable
   public Icon getIcon() {
     return type == null ? null : type.getIcon();
   }
 
-  @Nullable
-  public Icon getCompletionIcon() {
-    return type == null ? null : type.getCompletionIcon();
-  }
-
-  private int getTypeKey() {
-    return type != null ? type.getKey() : -1;
-  }
-
-  public int hashCode() {
-    return 31 * value.hashCode() + getTypeKey();
-  }
-
-  public boolean equals(Object obj) {
-    if(obj == this) {
-      return true;
-    }
-    if(obj != null && obj.getClass() == getClass()) {
-      final HaxeClassInfo info = (HaxeClassInfo)obj;
-      return info.value.equals(value) && info.getTypeKey() == getTypeKey();
-    }
-    return false;
-  }
 }

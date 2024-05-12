@@ -43,7 +43,7 @@ import java.util.*;
  */
 public class HaxeComponentIndex extends FileBasedIndexExtension<String, HaxeClassInfo> {
   public static final ID<String, HaxeClassInfo> HAXE_COMPONENT_INDEX = ID.create("HaxeComponentIndex");
-  private static final int INDEX_VERSION = HaxeIndexUtil.BASE_INDEX_VERSION + 6;
+  private static final int INDEX_VERSION = HaxeIndexUtil.BASE_INDEX_VERSION + 9;
   private final DataIndexer<String, HaxeClassInfo, FileContent> myIndexer = new MyDataIndexer();
   private final DataExternalizer<HaxeClassInfo> myExternalizer = new HaxeClassInfoExternalizer();
 
@@ -126,17 +126,26 @@ public class HaxeComponentIndex extends FileBasedIndexExtension<String, HaxeClas
     @NotNull
     public Map<String, HaxeClassInfo> map(final FileContent inputData) {
       final PsiFile psiFile = inputData.getPsiFile();
+
+      //TODO might want to make a setting for this
+      //  avoiding indexing platform specific versions of standard lib classes.
+      if (HaxeIndexUtil.fileBelongToPlatformSpecificStd(psiFile)) {
+        return Collections.emptyMap();
+      }
+
       final List<HaxeClass> classes = HaxeResolveUtil.findComponentDeclarations(psiFile);
       if (classes.isEmpty()) {
         return Collections.emptyMap();
       }
-      final Map<String, HaxeClassInfo> result = new HashMap<String, HaxeClassInfo>(classes.size());
+      final Map<String, HaxeClassInfo> result = new HashMap<>();
       for (HaxeClass haxeClass : classes) {
         if (haxeClass.getName() == null) {
           continue;
         }
-        final Pair<String, String> packageAndName = HaxeResolveUtil.splitQName(haxeClass.getQualifiedName());
-        final HaxeClassInfo info = new HaxeClassInfo(packageAndName.getFirst(), HaxeComponentType.typeOf(haxeClass));
+        String qualifiedName = haxeClass.getQualifiedName();
+        final Pair<String, String> packageAndName = HaxeResolveUtil.splitQName(qualifiedName);
+        final HaxeClassInfo info = new HaxeClassInfo(packageAndName.getSecond(), packageAndName.getFirst(), HaxeComponentType.typeOf(haxeClass));
+        // key should be just the name for easy lookups  using getItemsByName
         result.put(packageAndName.getSecond(), info);
       }
       return result;

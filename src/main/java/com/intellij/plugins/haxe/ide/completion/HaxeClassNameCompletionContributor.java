@@ -22,12 +22,12 @@ package com.intellij.plugins.haxe.ide.completion;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
-import com.intellij.openapi.application.Result;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.plugins.haxe.ide.index.HaxeClassInfo;
 import com.intellij.plugins.haxe.ide.index.HaxeComponentIndex;
+import com.intellij.plugins.haxe.ide.lookup.HaxeIndexedClassElement;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.HaxeAddImportHelper;
@@ -119,7 +119,7 @@ public class HaxeClassNameCompletionContributor extends CompletionContributor {
                                            @Nullable final InsertHandler<LookupElement> insertHandler) {
     final Project project = targetFile.getProject();
     final GlobalSearchScope scope = HaxeResolveUtil.getScopeForElement(targetFile);
-    final MyProcessor processor = new MyProcessor(resultSet, prefixPackage, insertHandler);
+    final MyProcessor processor = new MyProcessor(resultSet, prefixPackage, insertHandler, targetFile);
     HaxeComponentIndex.processAll(project, processor, scope);
   }
 
@@ -180,25 +180,25 @@ public class HaxeClassNameCompletionContributor extends CompletionContributor {
     private final CompletionResultSet myResultSet;
     @Nullable private final InsertHandler<LookupElement> myInsertHandler;
     @Nullable private final String myPrefixPackage;
+    @Nullable private final PsiElement element;
 
     private MyProcessor(CompletionResultSet resultSet,
                         @Nullable String prefixPackage,
-                        @Nullable InsertHandler<LookupElement> insertHandler) {
+                        @Nullable InsertHandler<LookupElement> insertHandler,
+                        @Nullable PsiElement element
+    ) {
+      this.element = element;
       myResultSet = resultSet;
       myPrefixPackage = prefixPackage;
       myInsertHandler = insertHandler;
+
     }
 
     @Override
     public boolean process(Pair<String, HaxeClassInfo> pair) {
       HaxeClassInfo info = pair.getSecond();
-      if (myPrefixPackage == null || myPrefixPackage.equalsIgnoreCase(info.getValue())) {
-        String name = pair.getFirst();
-        final String qName = HaxeResolveUtil.joinQName(info.getValue(), name);
-        myResultSet.addElement(LookupElementBuilder.create(qName, name)
-                                 .withIcon(info.getCompletionIcon())
-                                 .withTailText(" " + info.getValue(), true)
-                                 .withInsertHandler(myInsertHandler));
+      if (myPrefixPackage == null || myPrefixPackage.equalsIgnoreCase(info.getPath())) {
+        myResultSet.addElement(new HaxeIndexedClassElement(info.getName(), info.getPath(), info.getType(), element));
       }
       return true;
     }

@@ -18,17 +18,15 @@
  */
 package com.intellij.plugins.haxe.ide.index;
 
-import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.Pair;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeTypeDefImpl;
 import com.intellij.plugins.haxe.model.HaxeAnonymousTypeModel;
-import com.intellij.plugins.haxe.model.HaxeClassModel;
-import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.Function;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.indexing.*;
 import com.intellij.util.io.DataExternalizer;
@@ -89,25 +87,23 @@ public class HaxeTypeDefInheritanceIndex extends FileBasedIndexExtension<String,
     @NotNull
     public Map<String, List<HaxeClassInfo>> map(final FileContent inputData) {
       final PsiFile psiFile = inputData.getPsiFile();
-      final PsiElement[] fileChildren = psiFile.getChildren();
-      final List<AbstractHaxeTypeDefImpl> classes = ContainerUtil.map(ContainerUtil.filter(fileChildren, new Condition<PsiElement>() {
-        @Override
-        public boolean value(PsiElement element) {
-          return element instanceof AbstractHaxeTypeDefImpl;
-        }
-      }), new Function<PsiElement, AbstractHaxeTypeDefImpl>() {
-        @Override
-        public AbstractHaxeTypeDefImpl fun(PsiElement element) {
-          return (AbstractHaxeTypeDefImpl)element;
-        }
-      });
+      HaxeModule module = PsiTreeUtil.findChildOfType(psiFile, HaxeModule.class);
+      if (module == null) return Collections.emptyMap();
+
+      final PsiElement[] fileChildren = module.getChildren();
+      List<PsiElement> filtered = ContainerUtil.filter(fileChildren, element -> element instanceof AbstractHaxeTypeDefImpl);
+      final List<AbstractHaxeTypeDefImpl> classes = ContainerUtil.map(filtered, element -> (AbstractHaxeTypeDefImpl)element);
+
       if (classes.isEmpty()) {
         return Collections.emptyMap();
       }
-      final Map<String, List<HaxeClassInfo>> result = new HashMap<String, List<HaxeClassInfo>>(classes.size());
+
+      final Map<String, List<HaxeClassInfo>> result = new HashMap<>(classes.size());
       final Map<String, String> qNameCache = new HashMap<String, String>();
       for (AbstractHaxeTypeDefImpl haxeTypeDef : classes) {
-        final HaxeClassInfo value = new HaxeClassInfo(haxeTypeDef.getQualifiedName(), HaxeComponentType.typeOf(haxeTypeDef));
+        String qualifiedName = haxeTypeDef.getQualifiedName();
+        Pair<String, String> pair = HaxeResolveUtil.splitQName(qualifiedName);
+        final HaxeClassInfo value = new HaxeClassInfo(pair.getSecond(), pair.getFirst(),  HaxeComponentType.typeOf(haxeTypeDef));
         final HaxeTypeOrAnonymous haxeTypeOrAnonymous = haxeTypeDef.getTypeOrAnonymous();
         final HaxeType type = haxeTypeOrAnonymous == null ? null : haxeTypeOrAnonymous.getType();
         final HaxeAnonymousType anonymousType = haxeTypeOrAnonymous == null ? null : haxeTypeOrAnonymous.getAnonymousType();

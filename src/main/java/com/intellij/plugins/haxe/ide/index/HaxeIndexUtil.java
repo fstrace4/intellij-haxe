@@ -22,8 +22,11 @@ import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 
+import com.intellij.plugins.haxe.model.HaxeProjectModel;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
+import com.intellij.psi.PsiFile;
 import lombok.CustomLog;
+import org.jetbrains.annotations.Nullable;
 
 
 /**
@@ -35,6 +38,15 @@ public class HaxeIndexUtil {
 
   static {
       log.setLevel(LogLevel.WARNING);
+  }
+
+  public static boolean fileBelongToPlatformSpecificStd(@Nullable PsiFile file) {
+    if (file == null)  return false;
+    HaxeProjectModel project = HaxeProjectModel.fromElement(file);
+    if (project.getSdkRoot().contains(file)) {
+      return file.getVirtualFile().getPath().contains("_std");
+    }
+    return false;
   }
 
   public static boolean warnIfDumbMode(Project project) {
