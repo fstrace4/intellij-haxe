@@ -44,6 +44,7 @@
   </extensions>>
 
   <extensions defaultExtensionNs="com.intellij">
+    <iconMapper mappingFile="HaxeIconMappings.json"/>
     <compileServer.plugin  classpath="jps-plugin.jar;common.jar"/>
     <testFinder implementation="com.intellij.plugins.haxe.ide.HaxeTestFinder"/>
 

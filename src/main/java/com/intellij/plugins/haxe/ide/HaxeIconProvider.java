@@ -20,14 +20,17 @@ package com.intellij.plugins.haxe.ide;
 import com.intellij.ide.IconProvider;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponent;
 import com.intellij.plugins.haxe.lang.psi.HaxeFile;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiElement;
+import icons.HaxeIcons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.List;
 
 /**
  * @author: Fedor.Korotkov
@@ -44,10 +47,14 @@ public class HaxeIconProvider extends IconProvider {
   @Nullable
   private static Icon getHaxeFileIcon(HaxeFile file, @Iconable.IconFlags int flags) {
     final String fileName = FileUtil.getNameWithoutExtension(file.getName());
-    for (HaxeComponent component : HaxeResolveUtil.findComponentDeclarations(file)) {
+    List<HaxeClass> declarations = HaxeResolveUtil.findComponentDeclarations(file);
+    for (HaxeComponent component : declarations) {
       if (fileName.equals(component.getName())) {
         return component.getIcon(flags);
       }
+    }
+    if (!declarations.isEmpty()) {
+      return HaxeIcons.MultiDefinition;
     }
     return null;
   }

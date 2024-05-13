@@ -1,0 +1,18 @@
+{
+  "icons": {
+    "expui": {
+      "nodes": {
+        "class.svg": "icons/nodes/class.svg",
+        "enum.svg": "icons/nodes/enum.svg",
+        "field.svg": "icons/nodes/field.svg",
+        "parameter.svg": "icons/nodes/parameter.svg",
+        "file.svg": "icons/nodes/file.svg",
+        "interface.svg": "icons/nodes/interface.svg",
+        "method.svg": "icons/nodes/method.svg",
+        "typedef.svg": "icons/nodes/typedef.svg",
+        "typedefGutter.svg": "icons/nodes/typedefGutter.svg",
+        "module.svg": "icons/nodes/module.svg"
+      }
+    }
+  }
+}

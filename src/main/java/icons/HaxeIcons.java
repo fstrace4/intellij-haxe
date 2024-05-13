@@ -27,15 +27,19 @@ public class HaxeIcons {
     return IconLoader.getIcon(path, HaxeIcons.class);
   }
 
-  public static final Icon Class = load("/icons/class.svg");
-  public static final Icon Enum = load("/icons/enum.svg");
-  public static final Icon Typedef = load("/icons/typedef.svg");
-  public static final Icon Interface = load("/icons/interface.svg");
-  public static final Icon Method = load("/icons/method.svg");
-  public static final Icon Field = load("/icons/field.svg");
+  public static final Icon Class = load("/icons/nodes/class.svg");
+  public static final Icon Enum = load("/icons/nodes/enum.svg");
+  public static final Icon Typedef = load("/icons/nodes/typedef.svg");
+  public static final Icon Interface = load("/icons/nodes/interface.svg");
+  public static final Icon Method = load("/icons/nodes/method.svg");
+  public static final Icon Field = load("/icons/nodes/field.svg");
+  public static final Icon Parameter = load("/icons/nodes/parameter.svg");
+  public static final Icon Variable = load("/icons/nodes/variable.svg");
+  public static final Icon MultiDefinition = load("/icons/nodes/module.svg");
 
+  public static final Icon TYPEDEF_GUTTER = load("/icons/nodes/typedefGutter.svg");
 
-  public static final Icon HAXELIB_JSON = load("/icons/file.svg");
+  public static final Icon HAXELIB_JSON = load("/icons/nodes/file.svg");
 
   public static final Icon HAXE_LOGO = load("/icons/Haxe_logo.svg");
   public static final Icon NMML_LOGO = load("/icons/buildsystem/nme.svg");
@@ -45,7 +49,7 @@ public class HaxeIcons {
   public static final Icon HAXE_RELOAD = load("/icons/Haxe_reload.svg");
 
 
-  public static final Icon TYPEDEF_GUTTER = load("/icons/typedef_gutter.svg");
+
 
 
 }

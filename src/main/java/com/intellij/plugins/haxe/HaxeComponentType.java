@@ -71,7 +71,7 @@ public enum HaxeComponentType {
   }, VARIABLE(5) {
     @Override
     public Icon getIcon() {
-      return AllIcons.Nodes.Variable;
+      return HaxeIcons.Variable;
     }
   }, FIELD(6) {
     @Override
@@ -81,7 +81,7 @@ public enum HaxeComponentType {
   }, PARAMETER(7) {
     @Override
     public Icon getIcon() {
-      return AllIcons.Nodes.Parameter;
+      return HaxeIcons.Parameter;
     }
   }, TYPEDEF(8) {
     @Override
@@ -95,11 +95,11 @@ public enum HaxeComponentType {
     }
   }, TYPE_PARAMETER(10) {
     public Icon getIcon() {
-      return icons.HaxeIcons.Class;
+      return HaxeIcons.Class;
     }
   }, MODULE(11) {
     public Icon getIcon() {
-      return HaxeIcons.Class; // TODO icon for module
+      return HaxeIcons.MultiDefinition;
     }
   };
 
