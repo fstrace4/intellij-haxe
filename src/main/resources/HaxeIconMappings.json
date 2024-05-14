@@ -3,6 +3,7 @@
     "expui": {
       "nodes": {
         "class.svg": "icons/nodes/class.svg",
+        "abstract.svg": "icons/nodes/abstract.svg",
         "enum.svg": "icons/nodes/enum.svg",
         "field.svg": "icons/nodes/field.svg",
         "parameter.svg": "icons/nodes/parameter.svg",

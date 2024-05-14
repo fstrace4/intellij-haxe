@@ -45,7 +45,7 @@ public class HaxeColorAnnotatorUtil {
     }
     return switch (type) {
       case TYPE_PARAMETER -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_TYPE_PARAMETER);
-      case CLASS, ENUM, TYPEDEF -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_CLASS);
+      case CLASS, ABSTRACT, ENUM, TYPEDEF -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_CLASS);
       case INTERFACE -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_INTERFACE);
       case PARAMETER -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_PARAMETER);
       case VARIABLE -> TextAttributesKey.find(HaxeSyntaxHighlighterColors.HAXE_LOCAL_VARIABLE);

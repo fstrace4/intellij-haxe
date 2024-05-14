@@ -28,6 +28,7 @@ import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.SmartList;
 import com.intellij.util.containers.ContainerUtil;
+import icons.HaxeIcons;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -66,15 +67,22 @@ public class HaxeFileTemplateUtil {
   public static Icon getTemplateIcon(String name) {
     name = getTemplateShortName(name);
     if ("Class".equals(name)) {
-      return icons.HaxeIcons.Class;
+      return HaxeIcons.Class;
     }
     else if ("Interface".equals(name)) {
-      return icons.HaxeIcons.Interface;
+      return HaxeIcons.Interface;
     }
     else if ("Enum".equals(name)) {
-      return icons.HaxeIcons.Enum;
+      return HaxeIcons.Enum;
     }
-    return icons.HaxeIcons.HAXE_LOGO;
+    else if ("Abstract".equals(name)) {
+      return HaxeIcons.Abstract;
+    }
+    else if ("Module".equals(name)) {
+      return HaxeIcons.Module;
+    }
+
+    return HaxeIcons.HAXE_LOGO;
   }
 
   public static PsiElement createClass(String className,

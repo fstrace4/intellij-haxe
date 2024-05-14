@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license. -->
+
+<svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    version="1.1"
+    id="svg5"
+    xmlns="http://www.w3.org/2000/svg"
+>
+  <defs
+      id="defs5"/>
+
+  <circle
+      cx="8"
+      cy="8"
+      r="6.5"
+      fill="#25324D"
+      stroke="#548AF7"
+      id="circle1"/>
+  <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="m 8.914897,8.0897625 -0.7287002,-1.92 -0.7200449,1.92 z m -0.9965677,-3.6 H 8.4867314 L 10.737503,10.516859 9.7506929,10.489763 9.0928301,9.1136406 7.2378551,9.0865449 6.6303189,10.489763 5.6183456,10.449119 Z"
+      fill="#9aa7b0"
+      id="path1-3"
+      style="display:inline;fill:#548af7;fill-opacity:1;fill-rule:evenodd;stroke-width:0.963682"
+  />
+  <g
+      id="g5">
+    <rect
+        x="11"
+        y="11"
+        width="4"
+        height="4"
+        fill="#f7941e"
+        id="rect1"/>
+    <path
+        d="M11,13 l-1,-1.5 l0,-1.5 l1.5,0 l1.5,1 Z"
+        fill="#fdb813"
+        id="path2"/>
+    <path
+        d="M11,13 l-1,1.5 l0,1.5 l1.5,0 l1.5,-1 Z"
+        fill="#fdb813"
+        id="path3"/>
+    <path
+        d="M15,13 l1,-1.5 l0,-1.5 l-1.5,0 l-1.5,1 Z"
+        fill="#f58220"
+        id="path4"/>
+    <path
+        d="M15,13 l1,1.5 l0,1.5 l-1.5,0 l-1.5,-1 Z"
+        fill="#f58220"
+        id="path5"/>
+  </g>
+</svg>

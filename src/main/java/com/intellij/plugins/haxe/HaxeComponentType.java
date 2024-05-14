@@ -99,7 +99,11 @@ public enum HaxeComponentType {
     }
   }, MODULE(11) {
     public Icon getIcon() {
-      return HaxeIcons.MultiDefinition;
+      return HaxeIcons.Module;
+    }
+  }, ABSTRACT(12) {
+    public Icon getIcon() {
+      return HaxeIcons.Abstract;
     }
   };
 
@@ -149,6 +153,10 @@ public enum HaxeComponentType {
         return CLASSVARIABLE;
       case 10:
         return TYPE_PARAMETER;
+      case 11:
+        return MODULE;
+      case 12:
+        return ABSTRACT;
     }
     return null;
   }
@@ -156,9 +164,11 @@ public enum HaxeComponentType {
   @Nullable
   public static HaxeComponentType typeOf(PsiElement element) {
     if (element instanceof HaxeClassDeclaration ||
-        element instanceof HaxeExternClassDeclaration ||
-        element instanceof HaxeAbstractTypeDeclaration) {
+        element instanceof HaxeExternClassDeclaration) {
       return CLASS;
+    }
+    if (element instanceof HaxeAbstractTypeDeclaration) {
+      return ABSTRACT;
     }
     if (element instanceof HaxeEnumDeclaration) {
       return ENUM;

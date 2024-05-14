@@ -54,7 +54,7 @@ public class HaxeIconProvider extends IconProvider {
       }
     }
     if (!declarations.isEmpty()) {
-      return HaxeIcons.MultiDefinition;
+      return HaxeIcons.Module;
     }
     return null;
   }

@@ -444,7 +444,7 @@ public class HaxeResolveUtil {
     final HaxeComponentType type = HaxeComponentType.typeOf(element);
     if (type == HaxeComponentType.MODULE) {
       body = element;
-    } else if (type == HaxeComponentType.CLASS) {
+    } else if (type == HaxeComponentType.CLASS || type == HaxeComponentType.ABSTRACT) {
       body = PsiTreeUtil.getChildOfAnyType(element, HaxeClassBody.class, HaxeExternClassDeclarationBody.class);
     } else if (type == HaxeComponentType.INTERFACE) {
       body = PsiTreeUtil.getChildOfType(element, HaxeInterfaceBody.class);

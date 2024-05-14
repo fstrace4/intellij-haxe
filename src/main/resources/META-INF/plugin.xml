@@ -281,6 +281,8 @@
     <internalFileTemplate name="HaxeClass"/>
     <internalFileTemplate name="HaxeInterface"/>
     <internalFileTemplate name="HaxeEnum"/>
+    <internalFileTemplate name="HaxeAbstract"/>
+    <internalFileTemplate name="HaxeModule"/>
     <internalFileTemplate name="NMMLProjectFile"/>
 
     <liveTemplateMacro implementation="com.intellij.plugins.haxe.ide.template.macro.HaxeArrayVariableMacro"/>

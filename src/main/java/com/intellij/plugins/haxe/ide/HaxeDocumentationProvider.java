@@ -58,7 +58,7 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
     if (namedComponent != null) {
       if (type == null) return mainBuilder.toString();
       switch (type) {
-        case CLASS, INTERFACE, TYPEDEF, ENUM -> processType(mainBuilder, namedComponent, renderer);
+        case CLASS, ABSTRACT, INTERFACE, TYPEDEF, ENUM -> processType(mainBuilder, namedComponent, renderer);
         case METHOD, FUNCTION -> processMethod(mainBuilder, namedComponent, renderer);
         case FIELD -> processField(mainBuilder, namedComponent, renderer);
         case VARIABLE -> processVariable(mainBuilder, namedComponent, renderer);
@@ -109,7 +109,7 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
     //TODO support key-value iterator "vars"
     if (type == null) return mainBuilder.toString();
     switch (type) {
-      case CLASS, INTERFACE, TYPEDEF, ENUM -> processType(definitionBuilder, namedComponent, renderer);
+      case CLASS, ABSTRACT, INTERFACE, TYPEDEF, ENUM -> processType(definitionBuilder, namedComponent, renderer);
       case METHOD, FUNCTION -> processMethod(definitionBuilder, namedComponent, renderer);
       case FIELD -> processField(definitionBuilder, namedComponent, renderer);
       case VARIABLE -> processVariable(definitionBuilder, namedComponent, renderer);

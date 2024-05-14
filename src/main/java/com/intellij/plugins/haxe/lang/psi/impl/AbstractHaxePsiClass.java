@@ -245,14 +245,14 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   @Override
   public HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
 //TODO: debug line remove
-    List<HaxeNamedComponent> all = this.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
+    List<HaxeNamedComponent> all = this.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM, HaxeComponentType.ABSTRACT);
 
     //List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
     return ContainerUtil.find(all, component -> name.equals(component.getName()));
   }
 
   private static CachedValueProvider.Result<List<HaxeNamedComponent>> getHaxeFieldAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
-    List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM);
+    List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM, HaxeComponentType.ABSTRACT);
 
     List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
     return CachedValueProvider.Result.create(all,  dependencies);
@@ -281,7 +281,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   }
 
   private static CachedValueProvider.Result<List<HaxeMethod>> getHaxeMethodsAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
-    List<HaxeMethod> all = haxePsiClass.getHaxeMethodsAll(HaxeComponentType.CLASS);
+    List<HaxeMethod> all = haxePsiClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.ABSTRACT);
 
     Collection<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
     return CachedValueProvider.Result.create(all, dependencies);

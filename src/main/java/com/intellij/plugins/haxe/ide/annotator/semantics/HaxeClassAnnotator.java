@@ -284,8 +284,8 @@ public class HaxeClassAnnotator implements Annotator {
 
 
 
-    List<HaxeMethod> allMethodList = clazz.haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.INTERFACE);
-    Set<HaxeMethod> extendedClassMethodList = new HashSet<>(abstractClass.getHaxeClassModel().haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.INTERFACE));
+    List<HaxeMethod> allMethodList = clazz.haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.ABSTRACT, HaxeComponentType.INTERFACE);
+    Set<HaxeMethod> extendedClassMethodList = new HashSet<>(abstractClass.getHaxeClassModel().haxeClass.getHaxeMethodsAll(HaxeComponentType.CLASS, HaxeComponentType.ABSTRACT, HaxeComponentType.INTERFACE));
 
     Map<String, HaxeMethodModel> abstractMethods = extendedClassMethodList.stream()
       .map(HaxeMethodPsiMixin::getModel)
