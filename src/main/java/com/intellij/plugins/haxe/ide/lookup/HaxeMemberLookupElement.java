@@ -152,9 +152,9 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
   }
 
   private void evaluateTypeText() {
-    ResultHolder type = model.getResultType(null);
+    ResultHolder type = model.getResultType(resolver);
     if (isFunctionType && model instanceof HaxeMethodModel methodModel) {
-      SpecificFunctionReference functionType = methodModel.getFunctionType(null);
+      SpecificFunctionReference functionType = methodModel.getFunctionType(resolver);
       typeText =  functionType.toPresentationString();
       return;
     }
@@ -165,8 +165,17 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
 
   private void evaluateTailText() {
     if (model instanceof  HaxeMethodModel && !isFunctionType) {
-      String parameterListAsText = HaxePresentableUtil.getPresentableParameterList(model.getNamedComponentPsi());
-      tailText = "(" + parameterListAsText + ")";
+      if (leftReference != null) {
+        tailText = "(" + getParameterListAsText() + ")";
+      }
+    }
+  }
+
+  private @NotNull String getParameterListAsText() {
+    if (leftReference != null){
+      return HaxePresentableUtil.getPresentableParameterList(model.getNamedComponentPsi(), leftReference.getSpecialization(), true);
+    }else {
+      return HaxePresentableUtil.getPresentableParameterList(model.getNamedComponentPsi());
     }
   }
 
