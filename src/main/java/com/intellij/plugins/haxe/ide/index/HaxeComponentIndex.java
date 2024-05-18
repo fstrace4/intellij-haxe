@@ -127,9 +127,13 @@ public class HaxeComponentIndex extends FileBasedIndexExtension<String, HaxeClas
     public Map<String, HaxeClassInfo> map(final FileContent inputData) {
       final PsiFile psiFile = inputData.getPsiFile();
 
-      //TODO might want to make a setting for this
+
       //  avoiding indexing platform specific versions of standard lib classes.
       if (HaxeIndexUtil.fileBelongToPlatformSpecificStd(psiFile)) {
+        return Collections.emptyMap();
+      }
+
+      if (HaxeIndexUtil.belongToPlatformNotTargeted(psiFile)) {
         return Collections.emptyMap();
       }
 

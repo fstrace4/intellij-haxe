@@ -20,7 +20,6 @@ package com.intellij.plugins.haxe.ide.completion;
 import com.google.common.collect.Sets;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
@@ -73,10 +72,12 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
                // for the sorting even tho it would be nice to also get the proximity sorting.
                updatePsiElementValues(filteredCompletions);
 
+               // TODO mlo: suggest lambda / function when expected type is  functionType
 
-               //TODO mlo: mechanism for filtering getters and setters ( get_X / set_x)  when properties exists
+               //TODO mlo: mechanism for filtering getters and setters ( get_X / set_x)  when properties exists ? (could be that noCompletion solves this)
 
                // Since we've already run all of the providers, don't let them be repeated.
+
                result.stopHere();
              }
            });
@@ -138,6 +139,8 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
   }
 
   private static Set<CompletionResult> removeDuplicateCompletions(Set<CompletionResult> unfilteredCompletions) {
+    //TODO not sure if this is preferred now that resolving works better, but if compiler data contains all necessary data then maybe
+
     // We sort the elements according to name, giving preference to compiler-provided results
     // if the two names are identical.
     CompletionResult sorted[] = unfilteredCompletions.toArray(new CompletionResult[]{});

@@ -27,7 +27,9 @@ import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificFunctionReference;
 import com.intellij.plugins.haxe.util.HaxePresentableUtil;
+import icons.HaxeIcons;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,8 +50,8 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
   private final HaxeMethodContext context;
 
   private final HaxeGenericResolver resolver;
-  @Getter
-  private HaxeBaseMemberModel model;
+  @Getter private final boolean isFunctionType;
+  @Getter private HaxeBaseMemberModel model;
 
   private String presentableText;
   private String tailText;
@@ -86,21 +88,28 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
         shouldBeIgnored = true;
       }
       if (!shouldBeIgnored) {
-        result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver));
+        HaxeBaseMemberModel model = HaxeBaseMemberModel.fromPsi(componentName);
+        if (model instanceof  HaxeMethodModel) {
+          // adding functionType in addition to method call
+          result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver, model, true));
+        }
+        result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver, model));
       }
     }
     return result;
   }
 
 
-  public HaxeMemberLookupElement(HaxeResolveResult leftReference, HaxeComponentName name, HaxeMethodContext context, HaxeGenericResolver resolver) {
+  public HaxeMemberLookupElement(HaxeResolveResult leftReference, HaxeComponentName name, HaxeMethodContext context, HaxeGenericResolver resolver, HaxeBaseMemberModel model) {
+    this(leftReference, name, context, resolver, model, false);
+  }
+  public HaxeMemberLookupElement(HaxeResolveResult leftReference, HaxeComponentName name, HaxeMethodContext context, HaxeGenericResolver resolver, HaxeBaseMemberModel model, boolean functionType) {
     this.leftReference = leftReference;
     this.myComponentName = name;
     this.context = context;
     this.resolver = resolver;
-
-
-
+    this.model = model;
+    this.isFunctionType = functionType;
     calculatePresentation();
   }
 
@@ -123,14 +132,16 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
   }
 
   public void calculatePresentation() {
-    final ItemPresentation myComponentNamePresentation = myComponentName.getPresentation();
     presentableText = getLookupString();
 
-    if (myComponentNamePresentation == null) return;
-
-    icon = myComponentNamePresentation.getIcon(true);
-    model = HaxeBaseMemberModel.fromPsi(myComponentName);
-
+    if (!isFunctionType) {
+      final ItemPresentation myComponentNamePresentation = myComponentName.getPresentation();
+      if (myComponentNamePresentation == null) return;
+      icon = myComponentNamePresentation.getIcon(true);
+    } else {
+      // TODO functionType references should perhaps have its own icon?
+      icon = HaxeIcons.Field;
+    }
     if (model != null) {
       determineStriketrough();
       determineBold();
@@ -142,13 +153,18 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
 
   private void evaluateTypeText() {
     ResultHolder type = model.getResultType(null);
+    if (isFunctionType && model instanceof HaxeMethodModel methodModel) {
+      SpecificFunctionReference functionType = methodModel.getFunctionType(null);
+      typeText =  functionType.toPresentationString();
+      return;
+    }
     if (type != null && !type.isUnknown()) {
       typeText = type.toPresentationString();
     }
   }
 
   private void evaluateTailText() {
-    if (model instanceof  HaxeMethodModel) {
+    if (model instanceof  HaxeMethodModel && !isFunctionType) {
       String parameterListAsText = HaxePresentableUtil.getPresentableParameterList(model.getNamedComponentPsi());
       tailText = "(" + parameterListAsText + ")";
     }
@@ -182,7 +198,7 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
       }
     }
 
-    if (isMethod) {
+    if (isMethod && !isFunctionType) {
       final LookupElement[] allItems = context.getElements();
       final boolean overloadsMatter = allItems.length == 1 && getUserData(JavaCompletionUtil.FORCE_SHOW_SIGNATURE_ATTR) == null;
       JavaCompletionUtil.insertParentheses(context, this, overloadsMatter, hasParams);
@@ -205,9 +221,11 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof HaxeMemberLookupElement)) return false;
-
-    return myComponentName.equals(((HaxeMemberLookupElement)o).myComponentName);
+    if (o instanceof HaxeMemberLookupElement lookupElement) {
+      return myComponentName.equals(lookupElement.myComponentName) && lookupElement.isFunctionType == isFunctionType;
+    }else {
+      return false;
+    }
   }
 
   @Override

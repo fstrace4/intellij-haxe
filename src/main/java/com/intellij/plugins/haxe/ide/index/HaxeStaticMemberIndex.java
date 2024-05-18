@@ -98,10 +98,9 @@ public class HaxeStaticMemberIndex extends FileBasedIndexExtension<String, HaxeS
       if (HaxeIndexUtil.fileBelongToPlatformSpecificStd(psiFile)) {
         return Collections.emptyMap();
       }
-      //TODO
-      //if (HaxeIndexUtil.fileBelongToPlatformNotTargeted(psiFile)) {
-      //  return Collections.emptyMap();
-      //}
+      if (HaxeIndexUtil.belongToPlatformNotTargeted(psiFile)) {
+        return Collections.emptyMap();
+      }
 
       final List<HaxeClass> classes = HaxeResolveUtil.findComponentDeclarations(psiFile);
       if (classes.isEmpty()) {

@@ -22,11 +22,14 @@ import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 
+import com.intellij.plugins.haxe.haxelib.definitions.HaxeDefineDetectionManager;
 import com.intellij.plugins.haxe.model.HaxeProjectModel;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
 import com.intellij.psi.PsiFile;
 import lombok.CustomLog;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 
 /**
@@ -55,5 +58,35 @@ public class HaxeIndexUtil {
       return false;
     }
     return true;
+  }
+
+  public static boolean belongToPlatformNotTargeted(PsiFile file) {
+    Map<String, String> definitions = HaxeDefineDetectionManager.getInstance(file.getProject()).getAllDefinitions();
+    HaxeProjectModel project = HaxeProjectModel.fromElement(file);
+    if (project.getSdkRoot().contains(file)) {
+      String stdRootPath = project.getSdkRoot().access("").getVirtualFile().getPath();
+      String fileFullPath = file.getVirtualFile().getPath();
+      String replaced = fileFullPath.replace(stdRootPath, "");
+      String[] split = replaced.split("/");
+      if (split.length > 1) {
+        String scope = split[1];
+        return !switch (scope) {
+          case "cpp"  -> definitions.containsKey("cpp");
+          case "cs" -> definitions.containsKey("cs");
+          case "flash" -> definitions.containsKey("flash");
+          case "hl" -> definitions.containsKey("hl");
+          case "java" -> definitions.containsKey("java");
+          case "js" -> definitions.containsKey("js");
+          case "jvm" -> definitions.containsKey("jvm");
+          case "lua" -> definitions.containsKey("lua");
+          case "php" -> definitions.containsKey("php");
+          case "python" -> definitions.containsKey("python");
+          default-> true;
+        };
+      }
+    }
+    return false;
+
+
   }
 }
