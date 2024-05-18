@@ -69,7 +69,6 @@ public class HaxeCallExpressionUtil {
       else {
         validation.errors.add(new ErrorRecord(callExpressionList.getTextRange(), message));
       }
-      return validation;
     }
     //max arg check
     if (argumentList.size() > maxArgAllowed) {
@@ -79,7 +78,6 @@ public class HaxeCallExpressionUtil {
       }else {
         validation.errors.add(new ErrorRecord(callExpression.getTextRange(), message));
       }
-      return validation;
     }
 
     // generics and type parameter
@@ -340,13 +338,10 @@ public class HaxeCallExpressionUtil {
           PsiElement second = UsefulPsiTreeUtil.getNextSiblingSkipWhiteSpacesAndComments(first);
           TextRange range = TextRange.create(first.getTextOffset(), second.getTextOffset() + 1);
           validation.errors.add(new ErrorRecord(range, message));
-          //holder.newAnnotation(HighlightSeverity.ERROR, message).range(range).create();
         }
         else {
           validation.errors.add(new ErrorRecord(callExpressionList.getTextRange(), message));
-          //holder.newAnnotation(HighlightSeverity.ERROR, message).range(callExpressionList).create();
         }
-        return validation;
       }
       //max arg check
       if (argumentList.size() > maxArgAllowed) {

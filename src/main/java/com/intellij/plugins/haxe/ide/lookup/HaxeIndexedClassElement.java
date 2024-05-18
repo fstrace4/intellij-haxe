@@ -4,6 +4,7 @@ import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.psi.HaxeReference;
 import com.intellij.plugins.haxe.lang.psi.HaxeResolver;
@@ -33,7 +34,8 @@ public class HaxeIndexedClassElement extends LookupElement implements HaxePsiLoo
 
   // we need a psi element  when resolving qname (making sure we get data from the right project etc)
   private final PsiElement helperPsi;
-
+  // findClassByQName is too slow for "normal" use, so we delay  the resolve so we can get  docs lookup
+  private PsiElement myElement = null;
 
   private String presentableText;
   private String tailText;
@@ -52,8 +54,11 @@ public class HaxeIndexedClassElement extends LookupElement implements HaxePsiLoo
     tailText = path;
     type = componentType;
     icon = componentType.getCompletionIcon();
-  }
 
+  }
+  public void updatePsiElement() {
+    myElement = HaxeResolveUtil.findClassByQName(qname, helperPsi);
+  }
 
   @Override
   public void handleInsert(InsertionContext context) {
@@ -67,7 +72,7 @@ public class HaxeIndexedClassElement extends LookupElement implements HaxePsiLoo
 
   @Override
   public @Nullable PsiElement getPsiElement() {
-    return HaxeResolveUtil.findClassByQName(qname, helperPsi);
+    return myElement;
   }
 
   @NotNull

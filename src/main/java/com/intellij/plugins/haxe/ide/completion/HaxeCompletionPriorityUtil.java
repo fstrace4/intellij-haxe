@@ -9,14 +9,14 @@ import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.ide.lookup.*;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,8 +39,10 @@ public class HaxeCompletionPriorityUtil {
     }
     // is argument (get parameter type)
     boolean sorted = false;
-    if (!sorted)sorted = trySortForExtends(position, lookupList);
+    if (!sorted) sorted = trySortForExtends(position, lookupList);
     if (!sorted) sorted = trySortForArgument(position, lookupList); // NOTE TO SELF: function keyword if parameter is function typ
+    //if (!sorted) sorted = trySortForAssign(position, lookupList);
+    if (!sorted) sorted = trySortForLoops(position, lookupList);
     //TODO WiP
     // is for-loop (prioritize itrables)
     // is extends (if class, then class, if interface then interfaces)
@@ -62,6 +64,44 @@ public class HaxeCompletionPriorityUtil {
     }).toList();
 
     return completions;
+  }
+
+  private static boolean trySortForLoops(PsiElement position, List<HaxeLookupElement> list) {
+    HaxeIterable iterable = PsiTreeUtil.getParentOfType(position, HaxeIterable.class);
+    if (iterable != null) {
+      for (HaxeLookupElement element : list) {
+        if (element instanceof  HaxeMemberLookupElement memberLookup) {
+          HaxeBaseMemberModel model = memberLookup.getModel();
+          if (model != null) {
+            ResultHolder type = model.getResultType(null);
+            if (type.isClassType()) {
+              SpecificHaxeClassReference classType = type.getClassType();
+              ResultHolder iterableType = classType.getIterableElementType(null);
+              if (iterableType != null) {
+                memberLookup.getPriority().assignable += 5;
+              }
+            }
+          }
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private boolean hasIterator(HaxeReference reference) {
+    if (reference == null) return false;
+
+    ResultHolder holder = HaxeExpressionEvaluator.evaluate(reference, null).result;
+    SpecificHaxeClassReference resolvedType = holder.getClassType();
+    if (resolvedType == null) return false;
+
+    return resolvedType.isLiteralArray() || hasIterator(resolvedType);
+  }
+
+  private boolean hasIterator(SpecificHaxeClassReference type) {
+    if (type.getHaxeClassModel() == null) return false;
+    return  type.getHaxeClassModel().getMember("iterator", null) != null;
   }
 
   /*
@@ -109,11 +149,19 @@ public class HaxeCompletionPriorityUtil {
   private static boolean trySortForArgument(PsiElement position, List<HaxeLookupElement> lookupElements) {
     HaxeCallExpression callExpression = PsiTreeUtil.getParentOfType(position, HaxeCallExpression.class, true, HaxeNewExpression.class);
     HaxeNewExpression newExpression = PsiTreeUtil.getParentOfType(position, HaxeNewExpression.class, true, HaxeCallExpression.class);
+
     if (newExpression == null &&  callExpression == null) return false;
 
+    int argumentIndex = 0;
     HaxeCallExpressionUtil.CallExpressionValidation validation = null;
     if (callExpression != null) {
       validation = getValidationForMethod(callExpression);
+      HaxeCallExpressionList type = PsiTreeUtil.getParentOfType(position, HaxeCallExpressionList.class);
+      if (type != null) {
+        HaxeReferenceExpression ref = PsiTreeUtil.getParentOfType(position, HaxeReferenceExpression.class);
+        int index = type.getExpressionList().indexOf(ref);
+        if (index> -1) argumentIndex = index;
+      }
     }
     if (newExpression != null && newExpression.getType() != null) {
       boolean completeType = newExpression.getType().textMatches(position);
@@ -130,18 +178,32 @@ public class HaxeCompletionPriorityUtil {
     }
 
     if (validation!= null) {
-      Collection<ResultHolder> parameterTypes = validation.getParameterIndexToType().values();
+      List<ResultHolder> parameterTypes = List.copyOf(validation.getParameterIndexToType().values());
       List<String> names = validation.getParameterNames();
-      lookupElements.stream()
-        .peek( element ->  {if(element instanceof HaxePackageLookupElement lookupElement) lookupElement.getPriority().type -=0.1;})
-        .filter(lookupElement -> lookupElement instanceof HaxeMemberLookupElement)
-        .peek(element -> element.getPriority().type +=1)
-        .map(lookupElement -> (HaxeMemberLookupElement)lookupElement)
-        .forEach( r-> memberAssignCalculation(r, parameterTypes));
+
+
+      for (int i = 0; i < lookupElements.size(); i++) {
+        HaxeLookupElement element = lookupElements.get(i);
+
+        if (element instanceof HaxePackageLookupElement lookupElement) lookupElement.getPriority().type -= 0.1;
+        if (element instanceof HaxeMemberLookupElement memberLookupElement) {
+          memberCalculation(memberLookupElement, names, parameterTypes, argumentIndex);
+          element.getPriority().type += 1;
+
+        }
+        if (element instanceof HaxeStaticMemberLookupElement staticMemberLookupElement) {
+          staticMemberAssignCalculation(staticMemberLookupElement, parameterTypes);
+          element.getPriority().type += 0.5;
+        }
+      }
+
+
       return true;
     }
     return false;
   }
+
+
 
   private static HaxeCallExpressionUtil.CallExpressionValidation getValidationForMethod(HaxeCallExpression callExpression) {
     if (callExpression.getExpression() instanceof HaxeReferenceExpression referenceExpression) {
@@ -153,8 +215,23 @@ public class HaxeCompletionPriorityUtil {
     return null;
   }
 
+  private static void staticMemberAssignCalculation(HaxeStaticMemberLookupElement element, Collection<ResultHolder> types) {
+    for (ResultHolder type : types) {
+      if (type.isUnknown()) continue;
+      if(type.isClassType()) {
+        String name = type.getClassType().getClassName();
+        if (element.getTypeValue().contains(name)) {
+          element.getPriority().assignable += 5;
+        }
+      }
+    }
 
-  private static void memberAssignCalculation(HaxeMemberLookupElement element, Collection<ResultHolder> parameterTypes) {
+
+
+  }
+
+  private static void memberCalculation(HaxeMemberLookupElement element, List<String> names, List<ResultHolder> parameterTypes,
+                                        int argumentIndex) {
     HaxeBaseMemberModel model = element.getModel();
     if (model == null) return;
 
@@ -170,12 +247,53 @@ public class HaxeCompletionPriorityUtil {
       element.getPriority().type += METHOD;
     }
 
-    ResultHolder type = model.getResultType(null);
-    if (type != null && !type.isVoid()) {
-      if (parameterTypes.stream().anyMatch(type::canAssign)) {
-        element.getPriority().assignable += 1;
+    if (parameterTypes.size() <= argumentIndex) return;
+    ResultHolder lookupType = model.getResultType(null);
+    String lookupName = model.getName();
+    List<String> lookupWords = getWords(lookupName);
+
+    if(!calculateParameterPriority(element, names, parameterTypes, lookupType, argumentIndex, lookupWords, 1)){
+
+      for (int i = 0; i < parameterTypes.size(); i++) {
+        if (i == argumentIndex) continue;
+        calculateParameterPriority(element, names,parameterTypes, lookupType, i, lookupWords, 0.1);
       }
     }
+
+  }
+
+  private static @NotNull List<String> getWords(String lookupName) {
+    String[] camelCaseWords = lookupName.split("(?=[A-Z])");
+    return Arrays.stream(camelCaseWords).map(String::toLowerCase).toList();
+  }
+
+  private static boolean calculateParameterPriority(HaxeMemberLookupElement element,
+                                                    List<String> names,
+                                                    List<ResultHolder> parameterTypes,
+                                                    ResultHolder lookupType,
+                                                    int argumentIndex,
+                                                    List<String> words, double boost) {
+    boolean matched = false;
+
+    ResultHolder expectedParameterType = parameterTypes.get(argumentIndex);
+    if(expectedParameterType.canAssign(lookupType)) {
+      element.getPriority().assignable += 5 * boost;
+      matched = true;
+    }
+
+    String expectedParameterName = names.get(argumentIndex);
+    List<String> expectedWords = getWords(expectedParameterName);
+    int matches = findMatchingWords(words, expectedWords);
+    element.getPriority().name +=matches * boost;
+
+    return matched;
+  }
+
+  private static int findMatchingWords(List<String> words, List<String> expectedWords) {
+    HashSet<String> unique = new HashSet<>();
+    unique.addAll(expectedWords);
+    unique.addAll(words);
+    return expectedWords.size() + words.size() - unique.size();
   }
 
 

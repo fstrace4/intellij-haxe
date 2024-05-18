@@ -20,12 +20,15 @@ package com.intellij.plugins.haxe.ide.completion;
 import com.google.common.collect.Sets;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.plugins.haxe.config.sdk.HaxeSdkAdditionalDataBase;
 import com.intellij.plugins.haxe.config.sdk.HaxeSdkUtil;
+import com.intellij.plugins.haxe.ide.lookup.HaxeIndexedClassElement;
 import com.intellij.plugins.haxe.ide.lookup.HaxeLookupElement;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
@@ -58,10 +61,17 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
                LinkedHashSet<CompletionResult> unfilteredCompletions = result.runRemainingContributors(parameters, false);
                // Now filter out duplicates, etc.
                Set<CompletionResult> filteredCompletions = filter(parameters, unfilteredCompletions);
+
+
                filteredCompletions =  HaxeCompletionPriorityUtil.calculatePriority(filteredCompletions, parameters);
                filteredCompletions.stream()
                  .map(HaxeCompletionPriorityUtil::convertToPrioritized)
                  .forEach(result::passResult); // Add everything we want to keep to the result set.
+
+               // resolving PSI elements for index items is too slow for us to get correct item sorting (involves file parsing)
+               // we still want the PsiReference for documentation lookups, but we dont strictly need it
+               // for the sorting even tho it would be nice to also get the proximity sorting.
+               updatePsiElementValues(filteredCompletions);
 
 
                //TODO mlo: mechanism for filtering getters and setters ( get_X / set_x)  when properties exists
@@ -70,6 +80,15 @@ public class HaxeControllingCompletionContributor extends CompletionContributor 
                result.stopHere();
              }
            });
+  }
+
+  private static void updatePsiElementValues(Set<CompletionResult> filteredCompletions) {
+    ReadAction.run(() -> {
+      filteredCompletions.stream()
+        .filter(r -> r.getLookupElement() instanceof HaxeIndexedClassElement)
+        .map(r -> (HaxeIndexedClassElement)r.getLookupElement())
+        .forEach(HaxeIndexedClassElement::updatePsiElement);
+    });
   }
 
   private static Set<CompletionResult> filter(@NotNull CompletionParameters parameters,
