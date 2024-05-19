@@ -116,7 +116,7 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
         final HaxeClassInfo value = new HaxeClassInfo(classString, packageString, HaxeComponentType.typeOf(haxeClass));
         for (HaxeType haxeType : haxeClass.getHaxeExtendsList()) {
           if (haxeType == null) continue;
-          final String classNameCandidate = haxeType.getText();
+          final String classNameCandidate = getClassNameCandidate(haxeType);
           final String key = classNameCandidate.indexOf('.') != -1 ?
                              classNameCandidate :
                              getQNameAndCache(qNameCache, psiFile, classNameCandidate);
@@ -124,7 +124,7 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
         }
         for (HaxeType haxeType : haxeClass.getHaxeImplementsList()) {
           if (haxeType == null) continue;
-          final String classNameCandidate = haxeType.getText();
+          final String classNameCandidate = getClassNameCandidate(haxeType);
           final String key = classNameCandidate.indexOf('.') != -1 ?
                              classNameCandidate :
                              getQNameAndCache(qNameCache, psiFile, classNameCandidate);
@@ -132,6 +132,11 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
         }
       }
       return result;
+    }
+
+    private static String getClassNameCandidate(HaxeType haxeType) {
+      // we are not using "haxeType.getText();" here because that would include type parameters/ generics
+      return haxeType.getReferenceExpression().getText();
     }
 
     private static String getQNameAndCache(Map<String, String> qNameCache, PsiFile psiFile, String classNameCandidate) {
