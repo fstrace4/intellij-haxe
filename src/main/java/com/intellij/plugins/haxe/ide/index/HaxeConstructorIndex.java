@@ -163,8 +163,10 @@ public class HaxeConstructorIndex extends FileBasedIndexExtension<String, HaxeCo
       final HaxeTypeOrAnonymous haxeTypeOrAnonymous = haxeTypeDef.getTypeOrAnonymous();
       final HaxeType type = haxeTypeOrAnonymous == null ? null : haxeTypeOrAnonymous.getType();
       if (type != null) {
-        final String classNameCandidate = type.getReferenceExpression().getText();
-        String name = HaxeResolveUtil.getQName(cls.getContainingFile(), classNameCandidate, true);
+        HaxeReferenceExpression expression = type.getReferenceExpression();
+        final String classNameCandidate = expression.getText();
+        String name = HaxeResolveUtil.getQName(cls.getContainingFile(), classNameCandidate, true, true, type);
+        if (name == null) name = classNameCandidate;// fallback so key wont be null
         return HaxeResolveUtil.findClassByQName(name, cls);
       }
     }

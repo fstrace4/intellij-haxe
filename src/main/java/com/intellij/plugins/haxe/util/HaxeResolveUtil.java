@@ -1369,14 +1369,17 @@ public class HaxeResolveUtil {
     return classModel;
   }
 
-  public static String getQName(PsiFile file, final String result, boolean searchInSamePackage) {
+  @Nullable
+  public static String getQName(PsiFile file, final String name, boolean searchInSamePackage, boolean searchParentPackages, HaxeType targetReference) {
+
+
 
     HaxeModule module = PsiTreeUtil.getChildOfType(file, HaxeModule.class);
     if (module != null) {
       @NotNull PsiElement[] moduleChildren = module.getChildren();
       HaxeClass classForType = null;
       for (PsiElement child : moduleChildren) {
-        if (child instanceof HaxeClass && result.equals(((HaxeClass)child).getName())) {
+        if (child instanceof HaxeClass && name.equals(((HaxeClass)child).getName())) {
           classForType = (HaxeClass)child;
           break;
         }
@@ -1391,13 +1394,13 @@ public class HaxeResolveUtil {
       (HaxeImportStatement)(StreamUtil.reverse(Arrays.stream(fileChildren))
                               .filter(element ->
                                         element instanceof HaxeImportStatement impStatement
-                                        && impStatement.getModel().exposeByName(result) != null)
+                                        && impStatement.getModel().exposeByName(name) != null)
                               .findFirst()
                               .orElse(null));
 
     final HaxeExpression importStatementExpression = importStatement == null ? null : importStatement.getReferenceExpression();
     if (importStatementExpression != null) {
-      PsiElement element = importStatement.getModel().exposeByName(result);
+      PsiElement element = importStatement.getModel().exposeByName(name);
       if (element instanceof HaxeClass classModel) {
         return classModel.getQualifiedName();
       }
@@ -1410,15 +1413,18 @@ public class HaxeResolveUtil {
       if (fileModel != null) {
         final HaxePackageModel packageModel = fileModel.getPackageModel();
         if (packageModel != null) {
-          final HaxeClassModel classModel = packageModel.getClassModel(result);
+          final HaxeClassModel classModel = packageModel.getClassModel(name);
           if (classModel != null) {
             return classModel.haxeClass.getQualifiedName();
           }
         }
       }
     }
-
-    return result;
+    if (searchParentPackages && targetReference != null) {
+      HaxeClass haxeClass = findClassByQNameInSuperPackages(targetReference);
+      if (haxeClass != null) return haxeClass.getQualifiedName();
+    }
+    return null;
   }
 
   @Nullable

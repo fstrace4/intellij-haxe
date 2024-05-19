@@ -119,7 +119,7 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
           final String classNameCandidate = getClassNameCandidate(haxeType);
           final String key = classNameCandidate.indexOf('.') != -1 ?
                              classNameCandidate :
-                             getQNameAndCache(qNameCache, psiFile, classNameCandidate);
+                             getQNameAndCache(qNameCache, psiFile, classNameCandidate, haxeType);
           put(result, key, value);
         }
         for (HaxeType haxeType : haxeClass.getHaxeImplementsList()) {
@@ -127,7 +127,7 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
           final String classNameCandidate = getClassNameCandidate(haxeType);
           final String key = classNameCandidate.indexOf('.') != -1 ?
                              classNameCandidate :
-                             getQNameAndCache(qNameCache, psiFile, classNameCandidate);
+                             getQNameAndCache(qNameCache, psiFile, classNameCandidate, haxeType);
           put(result, key, value);
         }
       }
@@ -139,10 +139,11 @@ public class HaxeInheritanceIndex extends FileBasedIndexExtension<String, List<H
       return haxeType.getReferenceExpression().getText();
     }
 
-    private static String getQNameAndCache(Map<String, String> qNameCache, PsiFile psiFile, String classNameCandidate) {
+    private static String getQNameAndCache(Map<String, String> qNameCache, PsiFile psiFile, String classNameCandidate, HaxeType haxeType) {
       String result = qNameCache.get(classNameCandidate);
       if (result == null) {
-        result = HaxeResolveUtil.getQName(psiFile, classNameCandidate, true);
+        result = HaxeResolveUtil.getQName(psiFile, classNameCandidate, true, true, haxeType);
+        if (result == null) result = classNameCandidate;// fallback so key wont be null
         qNameCache.put(classNameCandidate, result);
       }
       return result;
