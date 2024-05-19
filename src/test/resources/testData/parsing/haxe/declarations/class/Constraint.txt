@@ -12,22 +12,23 @@ Haxe File
             IDENTIFIER
               HaxePsiToken:ID('T')
           HaxePsiToken::(':')
-          HaxePsiToken:(('(')
-          TYPE_LIST
-            TYPE_LIST_PART
-              TYPE_OR_ANONYMOUS
-                TYPE
-                  REFERENCE_EXPRESSION
-                    IDENTIFIER
-                      HaxePsiToken:ID('Event')
-            HaxePsiToken:,(',')
-            TYPE_LIST_PART
-              TYPE_OR_ANONYMOUS
-                TYPE
-                  REFERENCE_EXPRESSION
-                    IDENTIFIER
-                      HaxePsiToken:ID('EventDispatcher')
-          HaxePsiToken:)(')')
+          GENERIC_CONSTRAINT_PART
+            HaxePsiToken:(('(')
+            TYPE_LIST
+              TYPE_LIST_PART
+                TYPE_OR_ANONYMOUS
+                  TYPE
+                    REFERENCE_EXPRESSION
+                      IDENTIFIER
+                        HaxePsiToken:ID('Event')
+              HaxePsiToken:,(',')
+              TYPE_LIST_PART
+                TYPE_OR_ANONYMOUS
+                  TYPE
+                    REFERENCE_EXPRESSION
+                      IDENTIFIER
+                        HaxePsiToken:ID('EventDispatcher')
+            HaxePsiToken:)(')')
         HaxePsiToken:>('>')
       CLASS_BODY
         HaxePsiToken:{('{')
@@ -58,12 +59,13 @@ Haxe File
             IDENTIFIER
               HaxePsiToken:ID('T')
           HaxePsiToken::(':')
-          TYPE_LIST_PART
-            TYPE_OR_ANONYMOUS
-              TYPE
-                REFERENCE_EXPRESSION
-                  IDENTIFIER
-                    HaxePsiToken:ID('EventDispatcher')
+          GENERIC_CONSTRAINT_PART
+            TYPE_LIST_PART
+              TYPE_OR_ANONYMOUS
+                TYPE
+                  REFERENCE_EXPRESSION
+                    IDENTIFIER
+                      HaxePsiToken:ID('EventDispatcher')
         HaxePsiToken:>('>')
       CLASS_BODY
         HaxePsiToken:{('{')

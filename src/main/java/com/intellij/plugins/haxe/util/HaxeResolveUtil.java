@@ -955,8 +955,10 @@ public class HaxeResolveUtil {
     if (haxeClass == null && type != null) {
       PsiElement resolve = type.getReferenceExpression().resolve();
       if (resolve instanceof HaxeGenericListPart listPart) {
-        if (listPart.getTypeListPart() != null) {
-          HaxeTypeOrAnonymous typeOrAnonymous = listPart.getTypeListPart().getTypeOrAnonymous();
+
+        HaxeGenericConstraintPart constraintPart = listPart.getGenericConstraintPart();
+        if (constraintPart != null && constraintPart.getTypeListPart() != null) {
+          HaxeTypeOrAnonymous typeOrAnonymous = constraintPart.getTypeListPart().getTypeOrAnonymous();
           if (typeOrAnonymous != null) {
             HaxeType haxeType = typeOrAnonymous.getType();
             HaxeAnonymousType anonymousType = typeOrAnonymous.getAnonymousType();

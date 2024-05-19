@@ -3,6 +3,7 @@
 * Bugfix: import would be displayed as unused if last reference in a file was a fully qualified reference.
 * Bugfix: Fixing problem with resolving setter method  reference from property.
 * Bugfix: Imports would not be added automatically when package statement was missing.
+* Bugfix: Constraints and defaults could not be used together in type generics
 * Improvement: major rework of completion suggestions
   - Added completion for constructors
   - Added public static members to completion suggestions

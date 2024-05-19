@@ -1295,12 +1295,13 @@ Haxe File
             IDENTIFIER
               HaxePsiToken:ID('T')
           HaxePsiToken::(':')
-          TYPE_LIST_PART
-            TYPE_OR_ANONYMOUS
-              TYPE
-                REFERENCE_EXPRESSION
-                  IDENTIFIER
-                    HaxePsiToken:ID('EnumValue')
+          GENERIC_CONSTRAINT_PART
+            TYPE_LIST_PART
+              TYPE_OR_ANONYMOUS
+                TYPE
+                  REFERENCE_EXPRESSION
+                    IDENTIFIER
+                      HaxePsiToken:ID('EnumValue')
         HaxePsiToken:>('>')
       UNDERLYING_TYPE
         HaxePsiToken:(('(')

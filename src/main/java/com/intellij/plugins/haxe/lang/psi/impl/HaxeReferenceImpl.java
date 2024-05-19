@@ -880,8 +880,9 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
             }
 
             if (listPart != null) {
-              HaxeTypeList list = listPart.getTypeList();
-              HaxeTypeListPart typeListPart = listPart.getTypeListPart();
+              HaxeGenericConstraintPart constraintPart = listPart.getGenericConstraintPart();
+              HaxeTypeList list =  constraintPart == null ? null : constraintPart.getTypeList();
+              HaxeTypeListPart typeListPart =constraintPart == null ? null :  constraintPart.getTypeListPart();
               ASTNode node = listPart.getContext().getNode();
               if (list != null) {
                 List<HaxeType> classReferences = new ArrayList<>();

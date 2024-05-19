@@ -527,13 +527,14 @@ haxe4typeList ::= typeListPart ('&' typeListPart)+
 //typeGenericParam ::= '<' defaultGenericListPart (',' defaultGenericListPart)* '>'
 //methodGenericParam ::= '<' genericListPart (',' genericListPart)* '>'
 genericParam ::= '<' genericListPart (',' genericListPart)* '>'
-genericListPart ::= defaultGenericListPart |  regularGenericListPart | constGenericListPart
+genericListPart ::= normalGenericListPart  | constGenericListPart
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent" implements="com.intellij.plugins.haxe.lang.psi.HaxeComponent"}
-private defaultGenericListPart ::= componentName '=' typeWrapper
-private regularGenericListPart ::= componentName (':' ('(' (haxe4typeList | typeList) ')' | haxe4typeList | typeListPart ))? {pin=2}
+genericDefaultType ::= typeWrapper
+genericConstraintPart ::=  ('(' (haxe4typeList | typeList) ')' | haxe4typeList | typeListPart )
+private normalGenericListPart ::= componentName (':' genericConstraintPart)? ('=' genericDefaultType)?
 // constGenericListPart is only available when the macroMember is '@:const' (constMeta).  It's only useful in macros.
 // We can't use constMeta here until the lexer returns a string for macros instead of META_ID.
-private constGenericListPart ::= constantExpression (':' ('(' (haxe4typeList | typeList) ')' | haxe4typeList | typeListPart ))? {pin=2}
+private constGenericListPart ::= constantExpression (':' genericConstraintPart)? {pin=2}
 
 typeListPart ::= typeWrapper | literalExpression
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeTypeListPartPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeTypeListPartPsiMixin"}

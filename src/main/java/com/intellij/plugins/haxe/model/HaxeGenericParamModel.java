@@ -40,10 +40,14 @@ public class HaxeGenericParamModel {
   public HaxeGenericParamModel(@NotNull HaxeGenericListPart part, int index) {
     this.index = index;
     this.part = part;
-    this.defaultType = part.getTypeOrAnonymous();
-    this.defaultFunction = part.getFunctionType();
     this.name = part.getComponentName().getText();
+
+    HaxeGenericDefaultType defaultPart = part.getGenericDefaultType();
+    this.defaultType = defaultPart == null ? null : defaultPart.getTypeOrAnonymous();
+    this.defaultFunction = defaultPart == null ? null : defaultPart.getFunctionType();
   }
+
+
 
   public int getIndex() {
     return index;
@@ -66,53 +70,58 @@ public class HaxeGenericParamModel {
       resolver = new HaxeGenericResolver();
     }
 
-    HaxeTypeListPart constraint = part.getTypeListPart();
-    if (constraint == null) {
-      HaxeTypeList list = part.getTypeList();
-      if (list != null) {
-        // no need to  use multiType if only one value
-        if (list.getTypeListPartList().size() == 1) {
-          HaxeTypeListPart typeListPart = list.getTypeListPartList().get(0);
-          HaxeFunctionType functionType = typeListPart.getFunctionType();
-          if (functionType != null) {
-            return SpecificFunctionReference.create(new HaxeSpecificFunction(functionType, HaxeGenericSpecialization.EMPTY)).createHolder();
-          }
-          HaxeTypeOrAnonymous anonymous = typeListPart.getTypeOrAnonymous();
-          if(anonymous != null) {
-            return HaxeTypeResolver.getTypeFromTypeOrAnonymous(anonymous);
-          }
-
-        }
-        HaxeTypeParameterMultiType type = convertToMultiTypeParameter(list, resolver);
-        return  new ResultHolder(SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(type.getModel(), part)));
-      }
-    }
-    if (constraint != null)  {
-      HaxeTypeOrAnonymous toa = constraint.getTypeOrAnonymous();
-      if (toa != null) {
-        if (null != toa.getType()) {
-          HaxeReferenceExpression reference = toa.getType().getReferenceExpression();
-          ResultHolder result = HaxeExpressionEvaluator.evaluate(reference, new HaxeExpressionEvaluatorContext(part), resolver).result;
-          if (!result.isUnknown()) {
-            return result;
-          } else {
-            if (HaxeTypeResolver.isTypeParameter(reference)) {
-              // we dont want to resolve typeParameter constraints as the definition of this type parameter might need to inherit the type
-              return  new ResultHolder(SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(toa.getType().getText(), toa.getType(), true)));
-              //return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa);
+    HaxeGenericConstraintPart constraintPart = part.getGenericConstraintPart();
+    if (constraintPart != null) {
+      HaxeTypeListPart constraint = constraintPart.getTypeListPart();
+      if (constraint == null) {
+        HaxeTypeList list = constraintPart.getTypeList();
+        if (list != null) {
+          // no need to  use multiType if only one value
+          if (list.getTypeListPartList().size() == 1) {
+            HaxeTypeListPart typeListPart = list.getTypeListPartList().get(0);
+            HaxeFunctionType functionType = typeListPart.getFunctionType();
+            if (functionType != null) {
+              return SpecificFunctionReference.create(new HaxeSpecificFunction(functionType, HaxeGenericSpecialization.EMPTY))
+                .createHolder();
+            }
+            HaxeTypeOrAnonymous anonymous = typeListPart.getTypeOrAnonymous();
+            if (anonymous != null) {
+              return HaxeTypeResolver.getTypeFromTypeOrAnonymous(anonymous);
             }
           }
-        }
-
-        else {
-          // Anonymous struct for a constraint.
-          // TODO: Turn the anonymous structure into a ResolveResult.
-          return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa, resolver); //temp solution
+          HaxeTypeParameterMultiType type = convertToMultiTypeParameter(list, resolver);
+          return new ResultHolder(SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(type.getModel(), part)));
         }
       }
-      HaxeFunctionType functionType = constraint.getFunctionType();
-      if (functionType != null) {
-        return HaxeTypeResolver.getTypeFromFunctionType(functionType);
+      if (constraint != null) {
+        HaxeTypeOrAnonymous toa = constraint.getTypeOrAnonymous();
+        if (toa != null) {
+          if (null != toa.getType()) {
+            HaxeReferenceExpression reference = toa.getType().getReferenceExpression();
+            ResultHolder result = HaxeExpressionEvaluator.evaluate(reference, new HaxeExpressionEvaluatorContext(part), resolver).result;
+            if (!result.isUnknown()) {
+              return result;
+            }
+            else {
+              if (HaxeTypeResolver.isTypeParameter(reference)) {
+                // we dont want to resolve typeParameter constraints as the definition of this type parameter might need to inherit the type
+                return new ResultHolder(
+                  SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(toa.getType().getText(), toa.getType(), true)));
+                //return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa);
+              }
+            }
+          }
+
+          else {
+            // Anonymous struct for a constraint.
+            // TODO: Turn the anonymous structure into a ResolveResult.
+            return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa, resolver); //temp solution
+          }
+        }
+        HaxeFunctionType functionType = constraint.getFunctionType();
+        if (functionType != null) {
+          return HaxeTypeResolver.getTypeFromFunctionType(functionType);
+        }
       }
     }
     return null;

@@ -282,7 +282,8 @@ public class HaxeResolveResult implements Cloneable {
 
   @Nullable
   private static HaxeType getTypeOfGenericListPart(HaxeGenericListPart genericListPart) {
-    final HaxeTypeListPart typeListPart = genericListPart.getTypeListPart();
+    HaxeGenericConstraintPart constraintPart = genericListPart.getGenericConstraintPart();
+    final HaxeTypeListPart typeListPart = constraintPart == null ? null : constraintPart.getTypeListPart();
     final HaxeTypeOrAnonymous typeOrAnonymous = ((typeListPart != null) ? typeListPart.getTypeOrAnonymous() : null);
     return ((typeOrAnonymous != null) ? typeOrAnonymous.getType() : null);
   }
