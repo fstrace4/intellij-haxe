@@ -1397,6 +1397,11 @@ public class HaxeResolveUtil {
 
     final HaxeExpression importStatementExpression = importStatement == null ? null : importStatement.getReferenceExpression();
     if (importStatementExpression != null) {
+      PsiElement element = importStatement.getModel().exposeByName(result);
+      if (element instanceof HaxeClass classModel) {
+        return classModel.getQualifiedName();
+      }
+      // fallback if we dont have a HaxeClass
       return importStatementExpression.getText();
     }
 
