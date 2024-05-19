@@ -1,6 +1,8 @@
 # Changelog
 ## 1.5.4
 * Bugfix: import would be displayed as unused if last reference in a file was a fully qualified reference.
+* Bugfix: Fixing problem with resolving setter method  reference from property.
+* Bugfix: Imports would not be added automatically when package statement was missing.
 * Improvement: major rework of completion suggestions
   - Added completion for constructors
   - Added public static members to completion suggestions

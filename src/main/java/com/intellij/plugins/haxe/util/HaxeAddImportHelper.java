@@ -37,13 +37,14 @@ public class HaxeAddImportHelper {
     final PsiElement[] children = file.getChildren();
 
     PsiElement child = children[positionIndex];
-    // find HaxePackageStatement position
-    while (!(child instanceof HaxePackageStatement)) {
+    // search for package or first import
+    while (!(child instanceof HaxePackageStatement)
+           && !(child instanceof HaxeImportStatement)) {
       if (++positionIndex < children.length) {
         child = children[positionIndex];
-      }else {
-        log.warn("Unable to insert Import statement");
-        return null;
+      } else {
+        child = null;
+        break;
       }
     }
     // find last whitespace line before  docs or code and after last import
@@ -53,13 +54,17 @@ public class HaxeAddImportHelper {
       if (++positionIndex < children.length) {
         child = children[positionIndex];
       }else {
-        log.warn("Unable to insert Import statement");
-        return null;
+        child = null;
+        break;
       }
     }
 
-    assert child != null;
-    return insertImportBefore(path, file, child);
+    if(child != null) {
+      return insertImportBefore(path, file, child);
+    }else {
+      // if no package or import found (probably first import), we just add it to the top of the file
+      return insertImportTop(path, file);
+    }
   }
 
   private static HaxeImportStatement insertImportBefore(String path, PsiFile file, PsiElement child) {
@@ -70,6 +75,19 @@ public class HaxeAddImportHelper {
     }
 
     final PsiElement newLineElement = PsiParserFacade.getInstance(file.getProject()).createWhiteSpaceFromText("\n");
+    file.addBefore(newLineElement, child);
+    file.addBefore(importStatement, child);
+    return importStatement;
+  }
+  private static HaxeImportStatement insertImportTop(String path, PsiFile file) {
+    final HaxeImportStatement importStatement =
+      HaxeElementGenerator.createImportStatementFromPath(file.getProject(), path);
+    if (importStatement == null) {
+      return null;
+    }
+
+    final PsiElement newLineElement = PsiParserFacade.getInstance(file.getProject()).createWhiteSpaceFromText("\n");
+    PsiElement child = file.getFirstChild();
     file.addBefore(newLineElement, child);
     file.addBefore(importStatement, child);
     return importStatement;

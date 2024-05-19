@@ -116,7 +116,7 @@ public class HaxeFieldModel extends HaxeMemberModel {
   }
 
   public HaxeMethodModel getSetterMethod() {
-    if (getGetterType() != HaxeAccessorType.SET) return null;
+    if (getSetterType() != HaxeAccessorType.SET) return null;
     HaxeClassModel declaringClass = this.getDeclaringClass();
     if (declaringClass != null) {
       return declaringClass.getMethod("set_" + this.getName(), null);

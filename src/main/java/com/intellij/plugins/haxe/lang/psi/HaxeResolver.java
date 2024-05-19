@@ -67,7 +67,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   public static final HaxeResolver INSTANCE = new HaxeResolver();
 
-  public static ThreadLocal<Stack<PsiElement>> referencesProcessing = ThreadLocal.withInitial(() -> new Stack<PsiElement>());
+  public static ThreadLocal<Stack<PsiElement>> referencesProcessing = ThreadLocal.withInitial(Stack::new);
 
 
 
