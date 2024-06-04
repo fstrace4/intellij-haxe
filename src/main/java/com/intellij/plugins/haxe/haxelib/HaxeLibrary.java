@@ -167,7 +167,7 @@ public class HaxeLibrary {
 
   @NotNull
   public HaxeClasspathEntry getSourceRoot() {
-    if (CURRENT_DIR == myRelativeClasspath) {
+    if (CURRENT_DIR.equals(myRelativeClasspath)) {
       return getLibraryRoot();
     }
     return new HaxeClasspathEntry(myName, HaxeFileUtil.joinPath(myLibraryRoot, myRelativeClasspath));
@@ -184,7 +184,13 @@ public class HaxeLibrary {
   }
   @NotNull
   public String getVersionString() {
-    return myMetadata.getVersion();
+    String version = myMetadata.getVersion();
+    if (version == null) {
+      log.warn("Unable to retrieve version for lib: '"+ myName+"'");
+      return HaxelibSemVer.ZERO_VERSION.toString();
+    }else {
+      return version;
+    }
   }
 
   /**
