@@ -65,7 +65,7 @@ public class AddTypeTagToFieldIntention extends BaseIntentionAction {
     if (isMissingTypeTag) {
       ResultHolder type = HaxeExpressionEvaluator.evaluate(field, new HaxeExpressionEvaluatorContext(field), null).result;
       if (!(type == null || type.isUnknown())) {
-        HaxeTypeTag tag = createTypeTag(project, type.getType().toString());
+        HaxeTypeTag tag = createTypeTag(project, type.getType().toPresentationString());
         field.addAfter(tag, field.getComponentName());
       }
     }

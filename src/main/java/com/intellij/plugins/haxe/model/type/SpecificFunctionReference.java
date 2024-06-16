@@ -215,7 +215,7 @@ public class SpecificFunctionReference extends SpecificTypeReference {
       Argument argument = arguments.get(n);
       out.append(argument.toStringWithoutConstant());
     }
-    if (0 == arguments.size() && presentable) {
+    if (arguments.isEmpty() && presentable) {
       out.append("Void");
     }
     if (notSingleArgument) out.append(')');

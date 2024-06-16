@@ -76,9 +76,20 @@ public class HaxeCompletionPriorityUtil {
         HaxeBaseMemberModel model = memberLookup.getModel();
         if (model != null) {
           if (assignToType != null && !assignToType.isUnknown()) {
-            ResultHolder lookupType = model.getResultType(null);
+            SpecificTypeReference lookupType;
+            if (memberLookup.isFunctionType() && model instanceof HaxeMethodModel methodModel) {
+              lookupType = methodModel.getFunctionType(null);
+            }else {
+              lookupType = model.getResultType(null).getType();
+            }
             if (lookupType.canAssign(assignToType)) {
               memberLookup.getPriority().type += 0.5;
+              if (lookupType.isAny() || lookupType.isDynamic()){
+                memberLookup.getPriority().type -=0.1;// prefer more concrete types
+              }
+            }
+            if (memberLookup.isFunctionType() && assignToType.isFunctionType()) {
+              element.getPriority().type += FUNCTION_TYPE;
             }
           }
 
