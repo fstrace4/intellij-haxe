@@ -646,8 +646,8 @@ private returnValue ::= objectLiteral
 lamdaReturnStatement ::= 'return' (returnValue)? {implements="returnStatement"}
 returnStatement ::= 'return' (returnValue)? <<semicolonUnlessPrecededByStatement>>
 
-breakStatement ::= 'break' ';'
-continueStatement ::= 'continue' ';'
+breakStatement ::= 'break' <<semicolonUnlessFollowedByElseStatement>> // semi optional in guarded statement
+continueStatement ::= 'continue' <<semicolonUnlessFollowedByElseStatement>> // semi optional in guarded statement
 
 throwStatement ::= 'throw' expression ';'?
 

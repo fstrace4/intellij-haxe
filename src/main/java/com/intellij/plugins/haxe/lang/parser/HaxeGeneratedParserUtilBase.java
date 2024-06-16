@@ -115,7 +115,6 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     if (previousType == HaxeTokenTypes.PRCURLY || previousType == HaxeTokenTypes.OSEMI) {
       return true;
     }
-
     /*
       macro value expressions can be "normal" expressions but should be treated as a single value
       so the same way an string or int argument does not need a trailing ; in a method call
@@ -132,6 +131,23 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
 
     builder_.error(HaxeBundle.message("parsing.error.missing.semi.colon"));
     return false;
+  }
+
+  /**
+  * guarded statements followed by else statement does not need semi
+  */
+  public static boolean semicolonUnlessFollowedByElseStatement(PsiBuilder builder_, int level) {
+    if (consumeTokenFast(builder_, OSEMI)) {
+      return true;
+    }
+    int i = 0;
+    IElementType nextType = builder_.rawLookup(i);
+    while (null != nextType && isWhitespaceOrComment(builder_, nextType)) {
+      nextType = builder_.rawLookup(i++);
+    }
+
+    //guarded statement does not need semicolon if followed by "else"
+    return nextType == ELSE_STATEMENT;
   }
   // hopefully faster way to stop unnecessary parsing attempts when not reification
   public static boolean canBeReification(PsiBuilder builder_, int level) {
