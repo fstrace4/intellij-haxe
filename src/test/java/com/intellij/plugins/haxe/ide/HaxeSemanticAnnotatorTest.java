@@ -27,7 +27,6 @@ import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.ex.LocalInspectionToolWrapper;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.registry.Registry;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.HaxeCodeInsightFixtureTestCase;
 import com.intellij.plugins.haxe.ide.annotator.HaxeSemanticAnnotatorInspections;
@@ -431,12 +430,12 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
 
   // var a:Int = (10 : Float);
   @Test
-  public void testInitializeIntWithIntTypeCheckedToFloat() throws Exception {
+  public void testInitializeIntWithTypeChecked() throws Exception {
     doTestNoFixWithWarnings();
   }
 
   @Test
-  public void testAssignIntWithIntTypeCheckedToFloat() throws Exception {
+  public void testAssignWithTypeChecker() throws Exception {
     doTestNoFixWithWarnings();
   }
 
