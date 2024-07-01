@@ -190,6 +190,7 @@ public class HaxeExpressionEvaluator {
       }
     }
 
+
     if (element instanceof  HaxeNamedComponent) {
 
       // must be before  HaxeLocalVarDeclaration as HaxeSwitchCaseCaptureVar extends HaxeLocalVarDeclaration
@@ -275,6 +276,10 @@ public class HaxeExpressionEvaluator {
 
       if (element instanceof HaxeStringLiteralExpression) {
         return handleStringLiteralExpression(element);
+      }
+
+      if (element instanceof HaxeTypeCheckExpr expr) {
+        return handeTypeCheckExpr(element, expr, resolver);
       }
     }
 
@@ -410,6 +415,16 @@ public class HaxeExpressionEvaluator {
 
     if(log.isDebugEnabled()) log.debug("Unhandled " + element.getClass());
     return createUnknown(element);
+  }
+
+  private static ResultHolder handeTypeCheckExpr(PsiElement element, HaxeTypeCheckExpr expr, HaxeGenericResolver resolver) {
+    if (expr.getTypeOrAnonymous() != null) {
+      return HaxeTypeResolver.getTypeFromTypeOrAnonymous(expr.getTypeOrAnonymous(), resolver);
+    }else if (expr.getFunctionType() != null) {
+      return HaxeTypeResolver.getTypeFromFunctionType(expr.getFunctionType());
+    }else {
+      return createUnknown(element);
+    }
   }
 
   private static ResultHolder handleMacroStatement(HaxeExpressionEvaluatorContext context, HaxeMacroStatement macroStatement, HaxeGenericResolver resolver) {
