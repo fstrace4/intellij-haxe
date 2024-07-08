@@ -17,16 +17,11 @@
  */
 package com.intellij.plugins.haxe.ide.inspections;
 
-import com.intellij.codeInspection.InspectionManager;
-import com.intellij.codeInspection.LocalInspectionTool;
-import com.intellij.codeInspection.ProblemDescriptor;
-import com.intellij.codeInspection.ProblemHighlightType;
+import com.intellij.codeInspection.*;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.ide.annotator.HaxeAnnotatingVisitor;
-import com.intellij.plugins.haxe.lang.psi.HaxeFile;
-import com.intellij.plugins.haxe.lang.psi.HaxeImportStatement;
-import com.intellij.plugins.haxe.lang.psi.HaxeReferenceExpression;
+import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ArrayUtil;
@@ -36,6 +31,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import static com.intellij.plugins.haxe.ide.inspections.HaxeUnresolvedSymbolQuickFixes.*;
 
 /**
  * Created by fedorkorotkov.
@@ -88,12 +86,27 @@ public class HaxeUnresolvedSymbolInspection extends LocalInspectionTool {
           TextRange.from(0, nameIdentifier.getTextLength()),
           getDisplayName(),
           ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
-          isOnTheFly
+          isOnTheFly,
+          createQuickfixesIfAvailable(reference)
         ));
       }
     }.visitFile(file);
     return ArrayUtil.toObjectArray(result, ProblemDescriptor.class);
   }
+
+  private LocalQuickFix[] createQuickfixesIfAvailable(HaxeReferenceExpression reference) {
+    List<LocalQuickFix> list = new ArrayList<>();
+    if (reference.getParent() instanceof HaxeCallExpression callExpression) {
+      list.add(createMethodQuickfix(callExpression));
+      list.add(createFunctionQuickfix(callExpression));
+    }else {
+      list.add(createLocalVarQuickfix(reference));
+      list.add(createFieldQuickfix(reference));
+      list.add(createMethodParameterQuickfix(reference));
+    }
+    return list.stream().filter(Objects::nonNull).toArray(LocalQuickFix[]::new);
+  }
+
 
   private boolean isPartOfImportStatement(HaxeReferenceExpression reference) {
     PsiElement parent = reference.getParent();

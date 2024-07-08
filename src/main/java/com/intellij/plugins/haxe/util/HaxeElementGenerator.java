@@ -26,10 +26,7 @@ import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.HaxeLanguage;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeExpressionCodeFragmentImpl;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiMember;
+import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.PsiFileFactoryImpl;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -83,6 +80,15 @@ public class HaxeElementGenerator {
     assert haxeClass != null;
     HaxeFieldDeclaration next = haxeClass.getFieldSelf(null).iterator().next();
     return next.getTypeTag();
+  }
+  public static HaxeParameter createParameter(Project myProject, String text) {
+    var statment = "function  dummy (" +text+ ", dummyParam:Int){}";
+    final HaxeFile dummyFile = createDummyFile(myProject, HaxeCodeGenerateUtil.wrapFunction(statment).getFirst());
+    final HaxeModule haxeModule = PsiTreeUtil.getChildOfType(dummyFile, HaxeModule.class);
+    final HaxeClass haxeClass = PsiTreeUtil.getChildOfType(haxeModule, HaxeClass.class);
+    assert haxeClass != null;
+    HaxeMethodDeclaration method = (HaxeMethodDeclaration)haxeClass.getHaxeMethodsSelf(null).get(0);
+    return method.getParameterList().getParameterList().get(0);
   }
 
   // XXX: Eventually, this ordering should come from the class order in
@@ -158,6 +164,12 @@ public class HaxeElementGenerator {
     final HaxeFile dummyFile =  createDummyFile(myProject, "package;");
     return dummyFile.getLastChild().getLastChild();
   }
+  @NotNull
+  public static PsiElement createComma(Project myProject) {
+    final HaxeFile dummyFile =  createDummyFile(myProject, "var a,b;");
+    return dummyFile.getLastChild().getPrevSibling().getPrevSibling();
+  }
+
 
   public static HaxeFile createDummyFile(Project myProject, String text) {
     final PsiFileFactory factory = PsiFileFactory.getInstance(myProject);
@@ -205,12 +217,10 @@ public class HaxeElementGenerator {
   }
 
   private static void reformat(final PsiMember movedElement) {
-    ApplicationManager.getApplication().runWriteAction(() -> {
-      final TextRange range = movedElement.getTextRange();
-      final PsiFile file = movedElement.getContainingFile();
-      final PsiFile baseFile = file.getViewProvider().getPsi(file.getViewProvider().getBaseLanguage());
-      CodeStyleManager.getInstance(movedElement.getProject()).reformatText(baseFile, range.getStartOffset(), range.getEndOffset());
-    });
+    final TextRange range = movedElement.getTextRange();
+    final PsiFile file = movedElement.getContainingFile();
+    final PsiFile baseFile = file.getViewProvider().getPsi(file.getViewProvider().getBaseLanguage());
+    CodeStyleManager.getInstance(movedElement.getProject()).reformatText(baseFile, range.getStartOffset(), range.getEndOffset());
   }
 
 }

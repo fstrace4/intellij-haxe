@@ -1,4 +1,8 @@
 # Changelog
+## 1.5.5
+* bugfix: incorrect handling of typeCheck expressions
+* Added: quick fix for unresolved symbols (generate method, function, variable, field, parameter)
+
 ## 1.5.4
 * Bugfix: import would be displayed as unused if last reference in a file was a fully qualified reference.
 * Bugfix: Fixing problem with resolving setter method  reference from property.

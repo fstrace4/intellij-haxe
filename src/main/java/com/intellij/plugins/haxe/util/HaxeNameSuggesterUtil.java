@@ -214,7 +214,10 @@ public class HaxeNameSuggesterUtil {
   }
 
   @NotNull
-  public static Collection<String> getSuggestedNames(final HaxeExpression expression, final boolean wantUpperCase) {
+  public static List<String> getSuggestedNames(final HaxeExpression expression, final boolean wantUpperCase) {
+    return getSuggestedNames(expression, wantUpperCase, true, null);
+  }
+  public static List<String> getSuggestedNames(final HaxeExpression expression, final boolean wantUpperCase, boolean findUsed, Set<String> customUsedList) {
     String text = expression.getText();
     boolean useUpperCase = wantUpperCase;
     boolean isArray = HaxeExpressionUtil.isArrayExpression(expression);
@@ -230,14 +233,18 @@ public class HaxeNameSuggesterUtil {
                                                  : HaxeNameSuggesterUtil.generateNames(text, useUpperCase, isArray);
     candidates.add(HaxeNameSuggesterUtil.getDefaultExpressionName(expression, useUpperCase));
 
-    final Set<String> usedNames = HaxeRefactoringUtil.collectUsedNames(expression);
-    usedNames.addAll(HaxeRefactoringUtil.collectKeywords());
-    final Collection<String> result = new ArrayList<String>();
-
+    Set<String> ignoreNameList = new HashSet<>(HaxeRefactoringUtil.collectKeywords());
+    if (customUsedList != null) {
+      ignoreNameList.addAll(customUsedList);
+    }
+    if (findUsed) {
+      ignoreNameList.addAll(HaxeRefactoringUtil.collectUsedNames(expression));
+    }
+    final List<String> result = new ArrayList<String>();
     for (String candidate : candidates) {
       int index = 0;
       String suffix = "";
-      while (usedNames.contains(candidate + suffix)) {
+      while (ignoreNameList.contains(candidate + suffix)) {
         suffix = Integer.toString(++index);
       }
       result.add(candidate + suffix);
