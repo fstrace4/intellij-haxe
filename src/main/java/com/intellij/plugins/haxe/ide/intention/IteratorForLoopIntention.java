@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.HaxeLanguage;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceHandler;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
@@ -64,7 +64,7 @@ public class IteratorForLoopIntention extends BaseIntentionAction {
         HaxeValueIterator valueIterator = itr.getValueIterator();
         if (valueIterator != null ) {
           HaxeComponentName name = valueIterator.getComponentName();
-          final var introducer = new HaxeIntroduceHandler.HaxeInplaceVariableIntroducer(name, editor, List.of());
+          final var introducer = new HaxeIntroduceHandler.HaxeInplaceVariableIntroducer(name, editor, List.of(), "Introduce loop iterator");
           introducer.setElementToRename(name);
           TextRange range = name.getTextRange();
           editor.getSelectionModel().setSelection(range.getStartOffset(), range.getEndOffset());

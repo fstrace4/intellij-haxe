@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.HaxeLanguage;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceHandler;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
@@ -81,7 +81,8 @@ public class KeyValueIteratorForLoopIntention extends BaseIntentionAction {
     HaxeComponentName keyNamed = keyItr.getComponentName();
     HaxeComponentName valueNamed = valueItr.getComponentName();
 
-    final var introducer = new HaxeIntroduceHandler.HaxeInplaceVariableIntroducer(keyNamed, editor, List.of(), Map.of( valueNamed, "value"));
+    final var introducer = new HaxeIntroduceHandler.HaxeInplaceVariableIntroducer(keyNamed, editor, List.of(), Map.of( valueNamed, "value"),
+                                                                                  "Introduce key-value iterator");
     introducer.setElementToRename(keyNamed);
     TextRange range = keyNamed.getTextRange();
     editor.getSelectionModel().setSelection(range.getStartOffset(), range.getEndOffset());

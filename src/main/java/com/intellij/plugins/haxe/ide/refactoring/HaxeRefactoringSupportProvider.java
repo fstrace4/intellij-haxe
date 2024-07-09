@@ -21,7 +21,8 @@ import com.intellij.lang.refactoring.RefactoringSupportProvider;
 import com.intellij.plugins.haxe.ide.refactoring.extractInterface.ExtractInterfaceHandler;
 import com.intellij.plugins.haxe.ide.refactoring.extractMethod.HaxeExtractMethodHandler;
 import com.intellij.plugins.haxe.ide.refactoring.extractSuperclass.ExtractSuperclassHandler;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceVariableHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceParameter.HaxeIntroduceParameterHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceVariableHandler;
 import com.intellij.plugins.haxe.ide.refactoring.introduceField.HaxeIntroduceConstantHandler;
 import com.intellij.plugins.haxe.ide.refactoring.memberPullUp.HaxePullUpHandler;
 import com.intellij.plugins.haxe.ide.refactoring.memberPushDown.HaxePushDownHandler;
@@ -42,6 +43,11 @@ public class HaxeRefactoringSupportProvider extends RefactoringSupportProvider {
   @Override
   public RefactoringActionHandler getIntroduceVariableHandler() {
     return new HaxeIntroduceVariableHandler();
+  }
+
+  @Override
+  public @Nullable RefactoringActionHandler getIntroduceParameterHandler() {
+    return new HaxeIntroduceParameterHandler();
   }
 
   @Nullable

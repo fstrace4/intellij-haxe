@@ -19,8 +19,8 @@
 package com.intellij.plugins.haxe.ide.refactoring.introduceField;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceHandler;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceOperation;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceOperation;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeClassBody;
 import com.intellij.plugins.haxe.lang.psi.HaxeExpression;
@@ -82,7 +82,7 @@ public class HaxeIntroduceConstantHandler extends HaxeIntroduceHandler {
   @Override
   public PsiElement createDeclaration(HaxeIntroduceOperation operation) {
     final Project project = operation.getProject();
-    final HaxeExpression initializer = operation.getInitializer();
+    final PsiElement initializer = operation.getInitializer();
     InitializerTextBuilder builder = new InitializerTextBuilder();
     initializer.accept(builder);
     String assignmentText = "public static inline var " + operation.getName() + " = " + builder.result() + ";";
@@ -122,7 +122,7 @@ public class HaxeIntroduceConstantHandler extends HaxeIntroduceHandler {
   }
 
   @Override
-  protected Collection<String> getSuggestedNames(HaxeExpression expression) {
+  protected Collection<String> getSuggestedNames(PsiElement expression) {
     return HaxeNameSuggesterUtil.getSuggestedNames(expression, true);
   }
 }

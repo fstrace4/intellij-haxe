@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.ide.refactoring.introduce;
+package com.intellij.plugins.haxe.ide.refactoring.introduceVariable;
 
 import com.intellij.codeInsight.CodeInsightUtilCore;
 import com.intellij.codeInsight.template.TemplateBuilderImpl;
@@ -26,6 +26,7 @@ import com.intellij.injected.editor.EditorWindow;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
@@ -61,6 +62,11 @@ import java.util.*;
  */
 @SuppressWarnings("MethodMayBeStatic")
 public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
+
+  protected   @NotNull String getActionName() {
+    return "Introduce Variable";
+  }
+
   @Nullable
   protected static PsiElement findAnchor(PsiElement occurrence) {
     return findAnchor(Collections.singletonList(occurrence));
@@ -109,7 +115,17 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file, DataContext dataContext) {
-    performAction(new HaxeIntroduceOperation(project, editor, file, null));
+
+    CommandProcessor.getInstance().executeCommand(project, () -> {
+      performAction(new HaxeIntroduceOperation(project, editor, file, null, getActionName()));
+    }, getActionName(), getActionName());
+
+    //LocalHistoryAction action = LocalHistory.getInstance().startAction(getActionName());
+    //try {
+    //  performAction(new HaxeIntroduceOperation(project, editor, file, null, getActionName()));
+    //}finally {
+    //  action.finish();
+    //}
   }
 
   @Override
@@ -167,16 +183,17 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
       return;
     }
 
-    element1 = HaxeRefactoringUtil.getSelectedExpression(project, file, element1, element2);
-    if (!isValidForExtraction(element1)) {
+    PsiElement selectedExpression = HaxeRefactoringUtil.getSelectedExpression(element1, element2);
+    if (selectedExpression == null) selectedExpression = HaxeRefactoringUtil.getSelectedComponentName(element1, element2);
+    if (!isValidForExtraction(selectedExpression)) {
       showCannotPerformError(project, editor);
       return;
     }
 
-    if (!checkIntroduceContext(file, editor, element1)) {
+    if (!checkIntroduceContext(file, editor, selectedExpression)) {
       return;
     }
-    operation.setElement(element1);
+    operation.setElement(selectedExpression);
     performActionOnElement(operation);
   }
 
@@ -285,18 +302,17 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
     if (!checkEnabled(operation)) {
       return;
     }
-    final PsiElement element = operation.getElement();
+      final PsiElement element = operation.getElement();
 
-    final HaxeExpression initializer = (HaxeExpression)element;
-    operation.setInitializer(initializer);
+      operation.setInitializer(element);
 
-    operation.setOccurrences(getOccurrences(element, initializer));
-    operation.setSuggestedNames(getSuggestedNames(initializer));
-    if (operation.getOccurrences().size() == 0) {
-      operation.setReplaceAll(false);
-    }
+      operation.setOccurrences(getOccurrences(element, element));
+      operation.setSuggestedNames(getSuggestedNames(element));
+      if (operation.getOccurrences().isEmpty()) {
+        operation.setReplaceAll(false);
+      }
 
-    performActionOnElementOccurrences(operation);
+      performActionOnElementOccurrences(operation);
   }
 
   protected void performActionOnElementOccurrences(final HaxeIntroduceOperation operation) {
@@ -331,7 +347,7 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
   protected static void ensureName(HaxeIntroduceOperation operation) {
     if (operation.getName() == null) {
       final Collection<String> suggestedNames = operation.getSuggestedNames();
-      if (suggestedNames.size() > 0) {
+      if (!suggestedNames.isEmpty()) {
         operation.suggestName();
       }
       else {
@@ -341,7 +357,7 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
   }
 
 
-  protected List<PsiElement> getOccurrences(PsiElement element, @NotNull final HaxeExpression expression) {
+  protected List<PsiElement> getOccurrences(PsiElement element, @NotNull final PsiElement expression) {
     PsiElement context = element;
     HaxeComponentType type = null;
     do {
@@ -363,7 +379,7 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
     return !isFunctionMethodClass;
   }
 
-  protected Collection<String> getSuggestedNames(final HaxeExpression expression) {
+  protected Collection<String> getSuggestedNames(final PsiElement expression) {
     return HaxeNameSuggesterUtil.getSuggestedNames(expression, false);
   }
 
@@ -383,9 +399,11 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
     if (declaration == null) {
       return;
     }
-    final Editor editor = operation.getEditor();
-    editor.getCaretModel().moveToOffset(declaration.getTextRange().getEndOffset());
-    editor.getSelectionModel().removeSelection();
+
+      final Editor editor = operation.getEditor();
+      editor.getCaretModel().moveToOffset(declaration.getTextRange().getEndOffset());
+      editor.getSelectionModel().removeSelection();
+
   }
 
   protected void performInplaceIntroduce(HaxeIntroduceOperation operation) {
@@ -421,9 +439,11 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
 
     operation.getEditor().getCaretModel().moveToOffset(elementForCaret.getTextRange().getStartOffset());
     final InplaceVariableIntroducer<PsiElement> introducer =
-      new HaxeInplaceVariableIntroducer(target.getComponentName(), operation, occurrences);
+      new HaxeInplaceVariableIntroducer(target.getComponentName(), operation, occurrences, getActionName());
     introducer.performInplaceRefactoring(names);
   }
+
+
 
   @Nullable
   protected PsiElement performRefactoring(HaxeIntroduceOperation operation) {
@@ -442,7 +462,7 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
 
   @Nullable
   public PsiElement createDeclaration(HaxeIntroduceOperation operation) {
-    HaxeExpression initializer = operation.getInitializer();
+    PsiElement initializer = operation.getInitializer();
     String typeText = "";
     if (initializer instanceof HaxeTypeCheckExpr) {
       typeText = toTypeText(((HaxeTypeCheckExpr)initializer).getTypeOrAnonymous());
@@ -475,16 +495,19 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
   }
 
   private PsiElement performReplace(@NotNull final PsiElement declaration, final HaxeIntroduceOperation operation) {
-    final HaxeExpression expression = operation.getInitializer();
+    final PsiElement expression = operation.getInitializer();
     final Project project = operation.getProject();
 
-    PsiElement result = WriteCommandAction.writeCommandAction(project, expression.getContainingFile()).compute(() -> {
+    PsiElement result = WriteCommandAction.writeCommandAction(project, expression.getContainingFile())
+      .withName(getActionName())
+      .withGroupId(getActionName())
+      .compute(() -> {
 
       final PsiElement createdDeclaration = addDeclaration(operation, declaration);
 
       if (createdDeclaration == null) return null;
 
-      modifyDeclaration(createdDeclaration);
+      modifyDeclaration(createdDeclaration, operation);
 
       PsiElement newExpression = createExpression(project, operation);
       if (null == newExpression) {
@@ -533,7 +556,7 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
     return null;
   }
 
-  protected void modifyDeclaration(@NotNull PsiElement declaration) {
+  protected void modifyDeclaration(@NotNull PsiElement declaration, HaxeIntroduceOperation operation) {
     final PsiElement newLineNode = PsiParserFacade.getInstance(declaration.getProject()).createWhiteSpaceFromText("\n");
     final PsiElement parent = declaration.getParent();
     parent.addAfter(newLineNode, declaration);
@@ -598,22 +621,22 @@ public abstract class HaxeIntroduceHandler implements RefactoringActionHandler {
 
     public HaxeInplaceVariableIntroducer(HaxeComponentName target,
                                          HaxeIntroduceOperation operation,
-                                         List<PsiElement> occurrences) {
-      super(target, operation.getEditor(), operation.getProject(), "Introduce Variable",
+                                         List<PsiElement> occurrences, String title) {
+      super(target, operation.getEditor(), operation.getProject(), title,
             occurrences.toArray(new PsiElement[0]), null);
       myTarget = target;
     }
     public HaxeInplaceVariableIntroducer(HaxeComponentName target,
                                          Editor editor,
-                                         List<PsiElement> occurrences) {
-      super(target, editor, editor.getProject(), "Introduce Variable",
+                                         List<PsiElement> occurrences, String title) {
+      super(target, editor, editor.getProject(), title,
             occurrences.toArray(new PsiElement[0]), null);
       myTarget = target;
     }
     public HaxeInplaceVariableIntroducer(HaxeComponentName target,
                                          Editor editor,
-                                         List<PsiElement> occurrences, Map<HaxeComponentName, String> additional) {
-      super(target, editor, editor.getProject(), "Introduce Variable",
+                                         List<PsiElement> occurrences, Map<HaxeComponentName, String> additional, String title) {
+      super(target, editor, editor.getProject(), title,
             occurrences.toArray(new PsiElement[0]), null);
       this.additional = additional;
       myTarget = target;

@@ -44,7 +44,7 @@ import java.util.*;
  * @author: Fedor.Korotkov
  */
 public class HaxeRefactoringUtil {
-  public static Set<String> collectUsedNames(HaxePsiCompositeElement context) {
+  public static Set<String> collectUsedNames(PsiElement context) {
     final Set<HaxeComponentName> usedComponentNames = new HashSet<>();
     PsiTreeUtil.treeWalkUp(new ComponentNameScopeProcessor(usedComponentNames), context, null, new ResolveState());
 
@@ -70,10 +70,7 @@ public class HaxeRefactoringUtil {
   }
 
   @Nullable
-  public static HaxeExpression getSelectedExpression(@NotNull final Project project,
-                                                     @NotNull PsiFile file,
-                                                     @NotNull final PsiElement element1,
-                                                     @NotNull final PsiElement element2) {
+  public static HaxeExpression getSelectedExpression(@NotNull final PsiElement element1, @NotNull final PsiElement element2) {
     PsiElement parent = PsiTreeUtil.findCommonParent(element1, element2);
     if (parent == null) {
       return null;
@@ -82,6 +79,17 @@ public class HaxeRefactoringUtil {
       return (HaxeExpression)parent;
     }
     return PsiTreeUtil.getParentOfType(parent, HaxeExpression.class);
+  }
+  @Nullable
+  public static HaxeComponentName getSelectedComponentName(@NotNull final PsiElement element1, @NotNull final PsiElement element2) {
+    PsiElement parent = PsiTreeUtil.findCommonParent(element1, element2);
+    if (parent == null) {
+      return null;
+    }
+    if (parent instanceof HaxeComponentName) {
+      return (HaxeComponentName)parent;
+    }
+    return PsiTreeUtil.getParentOfType(parent, HaxeComponentName.class);
   }
 
   public static void reformat(final PsiMember movedElement) {

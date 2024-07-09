@@ -10,8 +10,8 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceHandler;
-import com.intellij.plugins.haxe.ide.refactoring.introduce.HaxeIntroduceOperation;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceHandler;
+import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceOperation;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
@@ -31,7 +31,7 @@ public class HaxeExtractMethodHandler extends HaxeIntroduceHandler {
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file, DataContext dataContext) {
-    performAction(new HaxeIntroduceOperation(project, editor, file, null));
+    performAction(new HaxeIntroduceOperation(project, editor, file, null, "Extract Method"));
   }
 
   @Override
@@ -168,7 +168,7 @@ public class HaxeExtractMethodHandler extends HaxeIntroduceHandler {
 
         final InplaceVariableIntroducer<PsiElement> introducer =
           new HaxeInplaceVariableIntroducer(method.getComponentName(), operation,
-                                            List.of(method.getComponentName()));
+                                            List.of(method.getComponentName()), "Introduce Method");
 
         introducer.performInplaceRefactoring(new LinkedHashSet<>(Optional.ofNullable(operation.getSuggestedNames()).orElse(List.of())));
       }

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.ide.refactoring.introduce;
+package com.intellij.plugins.haxe.ide.refactoring.introduceVariable;
 
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -37,9 +37,10 @@ public class HaxeIntroduceOperation {
   private Editor myEditor;
   private PsiFile myFile;
   private String myName;
+  private String myActionName;
   private Boolean myReplaceAll;
   private PsiElement myElement;
-  private HaxeExpression myInitializer;
+  private PsiElement myInitializer;
   private List<PsiElement> myOccurrences = Collections.emptyList();
   private Collection<String> mySuggestedNames;
   private boolean nameWasAutoSelectedFromSuggestions;
@@ -47,11 +48,14 @@ public class HaxeIntroduceOperation {
   public HaxeIntroduceOperation(Project project,
                                 Editor editor,
                                 PsiFile file,
-                                String name) {
+                                String name,
+                                String actionName
+                                ) {
     myProject = project;
     myEditor = editor;
     myFile = file;
     myName = name;
+    myActionName = actionName;
   }
 
   public String getName() {
@@ -125,11 +129,11 @@ public class HaxeIntroduceOperation {
     myReplaceAll = replaceAll;
   }
 
-  public HaxeExpression getInitializer() {
+  public PsiElement getInitializer() {
     return myInitializer;
   }
 
-  public void setInitializer(HaxeExpression initializer) {
+  public void setInitializer(PsiElement initializer) {
     myInitializer = initializer;
   }
 

@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.ide.refactoring.introduce;
+package com.intellij.plugins.haxe.ide.refactoring.introduceVariable;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.lang.psi.HaxeExpression;
+import com.intellij.psi.PsiElement;
 import com.intellij.ui.EditorComboBoxEditor;
 import com.intellij.ui.EditorComboBoxRenderer;
 import com.intellij.ui.StringComboboxEditor;
@@ -45,7 +46,7 @@ public class HaxeIntroduceDialog extends DialogWrapper {
 
   private final Project myProject;
   private final int myOccurrencesCount;
-  private final HaxeExpression myExpression;
+  private final PsiElement myExpression;
 
   public HaxeIntroduceDialog(@NotNull final Project project,
                              @NotNull final String caption,
@@ -117,9 +118,6 @@ public class HaxeIntroduceDialog extends DialogWrapper {
     return myProject;
   }
 
-  public HaxeExpression getExpression() {
-    return myExpression;
-  }
 
   public boolean doReplaceAllOccurrences() {
     return myReplaceAll.isSelected();

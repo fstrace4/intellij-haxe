@@ -23,6 +23,7 @@ import com.intellij.plugins.haxe.ide.refactoring.HaxeRefactoringUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.util.HaxeExpressionUtil;
 import com.intellij.plugins.haxe.model.type.*;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.codeStyle.NameUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -86,13 +87,13 @@ public class HaxeNameSuggesterUtil {
   }
 
   @NotNull
-  public static String getDefaultExpressionName(HaxeExpression expression, boolean useUpperCase) {
+  public static String getDefaultExpressionName(PsiElement expression, boolean useUpperCase) {
     String lower = getDefaultExpressionName(expression);
     return useUpperCase ? lower.toUpperCase() : lower;
   }
 
   @NotNull
-  public static String getDefaultExpressionName(HaxeExpression expression) {
+  public static String getDefaultExpressionName(PsiElement expression) {
     ResultHolder typeResult = HaxeTypeResolver.getPsiElementType(expression, new HaxeGenericResolver());
     SpecificTypeReference type = typeResult.getType();
 
@@ -214,10 +215,10 @@ public class HaxeNameSuggesterUtil {
   }
 
   @NotNull
-  public static List<String> getSuggestedNames(final HaxeExpression expression, final boolean wantUpperCase) {
+  public static List<String> getSuggestedNames(final PsiElement expression, final boolean wantUpperCase) {
     return getSuggestedNames(expression, wantUpperCase, true, null);
   }
-  public static List<String> getSuggestedNames(final HaxeExpression expression, final boolean wantUpperCase, boolean findUsed, Set<String> customUsedList) {
+  public static List<String> getSuggestedNames(final PsiElement expression, final boolean wantUpperCase, boolean findUsed, Set<String> customUsedList) {
     String text = expression.getText();
     boolean useUpperCase = wantUpperCase;
     boolean isArray = HaxeExpressionUtil.isArrayExpression(expression);

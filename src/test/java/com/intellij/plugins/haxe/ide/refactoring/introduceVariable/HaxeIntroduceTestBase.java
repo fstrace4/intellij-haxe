@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.ide.refactoring.introduce;
+package com.intellij.plugins.haxe.ide.refactoring.introduceVariable;
 
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.plugins.haxe.HaxeCodeInsightFixtureTestCase;
@@ -69,7 +69,7 @@ public abstract class HaxeIntroduceTestBase extends HaxeCodeInsightFixtureTestCa
       myFixture.getEditor().getSettings().setVariableInplaceRenameEnabled(inPlace);
       HaxeIntroduceHandler handler = createHandler();
       final HaxeIntroduceOperation operation =
-        new HaxeIntroduceOperation(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile(), newname);
+        new HaxeIntroduceOperation(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile(), newname,"action name");
       operation.setReplaceAll(replaceAll);
       if (customization != null) {
         customization.consume(operation);

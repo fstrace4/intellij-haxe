@@ -83,7 +83,7 @@ public class HaxeExpressionUtil {
     return null;
   }
 
-  public static boolean isArrayExpression(HaxeExpression expr) {
+  public static boolean isArrayExpression(PsiElement expr) {
     return expr instanceof HaxeArrayLiteral
            || expr instanceof HaxeArrayAccessExpression;
   }

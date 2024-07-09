@@ -209,13 +209,10 @@ public class HaxeExpressionEvaluatorHandlers {
           resolved = false;
 
           if (children.length == 1) {
-            context.addError(children[n], "Can't resolve '" + accessName + "' in " + typeHolder.getType(),
-                             new HaxeCreateLocalVariableFixer(accessName, element));
+            context.addError(children[n], "Can't resolve '" + accessName + "' in " + typeHolder.getType());
           }
           else {
-            context.addError(children[n], "Can't resolve '" + accessName + "' in " + typeHolder.getType(),
-                             new HaxeCreateMethodFixer(accessName, element),
-                             new HaxeCreateFieldFixer(accessName, element));
+            context.addError(children[n], "Can't resolve '" + accessName + "' in " + typeHolder.getType());
           }
 
         }
