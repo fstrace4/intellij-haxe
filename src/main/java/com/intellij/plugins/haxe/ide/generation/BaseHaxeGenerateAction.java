@@ -23,6 +23,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +44,12 @@ public abstract class BaseHaxeGenerateAction extends AnAction {
     if (project == null) return Pair.create(null, null);
     Editor editor = e.getData(PlatformDataKeys.EDITOR);
     PsiFile psiFile = e.getData(LangDataKeys.PSI_FILE);
+
+    //TODO getData for PSI_FILE does not seem to work anymore?
+    if (psiFile == null && editor != null) {
+      psiFile = PsiManager.getInstance(project).findFile(editor.getVirtualFile());
+    }
+
     return Pair.create(editor, psiFile);
   }
 

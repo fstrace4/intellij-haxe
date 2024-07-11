@@ -89,29 +89,29 @@ public class CreateGetterSetterFix extends BaseCreateMethodsFix {
 
   @Override
   protected void modifyElement(HaxeNamedComponent namedComponent) {
-    if (!(namedComponent instanceof HaxeFieldDeclaration)) {
-      return;
-    }
-    if (((HaxeFieldDeclaration)namedComponent).getPropertyDeclaration() != null) {
-      // todo: modify
-      return;
-    }
+    if ((namedComponent instanceof HaxeFieldDeclaration fieldDeclaration)) {
+      if (fieldDeclaration.getPropertyDeclaration() != null) {
+        // todo: modify
+        return;
+      }
 
-    final String typeText = HaxePresentableUtil.buildTypeText(namedComponent, ((HaxeFieldDeclaration)namedComponent).getTypeTag());
+      final String typeText = HaxePresentableUtil.buildTypeText(namedComponent, fieldDeclaration.getTypeTag());
+      final String init = fieldDeclaration.getVarInit() != null ? fieldDeclaration.getVarInit().getText() : "";
 
-    final HaxeFieldDeclaration declaration =
-      HaxeElementGenerator.createVarDeclaration(namedComponent.getProject(), buildVarDeclaration(namedComponent, typeText));
-    final HaxePropertyDeclaration propertyDeclaration = declaration.getPropertyDeclaration();
-    if (propertyDeclaration != null) {
-      HaxeFieldDeclaration varDeclaration = PsiTreeUtil.getParentOfType(namedComponent, HaxeFieldDeclaration.class, false);
-      if (varDeclaration != null) {
-        HaxeMetadataUtils.copyMetadata(declaration, varDeclaration);
-        varDeclaration.replace(declaration);
+      final HaxeFieldDeclaration declaration =
+        HaxeElementGenerator.createVarDeclaration(namedComponent.getProject(), buildVarDeclaration(namedComponent, typeText, init));
+      final HaxePropertyDeclaration propertyDeclaration = declaration.getPropertyDeclaration();
+      if (propertyDeclaration != null) {
+        HaxeFieldDeclaration varDeclaration = PsiTreeUtil.getParentOfType(namedComponent, HaxeFieldDeclaration.class, false);
+        if (varDeclaration != null) {
+          HaxeMetadataUtils.copyMetadata(declaration, varDeclaration);
+          varDeclaration.replace(declaration);
+        }
       }
     }
   }
 
-  private String buildVarDeclaration(HaxeNamedComponent namedComponent, String typeText) {
+  private String buildVarDeclaration(HaxeNamedComponent namedComponent, String typeText, String initExpression) {
     final StringBuilder result = new StringBuilder();
     result.append("@:isVar ");
     if (namedComponent.isPublic()) {
@@ -140,6 +140,9 @@ public class CreateGetterSetterFix extends BaseCreateMethodsFix {
 
     if (!typeText.isEmpty()) {
       result.append(":").append(typeText);
+    }
+    if (!initExpression.isEmpty()){
+      result.append(initExpression);
     }
 
     result.append(";");

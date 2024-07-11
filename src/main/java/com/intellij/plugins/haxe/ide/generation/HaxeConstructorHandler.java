@@ -32,6 +32,7 @@ import com.intellij.plugins.haxe.model.HaxeParameterModel;
 import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +77,7 @@ public class HaxeConstructorHandler extends BaseHaxeGenerateHandler {
         out += "public function new(";
         boolean first = true;
 
-        PsiElement anchor = null;
+        PsiElement anchor = clazz.getBodyPsi() != null ? PsiTreeUtil.getDeepestVisibleFirst(clazz.getBodyPsi()) : null;
 
         List<HaxeFieldModel> fields = clazz.getFields();
         for (HaxeFieldModel field : fields) {
@@ -90,8 +91,10 @@ public class HaxeConstructorHandler extends BaseHaxeGenerateHandler {
             first = false;
           }
           out += param.name;
-          out += ":";
-          out += param.type;
+          if(!param.type.equals("unknown")) {
+            out += ":";
+            out += param.type;
+          }
         }
 
         out += ") {\n";
