@@ -93,11 +93,11 @@ public abstract class HaxeAnnotatingVisitor extends HaxeVisitor {
   }
 
   @Override
-  public void visitFieldDeclaration(@NotNull HaxeFieldDeclaration varDeclaration) {
-    if (varDeclaration.hasCompileTimeMetadata(HaxeMeta.DEPRECATED)) {
-      handleDeprecatedFieldDeclaration(varDeclaration);
+  public void visitFieldDeclaration(@NotNull HaxeFieldDeclaration fieldDeclaration) {
+    if (fieldDeclaration.hasCompileTimeMetadata(HaxeMeta.DEPRECATED)) {
+      handleDeprecatedFieldDeclaration(fieldDeclaration);
     }
-    super.visitFieldDeclaration(varDeclaration);
+    super.visitFieldDeclaration(fieldDeclaration);
   }
 
   @Override

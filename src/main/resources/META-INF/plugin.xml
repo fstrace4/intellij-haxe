@@ -372,6 +372,11 @@
                      groupKey="inspections.group.name" enabledByDefault="true"
                      implementationClass="com.intellij.plugins.haxe.ide.inspections.HaxeUnusedImportInspection"/>
 
+    <localInspection language="Haxe" shortName="HaxeUnusedVar" bundle="messages.HaxeBundle"
+                     key="haxe.inspections.unused.var.name"
+                     groupKey="inspections.group.name" enabledByDefault="true"
+                     implementationClass="com.intellij.plugins.haxe.ide.inspections.HaxeUnusedVarInspection"/>
+
     <localInspection language="Haxe" shortName="HaxeUnresolvedSymbol" bundle="messages.HaxeBundle"
                      key="haxe.inspection.unresolved.symbol"
                      groupKey="inspections.group.name" enabledByDefault="true"
