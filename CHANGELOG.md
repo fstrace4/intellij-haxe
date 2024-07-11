@@ -1,7 +1,11 @@
 # Changelog
 ## 1.5.5
-* bugfix: incorrect handling of typeCheck expressions
-* Added: quick fix for unresolved symbols (generate method, function, variable, field, parameter)
+* Bugfix: Incorrect handling of typeCheck expressions.
+* Bugfix: Fixed broken Generate actions (constructor, getter, setter).
+* Added: Introduce parameter refactoring
+* Added: Quick fix for unresolved symbols (generate method, function, variable, field, parameter).
+* Added: Annotating unused variables and Quickfix to remove. 
+* Improvement: Better handling of import statements when moving members to different packages. 
 
 ## 1.5.4
 * Bugfix: import would be displayed as unused if last reference in a file was a fully qualified reference.
