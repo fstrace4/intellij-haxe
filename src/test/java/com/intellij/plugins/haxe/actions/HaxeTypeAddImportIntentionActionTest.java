@@ -18,13 +18,19 @@
 package com.intellij.plugins.haxe.actions;
 
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.HaxeCodeInsightFixtureTestCase;
+import com.intellij.plugins.haxe.HaxeFileType;
+import com.intellij.plugins.haxe.HaxeLanguage;
 import com.intellij.plugins.haxe.ide.actions.HaxeTypeAddImportIntentionAction;
 import com.intellij.plugins.haxe.ide.index.HaxeComponentIndex;
 import com.intellij.plugins.haxe.lang.psi.HaxeType;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.codeStyle.CodeStyleSettings;
+import com.intellij.psi.codeStyle.CodeStyleSettingsManager;
+import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.junit.Test;
@@ -38,6 +44,9 @@ public class HaxeTypeAddImportIntentionActionTest extends HaxeCodeInsightFixture
     return "/addImportIntention/";
   }
 
+  protected CommonCodeStyleSettings myTestStyleSettings;
+
+
   public void doTest() {
     final PsiFile file = PsiDocumentManager.getInstance(myFixture.getProject()).getPsiFile(myFixture.getEditor().getDocument());
     assertNotNull(file);
@@ -50,6 +59,38 @@ public class HaxeTypeAddImportIntentionActionTest extends HaxeCodeInsightFixture
     FileDocumentManager.getInstance().saveAllDocuments();
     myFixture.checkResultByFile(getTestName(false) + ".txt");
   }
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    setTestStyleSettings();
+  }
+
+
+  @Override
+  public void setTestStyleSettings() {
+    Project project = getProject();
+    CodeStyleSettings currSettings = CodeStyleSettingsManager.getSettings(project);
+    assertNotNull(currSettings);
+    CodeStyleSettings tempSettings = currSettings.clone();
+    CodeStyleSettings.IndentOptions indentOptions = tempSettings.getIndentOptions(HaxeFileType.INSTANCE);
+    assertNotNull(indentOptions);
+    defineStyleSettings(tempSettings);
+    CodeStyleSettingsManager.getInstance(project).setTemporarySettings(tempSettings);
+  }
+
+  protected void defineStyleSettings(CodeStyleSettings tempSettings) {
+    myTestStyleSettings = tempSettings.getCommonSettings(HaxeLanguage.INSTANCE);
+    myTestStyleSettings.KEEP_BLANK_LINES_IN_CODE = 2;
+    myTestStyleSettings.METHOD_BRACE_STYLE = CommonCodeStyleSettings.END_OF_LINE;
+    myTestStyleSettings.BRACE_STYLE = CommonCodeStyleSettings.END_OF_LINE;
+    myTestStyleSettings.ALIGN_MULTILINE_PARAMETERS = false;
+    myTestStyleSettings.ALIGN_MULTILINE_PARAMETERS_IN_CALLS = false;
+    myTestStyleSettings.KEEP_FIRST_COLUMN_COMMENT = false;
+    myTestStyleSettings.BLANK_LINES_AFTER_PACKAGE = 2;
+    myTestStyleSettings.BLANK_LINES_AFTER_IMPORTS = 2;
+  }
+
 
   @Test
   public void testSimple() throws Throwable {

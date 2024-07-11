@@ -1,6 +1,7 @@
 package ;
 
 import bar.ArrayUtils;
+
 class Test {
     static function main() {
         function is_c(val) { return val == "c"; }

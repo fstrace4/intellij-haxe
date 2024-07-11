@@ -21,8 +21,10 @@ import com.intellij.plugins.haxe.util.HaxeStringUtil;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFileSystemItem;
 import com.intellij.psi.PsiManager;
+import lombok.CustomLog;
 import org.jetbrains.annotations.Nullable;
 
+@CustomLog
 public class HaxeSourceRootModel {
   public static final HaxeSourceRootModel DUMMY = new HaxeSourceRootModel(null, null);
   public final HaxeProjectModel project;
@@ -62,7 +64,12 @@ public class HaxeSourceRootModel {
     PsiDirectory current = directory;
     for (String part : HaxeStringUtil.split(packagePath, '.')) {
       if (current == null) break;
-      current = current.findSubdirectory(part);
+      try {
+        current = current.findSubdirectory(part);
+      }catch (Exception e) {
+        log.warn(e);
+        current = null;
+      }
     }
     return current;
   }

@@ -1066,12 +1066,60 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
   private void handleClassMovement(PsiClass element) {
     String thisFqn = getQualifiedName();
-    //This reference is not a fully qualified name. Nothing to do.
+    String newFqn = getFqn((HaxeClassDeclaration)element);
+    //This reference is not a fully qualified name.
     if (!thisFqn.contains(".")) {
-      return;
+      // if ref is not import statement, check if an import statement is needed  after move
+      // (ex. when changing from same package (no import required), to different packages (might be import required))
+      if (PsiTreeUtil.getParentOfType(this, HaxeImportStatement.class) == null &&
+          PsiTreeUtil.getParentOfType(this, HaxeUsingStatement.class) == null) {
+        if (missingImport(newFqn)) {
+            addImportFor(newFqn);
+        }
+      }else {
+        updateFullyQualifiedReference(newFqn);
+      }
+    }else {
+      updateFullyQualifiedReference(newFqn);
     }
-    String newFqn = ((HaxeClassDeclaration)element).getModel().haxeClass.getQualifiedName();
-    updateFullyQualifiedReference(newFqn);
+  }
+
+  private static String getFqn(HaxeClassDeclaration element) {
+    HaxeClassModel model = element.getModel();
+    FullyQualifiedInfo info = model.getQualifiedInfo();
+    if (info != null) return info.toShortendImportReferenceString();
+    return model.haxeClass.getQualifiedName();
+  }
+
+
+  private boolean missingImport(String fqn) {
+    PsiFile containingFile = this.getContainingFile();
+    Collection<HaxeImportStatement> imports = PsiTreeUtil.findChildrenOfType(containingFile, HaxeImportStatement.class);
+
+    Set<String> membersFqn = convertExposedMembersToFqn(imports);
+
+    return !membersFqn.contains(fqn);
+
+  }
+
+  private Set<String> convertExposedMembersToFqn(Collection<HaxeImportStatement> imports) {
+    Set<String> memberFqnList = new HashSet<>();
+    for (HaxeImportStatement importStatement : imports) {
+      List<HaxeModel> exposedMembers = importStatement.getModel().getExposedMembers();
+      for (HaxeModel member : exposedMembers) {
+        if (member instanceof  HaxeExposableModel model) {
+          if(model.getQualifiedInfo() != null) {
+            memberFqnList.add(model.getQualifiedInfo().toShortendImportReferenceString());
+          }
+        }
+      }
+    }
+    return memberFqnList;
+  }
+
+
+  private void addImportFor(String fqn) {
+    HaxeAddImportHelper.addImport(fqn, this.getContainingFile());
   }
 
   private void bindToPackage(PsiPackage element) {

@@ -19,6 +19,7 @@ package com.intellij.plugins.haxe.ide.actions;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.QuestionAction;
+import com.intellij.codeInsight.intention.preview.IntentionPreviewInfo;
 import com.intellij.codeInsight.navigation.PsiTargetNavigator;
 import com.intellij.codeInspection.HintAction;
 import com.intellij.codeInspection.LocalQuickFix;
@@ -31,12 +32,14 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
+import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponent;
 import com.intellij.plugins.haxe.util.HaxeAddImportHelper;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.search.PsiElementProcessor;
+import com.intellij.psi.util.PsiUtilCore;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 
@@ -119,8 +122,25 @@ public class HaxeTypeAddImportIntentionAction implements HintAction, QuestionAct
   }
 
   private void doImport(final PsiElement component) {
-    WriteCommandAction.writeCommandAction(myType.getProject(), myType.getContainingFile())
-      .run(() -> HaxeAddImportHelper.addImport(((HaxeClass)component).getQualifiedName(), myType.getContainingFile()));
+    PsiFile file = myType.getContainingFile();
+
+    WriteCommandAction.writeCommandAction(myType.getProject(), file)
+      .run(() -> {
+        HaxeAddImportHelper.addImport(((HaxeClass)component).getQualifiedName(), file);
+        PsiUtilCore.ensureValid(file);
+      });
+  }
+
+  @Override
+  public @NotNull IntentionPreviewInfo generatePreview(@NotNull Project project, @NotNull Editor editor, @NotNull PsiFile original) {
+    PsiFile file = (PsiFile)original.copy();
+
+    HaxeComponent next = candidates.iterator().next();
+    if (next instanceof HaxeClass haxeClass) {
+      HaxeAddImportHelper.addImport((haxeClass).getQualifiedName(), file);
+      return new IntentionPreviewInfo.CustomDiff(HaxeFileType.INSTANCE, null, original.getText(), file.getText(), true);
+    }
+    return HintAction.super.generatePreview(project, editor, file);
   }
 
   @Override

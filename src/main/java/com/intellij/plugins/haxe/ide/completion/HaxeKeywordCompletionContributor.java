@@ -50,6 +50,7 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
 import static com.intellij.plugins.haxe.ide.completion.HaxeCommonCompletionPattern.*;
 import static com.intellij.plugins.haxe.ide.completion.HaxeKeywordCompletionPatterns.*;
 import static com.intellij.plugins.haxe.ide.completion.HaxeKeywordCompletionUtil.*;
+import static com.intellij.plugins.haxe.ide.completion.HaxeKeywordCompletionUtil.addKeywords;
 import static com.intellij.plugins.haxe.ide.completion.KeywordCompletionData.keywordOnly;
 import static com.intellij.plugins.haxe.ide.completion.KeywordCompletionData.keywordWithSpace;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.*;
@@ -94,6 +95,10 @@ public class HaxeKeywordCompletionContributor extends CompletionContributor {
     PsiElement completionElementAsComment = cloneFile.findElementAt(position.getTextOffset());
 
     List<LookupElement> lookupElements = new ArrayList<>();
+
+    if(completionElementAsComment != null && completionElementAsComment.getParent() == completionElementAsComment.getContainingFile()) {
+      addKeywords(lookupElements, PACKAGE_KEYWORD);
+    }
 
     boolean isPPExpression = psiElement().withElementType(PPEXPRESSION).accepts(position);
     // avoid showing keyword suggestions when not relevant

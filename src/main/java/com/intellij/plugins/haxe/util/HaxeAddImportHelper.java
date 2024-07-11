@@ -18,14 +18,17 @@
  */
 package com.intellij.plugins.haxe.util;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.lang.psi.HaxeImportStatement;
 import com.intellij.plugins.haxe.lang.psi.HaxePackageStatement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiParserFacade;
+import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.util.PsiTreeUtil;
 import lombok.CustomLog;
 
-import static com.intellij.plugins.haxe.util.UsefulPsiTreeUtil.isWhitespaceOrCommentButNotDocs;
+import java.util.List;
 
 /**
  * @author: Fedor.Korotkov
@@ -33,31 +36,12 @@ import static com.intellij.plugins.haxe.util.UsefulPsiTreeUtil.isWhitespaceOrCom
 @CustomLog
 public class HaxeAddImportHelper {
   public static HaxeImportStatement addImport(String path, PsiFile file) {
-    int positionIndex = 0;
-    final PsiElement[] children = file.getChildren();
+    PsiElement child = PsiTreeUtil.findChildOfType(file, HaxePackageStatement.class);
+    List<HaxeImportStatement> importStatements = PsiTreeUtil.findChildrenOfType(file, HaxeImportStatement.class).stream().toList();
+    if(!importStatements.isEmpty()) {
+      child = importStatements.get(importStatements.size()-1);
+    }
 
-    PsiElement child = children[positionIndex];
-    // search for package or first import
-    while (!(child instanceof HaxePackageStatement)
-           && !(child instanceof HaxeImportStatement)) {
-      if (++positionIndex < children.length) {
-        child = children[positionIndex];
-      } else {
-        child = null;
-        break;
-      }
-    }
-    // find last whitespace line before  docs or code and after last import
-    while (child instanceof HaxePackageStatement
-           || child instanceof HaxeImportStatement
-           || isWhitespaceOrCommentButNotDocs(child)) {
-      if (++positionIndex < children.length) {
-        child = children[positionIndex];
-      }else {
-        child = null;
-        break;
-      }
-    }
 
     if(child != null) {
       return insertImportBefore(path, file, child);
@@ -75,21 +59,20 @@ public class HaxeAddImportHelper {
     }
 
     final PsiElement newLineElement = PsiParserFacade.getInstance(file.getProject()).createWhiteSpaceFromText("\n");
-    file.addBefore(newLineElement, child);
-    file.addBefore(importStatement, child);
-    return importStatement;
+    HaxeImportStatement element = (HaxeImportStatement)file.addAfter(importStatement, child);
+    file.addAfter(newLineElement, child);
+    return element;
   }
   private static HaxeImportStatement insertImportTop(String path, PsiFile file) {
-    final HaxeImportStatement importStatement =
-      HaxeElementGenerator.createImportStatementFromPath(file.getProject(), path);
+    HaxeImportStatement importStatement = HaxeElementGenerator.createImportStatementFromPath(file.getProject(), path);
     if (importStatement == null) {
       return null;
     }
 
     final PsiElement newLineElement = PsiParserFacade.getInstance(file.getProject()).createWhiteSpaceFromText("\n");
     PsiElement child = file.getFirstChild();
-    file.addBefore(newLineElement, child);
-    file.addBefore(importStatement, child);
-    return importStatement;
+    HaxeImportStatement element = (HaxeImportStatement)file.addBefore(importStatement.copy(), child);
+    file.addAfter(newLineElement.copy(), element);
+    return element;
   }
 }

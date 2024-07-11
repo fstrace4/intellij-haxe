@@ -52,9 +52,6 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
 
   private SpecificHaxeClassReference reference;
 
-  //for caching purposes
-  private FullyQualifiedInfo myQualifiedInfo;
-
   public HaxeClassModel(@NotNull HaxeClass haxeClass) {
     this.haxeClass = haxeClass;
   }
@@ -657,16 +654,14 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   @Nullable
   @Override
   public FullyQualifiedInfo getQualifiedInfo() {
-    if (myQualifiedInfo == null) {
       HaxeExposableModel exhibitor = getExhibitor();
       if (exhibitor != null) {
         FullyQualifiedInfo containerInfo = exhibitor.getQualifiedInfo();
         if (containerInfo != null) {
-          myQualifiedInfo = new FullyQualifiedInfo(containerInfo.packagePath, containerInfo.fileName, getName(), null);
+          return new FullyQualifiedInfo(containerInfo.packagePath, containerInfo.fileName, getName(), null);
         }
       }
-    }
-    return myQualifiedInfo;
+    return null;
   }
 
   public void addMethodsFromPrototype(List<HaxeMethodModel> methods) {

@@ -43,7 +43,7 @@ public class HaxeUnusedVarInspection extends LocalInspectionTool {
   @NotNull
   @Override
   public String getShortName() {
-    return "HaxeUnusedVariable";
+    return "HaxeUnusedVar";
   }
 
   @Nullable

@@ -173,6 +173,13 @@ public class FullyQualifiedInfo {
   public FullyQualifiedInfo toPackageQualifiedName() {
     return new FullyQualifiedInfo(this.packagePath, null, null, null);
   }
+  // avoiding full path to class (MyPackage.MyClass.Myclass, where Myclass is both module name and classname)
+  public String toShortendImportReferenceString() {
+    if (fileName.equals(className)) {
+      return new FullyQualifiedInfo(packagePath, fileName, null, memberName).toString();
+    }
+    return toString();
+  }
 
   public boolean equalsToNamedPart(String name) {
     return equalsToMemberName(name) || equalsToClassName(name) || equalsToFileName(name);
