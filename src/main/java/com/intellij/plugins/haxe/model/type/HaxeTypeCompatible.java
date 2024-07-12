@@ -24,6 +24,7 @@ import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiTreeUtil;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -221,6 +222,19 @@ public class HaxeTypeCompatible {
         if (from instanceof SpecificEnumValueReference valueReference) {
           if (classReference.isEnumValueClass()) return true; // all enum values can be assigned to EnumValueClass type;
           return canAssignToFromType(classReference, valueReference.getEnumClass());
+        }
+      } else {
+        //NOTE: special case for abstract enums
+        // check if  from value is same type as  abstract enums underlying type and allow assign if done inside abstract enum definition
+        HaxeClass haxeClass = classReference.getHaxeClass();
+        if (haxeClass != null && haxeClass.isEnum() && haxeClass.isAbstractType()) {
+          if (from instanceof SpecificHaxeClassReference reference) {
+            PsiElement commonParent = PsiTreeUtil.findCommonParent(reference.context, haxeClass);
+            if (commonParent == haxeClass) {
+              SpecificTypeReference underlyingType = haxeClass.getModel().getUnderlyingType();
+              return canAssignToFrom(underlyingType, from);
+            }
+          }
         }
       }
     }
