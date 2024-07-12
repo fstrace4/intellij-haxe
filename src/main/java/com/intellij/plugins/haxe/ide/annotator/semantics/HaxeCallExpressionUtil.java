@@ -877,7 +877,7 @@ public class HaxeCallExpressionUtil {
     if (type.getClassType() != null) {
       SpecificHaxeClassReference classType = type.getClassType();
       @NotNull ResultHolder[] specifics = classType.getSpecifics();
-      if (isExternRestClass(classType)) {
+      if (isExternRestClass(classType) || isRestClass(classType)) {
         if (specifics.length == 1) {
           return specifics[0];
         }
@@ -1041,8 +1041,8 @@ public class HaxeCallExpressionUtil {
               if (classType.isArray() && isMacroExpr(specificType)) {
                 return true;
               }
-              // haxe.extern.Rest<>
-              return isExternRestClass(classType);
+              // haxe.extern.Rest<> / haxe.Rest<>
+              return isExternRestClass(classType) || isRestClass(classType);
             }
           }
         }
@@ -1056,6 +1056,10 @@ public class HaxeCallExpressionUtil {
     return classReference.getHaxeClass().getQualifiedName().equals("haxe.macro.Expr");
   }
 
+  private static boolean isRestClass(SpecificHaxeClassReference classReference) {
+    if (classReference.getHaxeClass() == null) return false;
+    return classReference.getHaxeClass().getQualifiedName().equals("haxe.Rest");
+  }
   private static boolean isExternRestClass(SpecificHaxeClassReference classReference) {
     if (classReference.getHaxeClass() == null) return false;
     return classReference.getHaxeClass().getQualifiedName().equals("haxe.extern.Rest");
