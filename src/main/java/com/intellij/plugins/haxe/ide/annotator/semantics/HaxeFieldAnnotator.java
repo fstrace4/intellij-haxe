@@ -37,7 +37,7 @@ public class HaxeFieldAnnotator implements Annotator {
         if (field.isFinal()) {
           if (field.getDeclaringClass() == null || !field.getDeclaringClass().isExtern()) {
             if (!field.hasInitializer()) {
-              if (!isParentInterface(var) && !isParentAnonymousStructure(var)) {
+              if (!isParentInterface(var) && !isParentAnonymousStructure(var) && !isParentAbstractEnum(var)) {
                 if (field.isStatic()) {
                   holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.final.static.var.init", field.getName()))
                     .range(var)
@@ -128,6 +128,12 @@ public class HaxeFieldAnnotator implements Annotator {
   }
   private static boolean isParentAnonymousStructure(HaxeFieldDeclaration var) {
     return var.getParent() instanceof HaxeAnonymousTypeBody;
+  }
+  private static boolean isParentAbstractEnum(HaxeFieldDeclaration var) {
+    if(var.getParent().getParent() instanceof HaxeAbstractTypeDeclaration declaration) {
+     return declaration.isEnum();
+    }
+    return  false;
   }
 
   private static boolean isFieldInitializedInTheConstructor(HaxeFieldModel field) {
