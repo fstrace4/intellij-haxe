@@ -460,15 +460,25 @@ public class HaxeExpressionEvaluator {
             hitCounter.put(element, new AtomicInteger(0));
             map.put(element, new CacheRecord(result, resolverAsString));
           }
-        }else  if (result.isFunctionType()) {
-          hitCounter.put(element, new AtomicInteger(0));
-          map.put(element, new CacheRecord(result, resolverAsString));
+        }else  if (result.isFunctionType() && result.getFunctionType() != null) {
+          if (!containsUnknowns(result.getFunctionType())) {
+              hitCounter.put(element, new AtomicInteger(0));
+              map.put(element, new CacheRecord(result, resolverAsString));
+          }
         }
       }
       return result;
     }
   }
 
+  private static boolean containsUnknowns(SpecificFunctionReference type) {
+    if (type.getReturnType().isUnknown()) return true;
+    List<SpecificFunctionReference.Argument> arguments = type.getArguments();
+    for (SpecificFunctionReference.Argument argument : arguments) {
+      if(argument.getType().isUnknown()) return true;
+    }
+    return false;
+  }
 
 
   @NotNull

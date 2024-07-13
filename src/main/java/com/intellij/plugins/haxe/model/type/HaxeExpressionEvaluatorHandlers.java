@@ -56,7 +56,7 @@ public class HaxeExpressionEvaluatorHandlers {
                                                HaxeGenericResolver resolver) {
     RecursionManager.markStack();
     if (element == null ) return null;
-    return evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> handle(element, context, resolver));
+    return evaluatorHandlersRecursionGuard.doPreventingRecursion(element, true, () -> handle(element, context, resolver));
   }
 
 
@@ -88,6 +88,15 @@ public class HaxeExpressionEvaluatorHandlers {
       String operatorText;
       if (children.length == 3) {
         operatorText = children[1].getText();
+
+        PsiElement LeftChild = children[0];
+        PsiElement rightChild = children[2];
+
+        HaxeGenericResolver lhsResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(LeftChild);
+        HaxeGenericResolver rhsResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(rightChild);
+        ResultHolder lhsType = HaxeTypeResolver.getPsiElementType(LeftChild, expression, lhsResolver);
+        ResultHolder rhsType = HaxeTypeResolver.getPsiElementType(rightChild, expression, rhsResolver);
+
         SpecificTypeReference left = handle(children[0], context, resolver).getType();
         SpecificTypeReference right = handle(children[2], context, resolver).getType();
         left = resolveAnyTypeDefs(left);
@@ -280,7 +289,7 @@ public class HaxeExpressionEvaluatorHandlers {
                   HaxeGenericResolver inheritedClassResolver = createInheritedClassResolver(containingClass, usedIn, resolver);
                   HaxeGenericResolver resolverForContainingClass = inheritedClassResolver.getSpecialization(null).toGenericResolver(containingClass);
                   ResultHolder resolve = resolverForContainingClass.resolve(typeHolder);
-                  if (!resolve.isUnknown())typeHolder = resolve;
+                  if (resolve != null && !resolve.isUnknown()) typeHolder = resolve;
                 }
 
               }
