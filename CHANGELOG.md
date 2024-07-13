@@ -1,4 +1,11 @@
 # Changelog
+## 1.5.6
+* Added: Support for new core Api `haxe.Rest` abstract type
+* Bugfix: Incorrect caching of returnType for recursive methods
+* Bugfix: Allow uninitialized final fields in abstract enums
+* Bugfix: Allow assign from underlying type inside abstract enums
+* Changed: Renaming class will now also rename file/module if names are the same.
+
 ## 1.5.5
 * Bugfix: Incorrect handling of typeCheck expressions.
 * Bugfix: Fixed broken Generate actions (constructor, getter, setter).
