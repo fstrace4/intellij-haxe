@@ -19,6 +19,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.plugins.haxe.HaxeLanguage;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
@@ -133,9 +134,28 @@ public class HaxeRenameProcessor extends RenamePsiElementProcessor {
     // the PomRenameProcessor stating that it could handle the rename after we've already substituted the
     // proper elements.  But since we are handling it anyway the PomRenameProcessor is cut out of the loop.
     if (canBeRenamed(element)) {
+
+      PsiFile containingFile = element.getContainingFile();
+      if (shouldRenameFile(element, containingFile)) {
+        containingFile.setName(newName + ".hx");
+      }
+
       super.renameElement(element, newName, usages, listener);
     }
   }
+
+  private boolean shouldRenameFile(PsiElement element, PsiFile containingFile) {
+    //TODO make it possible to only rename file ?
+    if (element instanceof HaxeClass haxeClass) {
+      String fileName = containingFile.getName();
+      String typeName = haxeClass.getName();
+
+      String expectedName = fileName.replace(".hx", "");
+      return expectedName.equals(typeName);
+    }
+    return false;
+  }
+
 
   @Override
   public void prepareRenaming(@NotNull PsiElement element, @NotNull String newName, @NotNull Map<PsiElement, String> allRenames) {
@@ -147,6 +167,9 @@ public class HaxeRenameProcessor extends RenamePsiElementProcessor {
                               @NotNull String newName,
                               @NotNull Map<PsiElement, String> allRenames,
                               @NotNull SearchScope scope) {
+
+
+
     super.prepareRenaming(element, newName, allRenames, scope);
   }
 }
