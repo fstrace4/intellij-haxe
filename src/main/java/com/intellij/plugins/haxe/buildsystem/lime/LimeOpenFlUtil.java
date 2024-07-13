@@ -8,11 +8,15 @@ import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 @UtilityClass
 public class LimeOpenFlUtil {
     public boolean isOpenfl(XmlTag rootTag) {
-        return Arrays.stream(rootTag.findSubTags("haxelib")).anyMatch(xmlTag -> "openfl".equalsIgnoreCase(xmlTag.getAttribute("name").getValue()));
+        return Arrays.stream(rootTag.findSubTags("haxelib"))
+          .map(xmlTag -> xmlTag.getAttribute("name"))
+          .filter(Objects::nonNull)
+          .anyMatch(attribute -> "openfl".equalsIgnoreCase(attribute.getValue()));
     }
     public boolean looksLikeALimeProjectFile(XmlTag rootTag) {
         if(rootTag.getName().equalsIgnoreCase("project")) {
