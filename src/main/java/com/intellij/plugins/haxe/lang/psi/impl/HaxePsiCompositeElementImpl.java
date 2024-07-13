@@ -46,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -210,8 +211,12 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
     if (items == null) {
       return;
     }
+    // reversed to correctly resolve variable shadowing
+    // (declarations after element are not included, see getDeclarationElementToProcess and "stoppers")
+    List<HaxeLocalVarDeclarationList> declarationLists = Arrays.asList(items);
+    Collections.reverse(declarationLists);
 
-    Arrays.stream(items).forEach(list -> result.addAll(list.getLocalVarDeclarationList()));
+    declarationLists.forEach(list -> result.addAll(list.getLocalVarDeclarationList()));
   }
 
   private static void addVarDeclarations(@NotNull List<PsiElement> result, @Nullable HaxeFieldDeclaration[] items) {

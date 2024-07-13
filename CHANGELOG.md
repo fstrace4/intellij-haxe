@@ -1,6 +1,7 @@
 # Changelog
 ## 1.5.6
 * Added: Support for new core Api `haxe.Rest` abstract type
+* Bugfix: variable shadowing should now resolve to the correct declaration. 
 * Bugfix: Incorrect caching of returnType for recursive methods
 * Bugfix: Allow uninitialized final fields in abstract enums
 * Bugfix: Allow assign from underlying type inside abstract enums

@@ -102,7 +102,7 @@ class CallExpressionTest {
         var resultC:StringBuf = genericClassArgs(ImportAlias); // CORRECT (using import alias that matches variable type)
 
         genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'Int')">1</error>);  // WRONG parameter type  (should be Class)
-        genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'String')">resultC</error>);  // WRONG parameter type (should be Class)
+        genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'StringBuf')">resultC</error>);  // WRONG parameter type (should be Class)
         var resultD:Int = genericClassArgs(<error descr="Type mismatch (Expected: 'Class<T>' got: 'Int')">1</error>);  // WRONG ( parameter should be Class)
         var <error descr="Incompatible type: String should be Int">resultE:Int = genericClassArgs(String)</error>;  // WRONG variable type and return type missmatch
 
