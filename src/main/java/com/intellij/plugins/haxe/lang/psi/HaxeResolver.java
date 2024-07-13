@@ -204,6 +204,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     if (result == null) result = checkIsClassName(reference);
     if (result == null) result = checkCaptureVar(reference);
     if (result == null) result = checkCaptureVarReference(reference);
+    if (result == null) result = checkSwitchOnEnum(reference);
     if (result == null) result = checkEnumExtractor(reference);
     if (result == null) result = checkMemberReference(reference); // must be after resolvers that can find identifier inside a method
     if (result == null) {
@@ -283,6 +284,26 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     }
     return result;
 
+  }
+
+  private List<? extends PsiElement> checkSwitchOnEnum(HaxeReference reference) {
+    if (reference.getParent() instanceof HaxeSwitchCaseExpr) {
+      HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
+      if (switchStatement != null) {
+        HaxeExpression expressionWithType = switchStatement.getExpression();
+        ResultHolder possibleType = HaxeExpressionEvaluator.evaluate(expressionWithType, null).result;
+        if (possibleType.isEnum() && possibleType.getClassType() != null) {
+          SpecificHaxeClassReference type = possibleType.getClassType();
+          HaxeClassModel classModel = type.getHaxeClassModel();
+          if(classModel!= null) {
+            HaxeMemberModel member = classModel.getMember(reference.getText(), null);
+            if (member != null) return List.of(member.getNameOrBasePsi());
+          }
+        }
+      }
+
+    }
+    return null;
   }
 
   // checks if we are attempting to  assign an enum type, this makes sure we chose the enum value and not competing class names
