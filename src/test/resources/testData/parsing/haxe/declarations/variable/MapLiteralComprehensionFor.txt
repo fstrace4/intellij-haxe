@@ -50,9 +50,10 @@ Haxe File
               MAP_INITIALIZER_FOR_STATEMENT
                 HaxePsiToken:for('for')
                 HaxePsiToken:(('(')
-                COMPONENT_NAME
-                  IDENTIFIER
-                    HaxePsiToken:ID('n')
+                VALUE_ITERATOR
+                  COMPONENT_NAME
+                    IDENTIFIER
+                      HaxePsiToken:ID('n')
                 HaxePsiToken:in('in')
                 ITERABLE
                   ITERATOR_EXPRESSION
