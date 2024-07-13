@@ -133,7 +133,9 @@ public class HaxeCallExpressionUtil {
         }
       }
     }else {
-      applyCallieConstraints(typeParamTable, callieType.getClassType().getGenericResolver());
+      if (callieType.getClassType() != null) {
+        applyCallieConstraints(typeParamTable, callieType.getClassType().getGenericResolver());
+      }
 
     }
 
@@ -1092,49 +1094,22 @@ public class HaxeCallExpressionUtil {
   public record WarningRecord (TextRange range, String message){};
 
 
-
   public static ResultHolder tryGetCallieType(HaxeCallExpression callExpression) {
-    final HaxeReference leftReference = PsiTreeUtil.getChildOfType(callExpression.getExpression(), HaxeReference.class);
 
-    if (leftReference != null) {
-      // if chained call expression:  ...someMethod().thisMethod();
-      if (leftReference instanceof HaxeCallExpression prevCallExpression) {
-        ResultHolder evaluateResult =
-          HaxeExpressionEvaluator.evaluate(prevCallExpression, new HaxeExpressionEvaluatorContext(prevCallExpression), null).result;
-        if (evaluateResult.isClassType()) {
-          return evaluateResult.getClassType().createHolder();
-        }
-      }
+    HaxeExpression expression = callExpression.getExpression();
+    if (expression != null) {
+      @NotNull PsiElement[] children = expression.getChildren();
+      if (children.length > 1) {
 
-      // if  reference expression: ..myVar.thisMethod();
+        PsiElement child = children[children.length - 2];
+        HaxeExpressionEvaluatorContext evaluatorContext = new HaxeExpressionEvaluatorContext(child);
+        ResultHolder result = HaxeExpressionEvaluator.evaluateWithRecursionGuard(child, evaluatorContext, null).result;
 
-      PsiElement resolve = leftReference.resolve();
-      if (resolve != null) {
-        ResultHolder evaluateResult = HaxeExpressionEvaluator.evaluateWithRecursionGuard(resolve, new HaxeExpressionEvaluatorContext(resolve), null).result;
-        if (evaluateResult.isClassType()) {
-          return evaluateResult.getClassType().createHolder();
-        }
+        if (!result.isUnknown()) return result;
       }
     }
-    else {
-      // check if we can use  implicit "this" since there's no leftReference
-      HaxeMethodDeclaration parentMethod = PsiTreeUtil.getParentOfType(callExpression, HaxeMethodDeclaration.class);
-      if (parentMethod != null) {
-        HaxeMethodModel methodModel = parentMethod.getModel();
-        //if method is not static and is inside a class, use that class as "this" type
-        if (!methodModel.isStatic()) {
-          HaxeClassModel declaringClass = methodModel.getDeclaringClass();
-          if (declaringClass != null) {
-            return declaringClass.getInstanceType();
-          }
-        }
-      }
-    }
-
 
     return SpecificTypeReference.getUnknown(callExpression).createHolder();
-
-
   }
 
 }
