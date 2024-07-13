@@ -145,7 +145,14 @@ public class HaxeRenameProcessor extends RenamePsiElementProcessor {
   }
 
   private boolean shouldRenameFile(PsiElement element, PsiFile containingFile) {
-    //TODO make it possible to only rename file ?
+    //TODO make it possible to just rename file and not its primary type?
+
+    // it's possible to rename a class both by file (in project view) and in code (code editor)
+    // project view will use class declaration while editor might give you a componentName
+    if (element instanceof  HaxeComponentName) {
+      element = element.getParent();
+    }
+
     if (element instanceof HaxeClass haxeClass) {
       String fileName = containingFile.getName();
       String typeName = haxeClass.getName();
