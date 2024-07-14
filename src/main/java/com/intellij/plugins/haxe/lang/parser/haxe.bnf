@@ -665,7 +665,8 @@ switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  s
 ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
 
 switchEnumBitOperationExpression ::= enumValueReference (bitOperation enumValueReference)+ {extends="expression"}
-switchExtractorExpression ::= switchCaseExtractor (bitOperation switchCaseExtractor)* {extends="expression"}
+private switchExtractorPart ::= switchCaseExtractor (bitOperation switchCaseExtractor)*
+switchExtractorExpression ::=  "("switchExtractorPart")" | switchExtractorPart  {extends="expression"}
 private extractorMatchExpressionVariant::= '('ExtractorMatchExpression')' | '['ExtractorMatchExpression']'  | ExtractorMatchExpression
 switchCaseExtractor ::= extractorMatchExpressionVariant | enumArgumentExtractor | variableCaptureExpression {extends="expression"}
 //TODO mlo: clean up and bind to classes
@@ -678,7 +679,7 @@ enumExtractedValue::=componentName | primitiveExtractedValue
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
 
 private primitiveExtractedValue  ::= enumExtractObjectLiteral | enumExtractArrayLiteral
-private expressionOrExtractorMatchExpression ::=  switchCaseExtractor | enumExtractArrayLiteral | enumExtractObjectLiteral | expression   {extends=expression}
+private expressionOrExtractorMatchExpression ::=  switchExtractorExpression | enumExtractArrayLiteral | enumExtractObjectLiteral  | expression   {extends=expression}
 private enumObjectLiteralElement ::= (identifier | stringLiteralExpression) ':' expressionOrExtractorMatchExpression {pin=2 recoverWhile="object_literal_part_recover"}
 private enumObjectLiteralElementList ::= enumObjectLiteralElement (',' enumObjectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
 enumExtractObjectLiteral ::= '{' enumObjectLiteralElementList '}' {pin=2}
