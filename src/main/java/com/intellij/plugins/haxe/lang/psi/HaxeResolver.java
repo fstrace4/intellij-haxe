@@ -845,7 +845,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private static List<HaxeEnumExtractedValue> searchEnumArgumentExtractorForReference(HaxeReference reference, HaxeEnumArgumentExtractor extractor) {
     List<HaxeEnumExtractedValue> extractedValues = extractor.getEnumExtractorArgumentList().getEnumExtractedValueList();
     for (HaxeEnumExtractedValue value : extractedValues) {
-      if (value.getComponentName().textMatches(reference)) {
+      HaxeComponentName componentName = value.getComponentName();
+      if (componentName != null && componentName.textMatches(reference)) {
         return List.of(value);
       }
     }
@@ -987,13 +988,84 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         } else {
           HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(switchCaseExpr, HaxeSwitchStatement.class);
           if (switchStatement != null && switchStatement.getExpression() != null) {
-            return List.of(switchStatement.getExpression());
+            HaxeExpression expression = switchStatement.getExpression();
+            if (expression instanceof HaxeArrayLiteral arrayLiteral) {
+              // generate list of indexes  to look up in potentially multi-dimensional arrays
+              List<PsiElement> parents = collectArrayParents(reference);
+              List<Integer> indexes = findSwitchLiteralArrayIndexes(reference, parents);
+
+              Collections.reverse(indexes);
+              HaxeExpressionList list = arrayLiteral.getExpressionList();
+              if(list != null) {
+                HaxeExpression  target = arrayLiteral;
+                target = tryArrayLookup(indexes, target);
+                if(target != null) {
+                  return List.of(target);
+                }
+              }
+            }else {
+              HaxeExpression switchExpression = switchStatement.getExpression();
+              if (switchExpression != null) return List.of(switchExpression);
+            }
           }
         }
       }
 
     }
     return null;
+  }
+
+  private static @NotNull List<PsiElement> collectArrayParents(HaxeReference reference) {
+    List<PsiElement> parents = UsefulPsiTreeUtil.getPathToParentOfType(reference, HaxeSwitchCaseExprArray.class);
+    if (parents == null) return List.of();
+    return parents.stream().filter(element -> element instanceof HaxeSwitchCaseExprArray || element instanceof HaxeArrayLiteral).toList();
+  }
+
+  private static HaxeExpression tryArrayLookup(List<Integer> indexes, HaxeExpression target) {
+    for (Integer index : indexes) {
+      if (target instanceof HaxeArrayLiteral internalArray) {
+        HaxeExpressionList internalExpList = internalArray.getExpressionList();
+        if (internalExpList != null) {
+          List<HaxeExpression> expressionList = internalExpList.getExpressionList();
+          if (expressionList.size() > index) {
+            target = expressionList.get(index);
+          }
+        }
+      }
+    }
+    return target;
+  }
+
+  private static @NotNull List<Integer> findSwitchLiteralArrayIndexes(HaxeReference reference, List<PsiElement> arrayParents) {
+    List<Integer> indexes = new ArrayList<>();
+    for (PsiElement array : arrayParents) {
+
+      @NotNull PsiElement[] children = new PsiElement[0];
+      if (array instanceof  HaxeArrayLiteral arrayLiteral && arrayLiteral.getExpressionList() != null) {
+        children =  arrayLiteral.getExpressionList().getChildren();
+      }else if (array instanceof HaxeSwitchCaseExprArray caseExprArray) {
+        children = caseExprArray.getChildren();
+      }
+        for (int i = 0; i < children.length; i++) {
+          PsiElement child = children[i];
+          if(child == reference || isChildOf(reference, child, array)){
+            indexes.add(i);
+            break;
+          }
+        }
+      }
+    return indexes;
+  }
+
+  private static boolean isChildOf(PsiElement child, PsiElement target, PsiElement giveUpAt) {
+    PsiElement parent = child.getParent();
+    while (parent != null) {
+      if (parent == target)
+        return true;
+      parent = parent.getParent();
+      if (parent == giveUpAt) return false;
+    }
+    return false;
   }
 
   private int findExtractorIndex(PsiElement[] children, HaxeExpression expression) {
