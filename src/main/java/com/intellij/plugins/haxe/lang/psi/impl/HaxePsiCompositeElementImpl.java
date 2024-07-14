@@ -144,6 +144,13 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
     addDeclarations(result, PsiTreeUtil.getChildrenOfType(this, HaxeInterfaceDeclaration.class));
     addDeclarations(result, PsiTreeUtil.getChildrenOfType(this, HaxeTypedefDeclaration.class));
 
+    if(this instanceof HaxeSwitchCase switchCase) {
+      List<HaxeSwitchCaseExpr> list = switchCase.getSwitchCaseExprList();
+      for (HaxeSwitchCaseExpr expr : list) {
+        addDeclarations(result, PsiTreeUtil.findChildrenOfType(expr, HaxeSwitchCaseCapture.class));
+      }
+    }
+
     final HaxeParameterList parameterList = PsiTreeUtil.getChildOfType(this, HaxeParameterList.class);
     if (parameterList != null) {
       result.addAll(parameterList.getParameterList());
@@ -180,11 +187,10 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
         HaxeExpression expression = expr.getExpression();
         if (expression instanceof HaxeEnumArgumentExtractor extractor) {
 
-          Collection<HaxeEnumExtractedValue> extractedValues = PsiTreeUtil.findChildrenOfType(extractor, HaxeEnumExtractedValue.class);
+          Collection<HaxeEnumExtractedValueReference> extractedValues = PsiTreeUtil.findChildrenOfType(extractor, HaxeEnumExtractedValueReference.class);
 
           List<HaxeComponentName> list = extractedValues.stream()
-            .map(HaxeEnumExtractedValue::getComponentName)
-            .filter(Objects::nonNull)
+            .map(HaxeEnumExtractedValueReference::getComponentName)
             .toList();
           result.addAll(list);
 
@@ -196,9 +202,9 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
       HaxeComponentName componentName = captureVar.getComponentName();
       result.add(componentName);
     }
-    if (this instanceof HaxeEnumExtractedValue extractedValue) {
+    if (this instanceof HaxeEnumExtractedValueReference extractedValue) {
       HaxeComponentName componentName = extractedValue.getComponentName();
-      if (componentName != null) result.add(componentName);
+      result.add(componentName);
     }
 
     if (this instanceof HaxeCatchStatement) {
@@ -234,6 +240,11 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
   private static void addDeclarations(@NotNull List<PsiElement> result, @Nullable PsiElement[] items) {
     if (items != null) {
       result.addAll(Arrays.asList(items));
+    }
+  }
+  private static void addDeclarations(@NotNull List<PsiElement> result, @Nullable Collection<PsiElement> items) {
+    if (items != null) {
+      result.addAll(items);
     }
   }
 

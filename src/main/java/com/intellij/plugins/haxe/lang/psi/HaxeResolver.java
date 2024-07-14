@@ -287,7 +287,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   private List<? extends PsiElement> checkIsSwitchExtractedValue(HaxeReference reference) {
-    if (reference instanceof  HaxeEnumExtractedValue extractedValue) {
+    if (reference instanceof  HaxeEnumExtractedValueReference extractedValue) {
       if(extractedValue.getParent() instanceof HaxeEnumExtractorArgumentList argumentList) {
         if (argumentList.getParent() instanceof HaxeEnumArgumentExtractor extractor) {
           int argumentIndex = getExtractorArgumentIndex(extractedValue, extractor);
@@ -845,9 +845,12 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private static List<HaxeEnumExtractedValue> searchEnumArgumentExtractorForReference(HaxeReference reference, HaxeEnumArgumentExtractor extractor) {
     List<HaxeEnumExtractedValue> extractedValues = extractor.getEnumExtractorArgumentList().getEnumExtractedValueList();
     for (HaxeEnumExtractedValue value : extractedValues) {
-      HaxeComponentName componentName = value.getComponentName();
-      if (componentName != null && componentName.textMatches(reference)) {
-        return List.of(value);
+      HaxeEnumExtractedValueReference valueReference = value.getEnumExtractedValueReference();
+      if (valueReference != null) {
+        HaxeComponentName componentName = valueReference.getComponentName();
+        if (componentName.textMatches(reference)) {
+          return List.of(value);
+        }
       }
     }
     return null;
@@ -946,8 +949,10 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         HaxeParameterList parameters = enumValueModel.getConstructorParameters();
         if (parameters != null) {
           List<HaxeParameter> list = parameters.getParameterList();
-          HaxeParameter parameter = list.get(argumentIndex);
-          return List.of(parameter.getComponentName());
+          if (list.size()> argumentIndex) {
+            HaxeParameter parameter = list.get(argumentIndex);
+            return List.of(parameter.getComponentName());
+          }
         }
       }
     }
@@ -1688,10 +1693,13 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
           List<HaxeEnumExtractedValue> list = argumentList.getEnumExtractedValueList();
           for (HaxeEnumExtractedValue extractedValue : list) {
-            HaxeComponentName componentName = extractedValue.getComponentName();
-            if (name.equals(componentName.getText())) {
-              result.add(componentName);
-              return false;
+            HaxeEnumExtractedValueReference valueReference = extractedValue.getEnumExtractedValueReference();
+            if (valueReference != null) {
+              HaxeComponentName componentName = valueReference.getComponentName();
+              if (name.equals(componentName.getText())) {
+                result.add(componentName);
+                return false;
+              }
             }
           }
         }

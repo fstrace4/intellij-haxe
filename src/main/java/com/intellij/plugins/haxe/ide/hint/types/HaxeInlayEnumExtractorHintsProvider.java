@@ -3,6 +3,7 @@ package com.intellij.plugins.haxe.ide.hint.types;
 import com.intellij.codeInsight.hints.declarative.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.plugins.haxe.lang.psi.HaxeEnumExtractedValue;
+import com.intellij.plugins.haxe.lang.psi.HaxeEnumExtractedValueReference;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -21,12 +22,12 @@ public class HaxeInlayEnumExtractorHintsProvider implements InlayHintsProvider {
 
     @Override
     public void collectFromElement(@NotNull PsiElement element, @NotNull InlayTreeSink sink) {
-      if (element instanceof HaxeEnumExtractedValue extractedValue) {
+      if (element instanceof HaxeEnumExtractedValueReference extractedValue) {
         handleEnumArgumentExtractorHints(sink, extractedValue);
       }
     }
 
-    private static void handleEnumArgumentExtractorHints(@NotNull InlayTreeSink sink, HaxeEnumExtractedValue extractedValue) {
+    private static void handleEnumArgumentExtractorHints(@NotNull InlayTreeSink sink, HaxeEnumExtractedValueReference extractedValue) {
       InlineInlayPosition position = new InlineInlayPosition(extractedValue.getTextRange().getEndOffset(), true, 0);
       ResultHolder type = HaxeExpressionEvaluator.evaluate(extractedValue, null).result;
       sink.addPresentation(position, null, null, false, appendTypeTextToBuilder(type));

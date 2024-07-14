@@ -604,20 +604,35 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
 
-  static ResultHolder handleEnumExtractedValue(HaxeEnumExtractedValue extractedValue) {
+  static ResultHolder handleEnumExtractedValue(HaxeEnumExtractedValueReference extractedValue) {
     HaxeEnumArgumentExtractor extractor = PsiTreeUtil.getParentOfType(extractedValue, HaxeEnumArgumentExtractor.class);
 
     // TODO mlo should probably move the haxe model logic to the PSI implementation so we can cache it
     HaxeEnumExtractorModel extractorModel =  new HaxeEnumExtractorModel(extractor);
     HaxeEnumValueModel enumValueModel =  extractorModel.getEnumValueModel();
     if (enumValueModel != null) {
-      int index = extractorModel.findExtractValueIndex(extractedValue);
-      HaxeGenericResolver extractorResolver =  extractorModel.getGenericResolver();
-      ResultHolder parameterType = enumValueModel.getParameterType(index, extractorResolver);
-      if (parameterType != null) return parameterType;
+      // check if in literal array
+      HaxeSwitchExtractorExpressionArrayLiteral arrayLiteral =
+        PsiTreeUtil.getParentOfType(extractedValue, HaxeSwitchExtractorExpressionArrayLiteral.class, true, HaxeEnumArgumentExtractor.class);
+      if(arrayLiteral != null) {
+        int index = extractorModel.findExtractValueIndex(arrayLiteral);
+        HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
+        ResultHolder parameterType = enumValueModel.getParameterType(index, extractorResolver);
+        if (parameterType != null && parameterType.getClassType() != null)  {
+          HaxeGenericResolver resolver = parameterType.getClassType().getGenericResolver();
+          @NotNull ResultHolder[] specifics = resolver.getSpecifics();
+          if (specifics.length!= 0) return specifics[0];
+        }
+      }else {
+        int index = extractorModel.findExtractValueIndex(extractedValue);
+        HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
+        ResultHolder parameterType = enumValueModel.getParameterType(index, extractorResolver);
+        if (parameterType != null) return parameterType;
+      }
     }
     return createUnknown(extractedValue);
   }
+
 
   static ResultHolder handleForStatement(
     HaxeExpressionEvaluatorContext context,
@@ -1283,7 +1298,8 @@ public class HaxeExpressionEvaluatorHandlers {
                   genericsMap.get(genericName).add(parameter);
                 } else {
                   if (argument.getType().isClassType()) {
-                    HaxeGenericResolver parameterResolver = parameter.getClassType().getGenericResolver();
+                    SpecificHaxeClassReference classType = parameter.getClassType();
+                    HaxeGenericResolver parameterResolver = classType != null ? classType.getGenericResolver() : new HaxeGenericResolver();
                     ResultHolder test = parameterResolver.resolve(genericName);
                     if (test != null && !test.isUnknown()) {
                       genericsMap.get(genericName).add(parameter);

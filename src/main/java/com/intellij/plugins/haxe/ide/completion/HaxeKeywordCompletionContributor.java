@@ -205,7 +205,7 @@ public class HaxeKeywordCompletionContributor extends CompletionContributor {
   }
 
   private static void addSwitchVars(HaxeSwitchCase type, List<LookupElement> lookupElements) {
-    Collection<HaxeEnumExtractedValue> extractedValues = PsiTreeUtil.findChildrenOfType(type, HaxeEnumExtractedValue.class);
+    Collection<HaxeEnumExtractedValueReference> extractedValues = PsiTreeUtil.findChildrenOfType(type, HaxeEnumExtractedValueReference.class);
     Set<LookupElementBuilder> variables = extractedValues.stream().map(value -> value.getComponentName().getIdentifier().getText())
       .map(lookupString -> LookupElementBuilder.create(lookupString).withIcon(HaxeIcons.Field))
       .collect(Collectors.toSet());

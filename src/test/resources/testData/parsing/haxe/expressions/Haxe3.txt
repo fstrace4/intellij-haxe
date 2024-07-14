@@ -459,9 +459,10 @@ Haxe File
                               HaxePsiToken:(('(')
                               ENUM_EXTRACTOR_ARGUMENT_LIST
                                 ENUM_EXTRACTED_VALUE
-                                  COMPONENT_NAME
-                                    IDENTIFIER
-                                      HaxePsiToken:ID('s')
+                                  ENUM_EXTRACTED_VALUE_REFERENCE
+                                    COMPONENT_NAME
+                                      IDENTIFIER
+                                        HaxePsiToken:ID('s')
                               HaxePsiToken:)(')')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -487,15 +488,17 @@ Haxe File
                                   HaxePsiToken:(('(')
                                   ENUM_EXTRACTOR_ARGUMENT_LIST
                                     ENUM_EXTRACTED_VALUE
-                                      COMPONENT_NAME
-                                        IDENTIFIER
-                                          HaxePsiToken:ID('s')
+                                      ENUM_EXTRACTED_VALUE_REFERENCE
+                                        COMPONENT_NAME
+                                          IDENTIFIER
+                                            HaxePsiToken:ID('s')
                                   HaxePsiToken:)(')')
                                 HaxePsiToken:,(',')
                                 ENUM_EXTRACTED_VALUE
-                                  COMPONENT_NAME
-                                    IDENTIFIER
-                                      HaxePsiToken:ID('_')
+                                  ENUM_EXTRACTED_VALUE_REFERENCE
+                                    COMPONENT_NAME
+                                      IDENTIFIER
+                                        HaxePsiToken:ID('_')
                               HaxePsiToken:)(')')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK

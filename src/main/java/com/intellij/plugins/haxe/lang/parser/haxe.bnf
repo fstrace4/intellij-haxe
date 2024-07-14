@@ -657,7 +657,7 @@ switchBlock ::= '{' (switchCase | defaultCase)* '}'{pin=1}
 
 switchCaseBlock ::=  statementList | (literalExpression <<semicolonUnlessPrecededByStatement>>)
 switchCase ::= 'case'  switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
-private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar | enumExtractObjectLiteral |  statement ) {hooks=[popCollectionInitializersRule]}
+private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar | switchCaseCapture | enumExtractObjectLiteral |  statement ) {hooks=[popCollectionInitializersRule]}
 switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
 // Should NOT be named Expression, because it should not be an expression.
 switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
@@ -675,8 +675,10 @@ switchExtractorExpressionArrayLiteral ::= '[' (enumExtractorArgumentList ','?)? 
 // this might look  unnecessary complex, but we want to avoid extractors to be parsed as normal call expressions
 // extracted value identifiers must start with lowercase, but since your allowed to create enum-values that also start with lowercase,
 // we cant use that to tell the difference between an extractedvalue and a enumvalue reference
-enumExtractedValue::=componentName | primitiveExtractedValue
+enumExtractedValueReference ::= (<<startWithLowercaseOrUnderscoreCheck>> componentName)
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
+enumExtractedValue::= enumExtractedValueReference | primitiveExtractedValue
+
 
 private primitiveExtractedValue  ::= enumExtractObjectLiteral | enumExtractArrayLiteral
 private expressionOrExtractorMatchExpression ::=  switchExtractorExpression | enumExtractArrayLiteral | enumExtractObjectLiteral  | expression   {extends=expression}
@@ -686,13 +688,16 @@ enumExtractObjectLiteral ::= '{' enumObjectLiteralElementList '}' {pin=2}
 enumExtractArrayLiteral ::= '[' expressionOrExtractorMatchExpression (','  expressionOrExtractorMatchExpression)* ']' {pin=2}
 //{mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent" implements="com.intellij.plugins.haxe.lang.psi.HaxeComponent"}
 
-private switchExtractorExpressionArgument ::= (switchExtractorExpressionArrayLiteral | switchExtractorExpression  | switchEnumBitOperationExpression | enumExtractedValue )
+private switchExtractorExpressionArgument ::= (  extractorMatchExpressionVariant | switchExtractorExpressionArrayLiteral |  switchExtractorExpression  |  switchEnumBitOperationExpression | switchCaseCapture | enumExtractedValue  |<<startWithUppercaseCheck>> type)
 
 enumExtractorArgumentList ::= ( switchExtractorExpressionArgument) (',' (switchExtractorExpressionArgument))*
 enumValueReference ::= simpleQualifiedReferenceExpression
 enumArgumentExtractor ::= enumValueReference '(' enumExtractorArgumentList ')'   {extends="expression"}
 
 variableCaptureExpression ::= callOrArrayAccess ('=>' switchCaseExpr)+  {pin=2 extends="expression"}
+
+switchCaseCapture ::= <<startWithLowercaseOrUnderscoreCheck>> componentName varInit
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
 
 // This rule is superseded by localVarDeclarationList (in one of its degenerate configurations), as part of expression.
 switchCaseCaptureVar ::= mutabilityModifier+ componentName varInit? {extends="localVarDeclaration"}

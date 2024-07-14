@@ -197,6 +197,24 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
    return true;
   }
 
+  public static boolean startWithLowercaseOrUnderscoreCheck(PsiBuilder builder_, int level_) {
+    String text = builder_.getTokenText();
+    if (text != null) {
+      char c = text.charAt(0);
+      if (c == '_') return true;
+      return Character.isLowerCase(c);
+    }
+    return false;
+  }
+  public static boolean startWithUppercaseCheck(PsiBuilder builder_, int level_) {
+    String text = builder_.getTokenText();
+    if (text != null) {
+      char c = text.charAt(0);
+      return Character.isUpperCase(c);
+    }
+    return false;
+  }
+
 
   public static boolean isInitializersAllowed(PsiBuilder builder, int level) {
     Stack<Boolean> stack = getFlagStack(builder, COLLECTION_INITIALIZER_STATE);

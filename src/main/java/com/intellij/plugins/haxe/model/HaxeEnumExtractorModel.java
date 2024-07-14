@@ -37,21 +37,14 @@ public class HaxeEnumExtractorModel {
   }
 
 
-  public int findExtractValueIndex(HaxeEnumExtractedValue value) {
+  public int findExtractValueIndex(PsiElement value) {
       PsiElement[] extractorArguments = getChildrenCached();
       for (int i = 0; i < extractorArguments.length; i++) {
-        if (extractorArguments[i] == value) {
-          return i;
-        }
-      }
-    return -1;
-  }
-
-  public int findExtractValueIndex(HaxeEnumArgumentExtractor value) {
-      PsiElement[] extractorArguments = getChildrenCached();
-      for (int i = 0; i < extractorArguments.length; i++) {
-        if (extractorArguments[i] == value) {
-          return i;
+        PsiElement argument = extractorArguments[i];
+        if (argument instanceof  HaxeEnumExtractedValue extractedValue) {
+          if (extractedValue.getEnumExtractedValueReference() == value) {
+            return i;
+          }
         }
       }
     return -1;

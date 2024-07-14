@@ -56,7 +56,10 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
     HaxeNamedComponent namedComponent = getNamedComponent(element);
     final HaxeComponentType type = HaxeComponentType.typeOf(namedComponent);
     if (namedComponent != null) {
-      if (type == null) return mainBuilder.toString();
+      if (type == null){
+        resolveTypeAndMakeHeader(mainBuilder, namedComponent);
+        return mainBuilder.toString();
+      }
       switch (type) {
         case CLASS, ABSTRACT, INTERFACE, TYPEDEF, ENUM -> processType(mainBuilder, namedComponent, renderer);
         case METHOD, FUNCTION -> processMethod(mainBuilder, namedComponent, renderer);
@@ -106,8 +109,11 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
     HaxeDocumentationRenderer renderer = element.getProject().getService(HaxeDocumentationRenderer.class);
     final HaxeComponentType type = HaxeComponentType.typeOf(namedComponent);
     HtmlBuilder definitionBuilder = new HtmlBuilder();
-    //TODO support key-value iterator "vars"
-    if (type == null) return mainBuilder.toString();
+    //TODO support key-value iterator "vars" , capture vars etc
+    if (type == null) {
+      resolveTypeAndMakeHeader(mainBuilder, namedComponent);
+      return mainBuilder.toString();
+    }
     switch (type) {
       case CLASS, ABSTRACT, INTERFACE, TYPEDEF, ENUM -> processType(definitionBuilder, namedComponent, renderer);
       case METHOD, FUNCTION -> processMethod(definitionBuilder, namedComponent, renderer);
