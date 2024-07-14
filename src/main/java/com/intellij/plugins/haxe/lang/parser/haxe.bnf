@@ -657,23 +657,35 @@ switchBlock ::= '{' (switchCase | defaultCase)* '}'{pin=1}
 
 switchCaseBlock ::=  statementList | (literalExpression <<semicolonUnlessPrecededByStatement>>)
 switchCase ::= 'case'  switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
-private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar |  statement ) {hooks=[popCollectionInitializersRule]}
+private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar | enumExtractObjectLiteral |  statement ) {hooks=[popCollectionInitializersRule]}
 switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
 // Should NOT be named Expression, because it should not be an expression.
 switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
 
 ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
 
+switchEnumBitOperationExpression ::= enumValueReference (bitOperation enumValueReference)+ {extends="expression"}
 switchExtractorExpression ::= switchCaseExtractor (bitOperation switchCaseExtractor)* {extends="expression"}
 private extractorMatchExpressionVariant::= '('ExtractorMatchExpression')' | '['ExtractorMatchExpression']'  | ExtractorMatchExpression
 switchCaseExtractor ::= extractorMatchExpressionVariant | enumArgumentExtractor | variableCaptureExpression {extends="expression"}
 //TODO mlo: clean up and bind to classes
 switchExtractorExpressionArrayLiteral ::= '[' (enumExtractorArgumentList ','?)? ']'
 
-enumExtractedValue::=componentName
-{mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent" implements="com.intellij.plugins.haxe.lang.psi.HaxeComponent"}
+// this might look  unnecessary complex, but we want to avoid extractors to be parsed as normal call expressions
+// extracted value identifiers must start with lowercase, but since your allowed to create enum-values that also start with lowercase,
+// we cant use that to tell the difference between an extractedvalue and a enumvalue reference
+enumExtractedValue::=componentName | primitiveExtractedValue
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
 
-private switchExtractorExpressionArgument ::= (switchExtractorExpressionArrayLiteral | switchExtractorExpression | enumExtractedValue)
+private primitiveExtractedValue  ::= enumExtractObjectLiteral | enumExtractArrayLiteral
+private expressionOrExtractorMatchExpression ::=  switchCaseExtractor | enumExtractArrayLiteral | enumExtractObjectLiteral | expression   {extends=expression}
+private enumObjectLiteralElement ::= (identifier | stringLiteralExpression) ':' expressionOrExtractorMatchExpression {pin=2 recoverWhile="object_literal_part_recover"}
+private enumObjectLiteralElementList ::= enumObjectLiteralElement (',' enumObjectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
+enumExtractObjectLiteral ::= '{' enumObjectLiteralElementList '}' {pin=2}
+enumExtractArrayLiteral ::= '[' expressionOrExtractorMatchExpression (','  expressionOrExtractorMatchExpression)* ']' {pin=2}
+//{mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent" implements="com.intellij.plugins.haxe.lang.psi.HaxeComponent"}
+
+private switchExtractorExpressionArgument ::= (switchExtractorExpressionArrayLiteral | switchExtractorExpression  | switchEnumBitOperationExpression | enumExtractedValue )
 
 enumExtractorArgumentList ::= ( switchExtractorExpressionArgument) (',' (switchExtractorExpressionArgument))*
 enumValueReference ::= simpleQualifiedReferenceExpression
@@ -933,6 +945,6 @@ objectLiteral ::= nonEmptyObjectLiteral | emptyObjectLiteral
 private objectLiteralElementList ::= objectLiteralElement (',' objectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
 private object_literal_list_recover ::= !('}')
 // extractor match expression can contain ObjectLiterals and we need to allow extractors inside these expressions
-private expressionOrExtractorMatchExpression ::=  expression | switchCaseExtractor  {extends=expression}
-objectLiteralElement ::= (identifier | stringLiteralExpression) ':' expressionOrExtractorMatchExpression {pin=2 recoverWhile="object_literal_part_recover"}
+
+objectLiteralElement ::= (identifier | stringLiteralExpression) ':' expression {pin=2 recoverWhile="object_literal_part_recover"}
 private object_literal_part_recover ::= !(',' | '}')

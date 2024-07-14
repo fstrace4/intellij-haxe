@@ -59,7 +59,9 @@ public class HaxeEnumExtractorModel {
 
 
   public HaxeGenericResolver getGenericResolver() {
-    HaxeClassModel anEnum = getEnumValueModel().getDeclaringEnum();
+    HaxeEnumValueModel model = getEnumValueModel();
+    if (model == null) return  new HaxeGenericResolver();
+    HaxeClassModel anEnum = model.getDeclaringEnum();
     HaxeGenericResolver resolver = anEnum != null ? anEnum.getGenericResolver(null) : new HaxeGenericResolver();
     HaxeEnumArgumentExtractor parentExtractor = PsiTreeUtil.getParentOfType(extractor, HaxeEnumArgumentExtractor.class);
     if (parentExtractor != null) {
@@ -68,9 +70,11 @@ public class HaxeEnumExtractorModel {
 
       int index = extractorModel.findExtractValueIndex(extractor);
       HaxeEnumValueModel valueModel = extractorModel.getEnumValueModel();
-      ResultHolder parameterType = valueModel.getParameterType(index, parentResolver);
-      if (parameterType != null && parameterType.isClassType()) {
-        return parameterType.getClassType().getGenericResolver();
+      if(valueModel != null) {
+        ResultHolder parameterType = valueModel.getParameterType(index, parentResolver);
+        if (parameterType != null && parameterType.isClassType()) {
+          return parameterType.getClassType().getGenericResolver();
+        }
       }
     }else {
       SpecificHaxeClassReference reference = HaxeResolveUtil.resolveExtractorEnum(extractor);
@@ -78,7 +82,7 @@ public class HaxeEnumExtractorModel {
         return reference.getGenericResolver();
       }
     }
-    return resolver;
+    return resolver != null ?  resolver : new HaxeGenericResolver();
   }
 
   private @NotNull PsiElement[] getChildrenCached() {

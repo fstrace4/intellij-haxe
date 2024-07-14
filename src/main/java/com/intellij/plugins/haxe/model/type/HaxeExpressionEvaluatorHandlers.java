@@ -1210,7 +1210,6 @@ public class HaxeExpressionEvaluatorHandlers {
         }
       }
     }
-
     SpecificTypeReference functionType = handle(callExpressionRef, context, localResolver).getType();
     boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
     boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
@@ -1313,8 +1312,7 @@ public class HaxeExpressionEvaluatorHandlers {
       ResultHolder returnType = ftype.getReturnType().tryUnwrapNullType();
 
       HaxeGenericResolver functionResolver = new HaxeGenericResolver();
-      functionResolver.addAll(resolver);
-      HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, functionResolver);
+      functionResolver.addAll(resolver.withoutArgumentType());
 
       // if reference to "real" method, try to use any argument to type parameter mapping
       if (ftype.method != null && returnType.isTypeParameter()) {

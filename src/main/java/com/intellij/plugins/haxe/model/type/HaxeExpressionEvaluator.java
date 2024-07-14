@@ -217,9 +217,7 @@ public class HaxeExpressionEvaluator {
         return resolveWithCache(element, resolver, () -> findIteratorType(element));
       }
 
-      if (element instanceof HaxeEnumExtractedValue extractedValue) {
-        return resolveWithCache(extractedValue, resolver, () -> handleEnumExtractedValue(extractedValue));
-      }
+
 
       //NOTE: must be before HaxeParameter as HaxeRestParameter extends HaxeParameter
       if (element instanceof HaxeRestParameter restParameter) {
@@ -235,6 +233,11 @@ public class HaxeExpressionEvaluator {
       }
 
     }
+
+    if (element instanceof HaxeEnumExtractedValue extractedValue) {
+      return resolveWithCache(extractedValue, resolver, () -> handleEnumExtractedValue(extractedValue));
+    }
+
 
     if (element instanceof HaxeReference) {
 

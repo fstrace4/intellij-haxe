@@ -44,10 +44,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /*
  * This class, ideally, must not derive from HaxeModifierListOwner because every element cannot be prefixed with modifiers/annotations.
@@ -182,8 +179,13 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
         }
         HaxeExpression expression = expr.getExpression();
         if (expression instanceof HaxeEnumArgumentExtractor extractor) {
-          List<HaxeComponentName> list = extractor.getEnumExtractorArgumentList().getEnumExtractedValueList().stream()
-            .map(HaxeEnumExtractedValue::getComponentName).toList();
+
+          Collection<HaxeEnumExtractedValue> extractedValues = PsiTreeUtil.findChildrenOfType(extractor, HaxeEnumExtractedValue.class);
+
+          List<HaxeComponentName> list = extractedValues.stream()
+            .map(HaxeEnumExtractedValue::getComponentName)
+            .filter(Objects::nonNull)
+            .toList();
           result.addAll(list);
 
         }
@@ -191,10 +193,12 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
     }
 
     if (this instanceof HaxeSwitchCaseCaptureVar captureVar) {
-      result.add(captureVar.getComponentName());
+      HaxeComponentName componentName = captureVar.getComponentName();
+      result.add(componentName);
     }
     if (this instanceof HaxeEnumExtractedValue extractedValue) {
-      result.add(extractedValue.getComponentName());
+      HaxeComponentName componentName = extractedValue.getComponentName();
+      if (componentName != null) result.add(componentName);
     }
 
     if (this instanceof HaxeCatchStatement) {

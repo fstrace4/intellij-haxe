@@ -582,25 +582,23 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            OBJECT_LITERAL
+                            ENUM_EXTRACT_OBJECT_LITERAL
                               HaxePsiToken:{('{')
-                              OBJECT_LITERAL_ELEMENT
-                                IDENTIFIER
-                                  HaxePsiToken:ID('name')
-                                HaxePsiToken::(':')
-                                STRING_LITERAL_EXPRESSION
-                                  HaxePsiToken:OPEN_QUOTE('"')
-                                  HaxePsiToken:REGULAR_STRING_PART('haxe')
-                                  HaxePsiToken:CLOSING_QUOTE('"')
+                              IDENTIFIER
+                                HaxePsiToken:ID('name')
+                              HaxePsiToken::(':')
+                              STRING_LITERAL_EXPRESSION
+                                HaxePsiToken:OPEN_QUOTE('"')
+                                HaxePsiToken:REGULAR_STRING_PART('haxe')
+                                HaxePsiToken:CLOSING_QUOTE('"')
                               HaxePsiToken:,(',')
-                              OBJECT_LITERAL_ELEMENT
-                                IDENTIFIER
-                                  HaxePsiToken:ID('rating')
-                                HaxePsiToken::(':')
-                                STRING_LITERAL_EXPRESSION
-                                  HaxePsiToken:OPEN_QUOTE('"')
-                                  HaxePsiToken:REGULAR_STRING_PART('poor')
-                                  HaxePsiToken:CLOSING_QUOTE('"')
+                              IDENTIFIER
+                                HaxePsiToken:ID('rating')
+                              HaxePsiToken::(':')
+                              STRING_LITERAL_EXPRESSION
+                                HaxePsiToken:OPEN_QUOTE('"')
+                                HaxePsiToken:REGULAR_STRING_PART('poor')
+                                HaxePsiToken:CLOSING_QUOTE('"')
                               HaxePsiToken:}('}')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK
@@ -612,24 +610,22 @@ Haxe File
                         SWITCH_CASE
                           HaxePsiToken:case('case')
                           SWITCH_CASE_EXPR
-                            OBJECT_LITERAL
+                            ENUM_EXTRACT_OBJECT_LITERAL
                               HaxePsiToken:{('{')
-                              OBJECT_LITERAL_ELEMENT
-                                IDENTIFIER
-                                  HaxePsiToken:ID('rating')
-                                HaxePsiToken::(':')
-                                STRING_LITERAL_EXPRESSION
-                                  HaxePsiToken:OPEN_QUOTE('"')
-                                  HaxePsiToken:REGULAR_STRING_PART('awesome')
-                                  HaxePsiToken:CLOSING_QUOTE('"')
+                              IDENTIFIER
+                                HaxePsiToken:ID('rating')
+                              HaxePsiToken::(':')
+                              STRING_LITERAL_EXPRESSION
+                                HaxePsiToken:OPEN_QUOTE('"')
+                                HaxePsiToken:REGULAR_STRING_PART('awesome')
+                                HaxePsiToken:CLOSING_QUOTE('"')
                               HaxePsiToken:,(',')
-                              OBJECT_LITERAL_ELEMENT
+                              IDENTIFIER
+                                HaxePsiToken:ID('name')
+                              HaxePsiToken::(':')
+                              REFERENCE_EXPRESSION
                                 IDENTIFIER
-                                  HaxePsiToken:ID('name')
-                                HaxePsiToken::(':')
-                                REFERENCE_EXPRESSION
-                                  IDENTIFIER
-                                    HaxePsiToken:ID('n')
+                                  HaxePsiToken:ID('n')
                               HaxePsiToken:}('}')
                           HaxePsiToken::(':')
                           SWITCH_CASE_BLOCK

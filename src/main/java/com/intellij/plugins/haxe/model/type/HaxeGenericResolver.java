@@ -673,4 +673,10 @@ public class HaxeGenericResolver {
     copy.constaints.removeIf(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER);
     return copy;
   }
+  public HaxeGenericResolver withoutArgumentType() {
+    HaxeGenericResolver copy = copy();
+    copy.resolvers.removeIf(entry -> entry.resolveSource() == ARGUMENT_TYPE);
+    copy.constaints.removeIf(entry -> entry.resolveSource() == ARGUMENT_TYPE);
+    return copy;
+  }
 }

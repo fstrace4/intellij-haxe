@@ -286,6 +286,20 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   }
 
+  private List<? extends PsiElement> checkIsSwitchExtractedValue(HaxeReference reference) {
+    if (reference instanceof  HaxeEnumExtractedValue extractedValue) {
+      if(extractedValue.getParent() instanceof HaxeEnumExtractorArgumentList argumentList) {
+        if (argumentList.getParent() instanceof HaxeEnumArgumentExtractor extractor) {
+          int argumentIndex = getExtractorArgumentIndex(extractedValue, extractor);
+          if(argumentIndex > -1) {
+            findExtractedValueEnumParameter(extractor, argumentIndex);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   private List<? extends PsiElement> checkSwitchOnEnum(HaxeReference reference) {
     if (reference.getParent() instanceof HaxeSwitchCaseExpr) {
       HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(reference, HaxeSwitchStatement.class);
@@ -764,6 +778,9 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     // check if default name in match expression (ex  `case TString(_ => captureVar)`)
     result = checkIfDefaultValueInMatchExpression(reference, switchCaseExpr);
 
+    // check if enum extracted value (ex `case MyEnumVal(reference)`)
+    if (result == null) result = checkIsSwitchExtractedValue(reference);
+
     // check if matches default name ( ex. `case _:`)
     if (result == null) result = checkIfSwitchCaseDefaultValue(reference);
 
@@ -882,7 +899,17 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   @Nullable
-  private List<HaxeParameter> checkIfDefaultValueInMatchExpression(HaxeReference reference, HaxeSwitchCaseExpr switchCaseExpr) {
+  private List<PsiElement> checkIfDefaultValueInMatchExpression(HaxeReference reference, HaxeSwitchCaseExpr switchCaseExpr) {
+
+    HaxeEnumArgumentExtractor argumentExtractorBeforeAntSwitchExpr = PsiTreeUtil.getParentOfType(reference, HaxeEnumArgumentExtractor.class, true, HaxeSwitchCaseExpr.class);
+    if (argumentExtractorBeforeAntSwitchExpr != null) {
+      int argumentIndex = getExtractorArgumentIndex(reference,  argumentExtractorBeforeAntSwitchExpr);
+      if (argumentIndex > -1) {
+        List<PsiElement> parameter = findExtractedValueEnumParameter(argumentExtractorBeforeAntSwitchExpr, argumentIndex);
+        if (parameter != null) return parameter;
+      }
+    }
+
     HaxeExtractorMatchExpression matchExpression = PsiTreeUtil.getParentOfType(reference, HaxeExtractorMatchExpression.class);
 
     if (matchExpression != null) {
@@ -907,11 +934,52 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     return null;
   }
 
+  private static @Nullable List<PsiElement> findExtractedValueEnumParameter(HaxeEnumArgumentExtractor argumentExtractor1, int argumentIndex) {
+    HaxeEnumValueReference enumType = argumentExtractor1.getEnumValueReference();
+    HaxeResolveResult result = enumType.getReferenceExpression().resolveHaxeClass();
+    HaxeClass aClass = result.getHaxeClass();
+    if (aClass != null) {
+      HaxeClassModel model = aClass.getModel();
+      HaxeMemberModel member = model.getMember(enumType.getText(), null);
+      if (member instanceof HaxeEnumValueModel enumValueModel) {
+        HaxeParameterList parameters = enumValueModel.getConstructorParameters();
+        if (parameters != null) {
+          List<HaxeParameter> list = parameters.getParameterList();
+          HaxeParameter parameter = list.get(argumentIndex);
+          return List.of(parameter.getComponentName());
+        }
+      }
+    }
+    return null;
+  }
+
+  private static int getExtractorArgumentIndex(HaxeReference reference, HaxeEnumArgumentExtractor argumentExtractor) {
+    HaxeEnumExtractorArgumentList argumentList = argumentExtractor.getEnumExtractorArgumentList();
+    List<HaxeExpression> expressions = argumentList.getExpressionList();
+
+    int argumentIndex = -1;
+    for (int i = 0; i < expressions.size(); i++) {
+      HaxeExpression expression = expressions.get(i);
+      PsiElement context = PsiTreeUtil.findCommonContext(expression, reference);
+      // pure extractedValue reference
+      if(context instanceof  HaxeEnumExtractedValue) {
+        argumentIndex = i;
+        break;
+      }
+      // reference as part of an expression
+      if (context != argumentExtractor && context instanceof  HaxeExtractorMatchExpression) {
+        argumentIndex = i;
+        break;
+      }
+    }
+    return argumentIndex;
+  }
+
   @Nullable
-  private static List<@NotNull HaxeExpression> checkIfSwitchCaseDefaultValue(HaxeReference reference) {
+  private static List<@NotNull PsiElement> checkIfSwitchCaseDefaultValue(HaxeReference reference) {
     if (reference.textMatches("_")) {
       // if is part of an expression
-      HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class);
+      HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class,  true, HaxeEnumArgumentExtractor.class);
       if (switchCaseExpr != null) {
         if (switchCaseExpr.getParent() instanceof HaxeExtractorMatchExpression matchExpression) {
           //  reference should be  previous matchExpression as it's the value/result from that one that is passed as _
@@ -923,6 +991,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           }
         }
       }
+
     }
     return null;
   }
