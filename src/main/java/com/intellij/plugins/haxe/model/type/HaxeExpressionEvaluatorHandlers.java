@@ -1534,31 +1534,11 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeGenericResolver resolver,
     HaxeWhileStatement whileStatement) {
     HaxeDoWhileBody whileBody = whileStatement.getBody();
-    HaxeBlockStatement blockStatement = null != whileBody ? whileBody.getBlockStatement() : null;
-    List<HaxeExpression> list = null != blockStatement ? blockStatement.getExpressionList() : Collections.emptyList();
-    SpecificTypeReference type = null;
-    HaxeExpression lastExpression = null;
-    for (HaxeExpression expression : list) {
-      type = handle(expression, context, resolver).getType();
-      lastExpression = expression;
+    if (whileBody != null) {
+      @NotNull PsiElement[] children = whileBody.getChildren();
+      PsiElement lastChild = children[children.length - 1];
+      return handle(lastChild, context, resolver);
     }
-    if (type == null) {
-      type = SpecificTypeReference.getDynamic(whileStatement);
-    }
-    if (!type.isBool() && lastExpression != null) {
-      context.addError(
-        lastExpression,
-        "While expression must be boolean",
-        new HaxeCastFixer(lastExpression, type, SpecificHaxeClassReference.getBool(whileStatement))
-      );
-    }
-
-    PsiElement body = whileStatement.getLastChild();
-    if (body != null) {
-      //return SpecificHaxeClassReference.createArray(result); // @TODO: Check this
-      return handle(body, context, resolver);
-    }
-
     return createUnknown(whileStatement);
   }
 
