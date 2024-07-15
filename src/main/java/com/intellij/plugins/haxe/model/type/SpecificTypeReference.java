@@ -45,6 +45,7 @@ public abstract class SpecificTypeReference {
   public static final String BOOL = "Bool";
   public static final String INT = "Int";
   public static final String FLOAT = "Float";
+  public static final String SINGLE = "Single";
   public static final String STRING = "String";
   public static final String ARRAY = "Array";
   public static final String DYNAMIC = "Dynamic";
@@ -252,7 +253,7 @@ public abstract class SpecificTypeReference {
   }
 
   final public boolean isNumeric() {
-    return isInt() || isFloat();
+    return isInt() || isFloat() || isSingle();
   }
 
   final public boolean isBool() {
@@ -261,6 +262,9 @@ public abstract class SpecificTypeReference {
 
   final public boolean isFloat() {
     return this.isNamedType(FLOAT);
+  }
+  final public boolean isSingle() {
+    return this.isNamedType(SINGLE);
   }
 
   final public boolean isString() {
