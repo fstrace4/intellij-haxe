@@ -15,6 +15,8 @@ class PatternMachingTest {
         var  enumVal = Test.TAny(myArray);
         // correct
         switch(enumVal) {
+            //TODO mlo : needs resolver work
+            case TString(x = <warning descr="Unresolved symbol">s</warning>): x.<warning descr="Unresolved symbol">toLowerCase</warning>();
             case TString(s): s.toLowerCase();
             case TInt(i): i  * 2;
             case TAny(a): a.indexOf("");

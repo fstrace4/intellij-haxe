@@ -1,10 +1,13 @@
 # Changelog
 ## 1.5.6
-* Added: Support for new core Api `haxe.Rest` abstract type
+* Added: Support for  core Api `haxe.Rest` & `Single` abstract types
+* Improvement: better support for switch capture variables (wip)
 * Bugfix: variable shadowing should now resolve to the correct declaration. 
 * Bugfix: Incorrect caching of returnType for recursive methods
 * Bugfix: Allow uninitialized final fields in abstract enums
 * Bugfix: Allow assign from underlying type inside abstract enums
+* Bugfix: Fixed issue with autocompletion in lime/openFL project xmls
+* Bugfix: fixed incorrect handling of for/while loop array initializers
 * Changed: Renaming class will now also rename file/module if names are the same.
 
 ## 1.5.5
