@@ -69,6 +69,11 @@ public class HaxeOperatorResolver {
       if (operator.equals("/")) result = SpecificHaxeClassReference.getFloat( elementContext);
     }
 
+    // avoid marking Enum Patterns as errors (EnumValue.match accepts these inputs)
+    boolean bothAreEnumValues = left.isEnumValue() && right.isEnumValue();
+    if (bothAreEnumValues && (operator.equals("&") || operator.equals("|"))) {
+     return SpecificHaxeClassReference.getDynamic(elementContext);
+    }
 
     if (canAssignLeftToInt && canAssignRightToInt) {
       if (operator.equals("<<")

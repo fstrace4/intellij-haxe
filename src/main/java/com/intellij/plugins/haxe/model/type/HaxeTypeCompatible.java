@@ -232,7 +232,9 @@ public class HaxeTypeCompatible {
             PsiElement commonParent = PsiTreeUtil.findCommonParent(reference.context, haxeClass);
             if (commonParent == haxeClass) {
               SpecificTypeReference underlyingType = haxeClass.getModel().getUnderlyingType();
-              return canAssignToFrom(underlyingType, from);
+              boolean canAssignToUnderlying = canAssignToFrom(underlyingType, from);
+              // we only return true when allowed,  we continue checks below if not as the assign might be Enum to Enum (and not underlying to enum)
+              if (canAssignToUnderlying) return true;
             }
           }
         }
