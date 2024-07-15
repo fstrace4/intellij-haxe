@@ -38,11 +38,14 @@ public class HaxeOperatorResolver {
 
     // while normal abstracts should not be resolved to underlying type, there's an exception for Null<T>
     // in this case we just "unwrap"  without trying to resolve
-    if (left.isNullType()) {
-      left = ((SpecificHaxeClassReference)left).getSpecifics()[0].getType();
+
+    if (left instanceof SpecificHaxeClassReference classReference && (classReference.isTypeDef()|| classReference.isNullType() )) {
+      SpecificTypeReference resolved = classReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+      if (resolved != null) left = resolved;
     }
-    if (right.isNullType()) {
-      right = ((SpecificHaxeClassReference)right).getSpecifics()[0].getType();
+    if (right instanceof SpecificHaxeClassReference classReference && (classReference.isTypeDef()|| classReference.isNullType() )) {
+      SpecificTypeReference resolved = classReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+      if (resolved != null) right = resolved;
     }
 
     SpecificHaxeClassReference intRef = SpecificHaxeClassReference.getInt(elementContext);
