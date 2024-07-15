@@ -657,25 +657,23 @@ public class HaxeExpressionEvaluatorHandlers {
       if (type == null && iterableValue.isString()) {
         type = iterableValue;
       }
+
       if (type != null) {
         if (forStatementExpression != null) {
           ResultHolder handle = handle(forStatementExpression, context, resolver);
-          if (handle.getType() != null) {
-            return handle.getType().createHolder();
-          }
+          return handle.getType().createHolder();
         }
         if (type.isTypeParameter()) {
-          if (iterable.getExpression() instanceof  HaxeReference reference) {
+          if (iterable!= null && iterable.getExpression() instanceof  HaxeReference reference) {
             HaxeResolveResult result = reference.resolveHaxeClass();
             HaxeGenericResolver classResolver = result.getGenericResolver();
             ResultHolder holder = type.createHolder();
             ResultHolder resolved = classResolver.resolve(holder);
-            if (!resolved.isUnknown()) {
-              return resolved;
+            if (resolved != null && !resolved.isUnknown()) {
+              type = resolved.getType();
             }
           }
         }
-        return new ResultHolder(type);
       }
       if ( type != null) {
         if (iterableValue.isConstant()) {
@@ -1464,6 +1462,9 @@ public class HaxeExpressionEvaluatorHandlers {
       if (specifics.length == 1) {
         ResultHolder specific = specifics[0];
         if (specific.isUnknown() || isUnknownLiteralArray(specific)) return true;
+      }
+      if (classType.context instanceof HaxeArrayLiteral arrayLiteral) {
+        return arrayLiteral.getExpressionList() == null;
       }
     }
     return false;
