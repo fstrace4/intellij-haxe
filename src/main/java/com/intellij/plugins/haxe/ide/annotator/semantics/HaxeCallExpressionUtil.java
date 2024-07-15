@@ -850,7 +850,12 @@ public class HaxeCallExpressionUtil {
         SpecificFunctionReference type = methodDeclaration.getModel().getFunctionType(null);
         expressionType = type.createHolder();
       }else if (resolvedExpression instanceof HaxeEnumValueDeclaration valueDeclaration) {
-        return  HaxeTypeResolver.getEnumReturnType(valueDeclaration, referenceExpression.resolveHaxeClass().getGenericResolver());
+        ResultHolder type = HaxeTypeResolver.getEnumReturnType(valueDeclaration, referenceExpression.resolveHaxeClass().getGenericResolver());
+        // convert any EnumValue to its parent enumClass so we can do proper assignCheck
+        if (type.isEnumValueType()) {
+          type = type.getEnumValueType().getEnumClass().createHolder();
+        }
+        return type;
       }
     }
 
@@ -890,6 +895,10 @@ public class HaxeCallExpressionUtil {
           type = SpecificTypeReference.getDynamic(parameter.getParameterPsi()).createHolder();
         }
       }
+    }
+    // convert any EnumValue to its parent enumClass so we can do proper assignCheck
+    if (type.isEnumValueType()) {
+      type = type.getEnumValueType().getEnumClass().createHolder();
     }
     return type;
   }

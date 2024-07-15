@@ -558,6 +558,7 @@ public class HaxeTypeCompatible {
 
   private static boolean handleEnumValue(SpecificHaxeClassReference to, SpecificHaxeClassReference from, @Nullable PsiElement fromOrigin) {
     if(to.getHaxeClassReference().refersToSameClass(from.getHaxeClassReference())) return true;
+    if (from.isTypeParameter()) return true; // if TypeParameter we do not know the real type( enumValue or not) so we just allow assign for now.
     if(from.isEnumClass()) return false;
     // assigning the "real" enum Type (as in just the name of the enum/class in code) to a variable of enum type  should not be allowed,
     // assigning value from  the result of a method call or anything else that has the type as part of a typeTag should be allowed
