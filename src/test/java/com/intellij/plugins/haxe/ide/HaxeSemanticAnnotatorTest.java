@@ -333,7 +333,16 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   }
 
   @Test
+  public void testVariableShadowing() throws Exception {
+    doTestNoFixWithWarnings();
+  }
+
+  @Test
   public void testFinalKeyword() throws Exception {
+    doTestNoFixWithWarnings();
+  }
+  @Test
+  public void testFinalKeywordEnum() throws Exception {
     doTestNoFixWithWarnings();
   }
 
@@ -455,6 +464,11 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   // var a:String = 10;
   @Test
   public void testInitializeStringWithInt() throws Exception {
+    doTestNoFixWithWarnings();
+  }
+
+  @Test
+  public void testInitializeWithLoops() throws Exception {
     doTestNoFixWithWarnings();
   }
 
@@ -849,6 +863,12 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   // but to verify the resolved results we need to do type compare
   @Test
   public void testEnumTypeHints() throws Throwable {
+    myFixture.enableInspections(HaxeUnresolvedSymbolInspection.class);
+    doTestNoFixWithWarnings();
+  }
+
+  @Test
+  public void testEnumSwitchResolve() throws Throwable {
     myFixture.enableInspections(HaxeUnresolvedSymbolInspection.class);
     doTestNoFixWithWarnings();
   }

@@ -27,6 +27,7 @@
 @:coreType abstract Void { }
 @:coreType @:notNull @:runtimeValue abstract Float { }
 @:coreType @:notNull @:runtimeValue abstract Int to Float { }
+@:coreType @:notNull @:runtimeValue abstract Single to Float from Float {} //(java || cs || hl || cpp)
 @:forward @:coreType abstract Null<T> from T to T { }
 @:coreType @:notNull @:runtimeValue @:enum abstract Bool {
   false = 0;

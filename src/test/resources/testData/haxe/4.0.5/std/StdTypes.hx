@@ -60,12 +60,12 @@
 **/
 @:coreType @:notNull @:runtimeValue abstract Int to Float {}
 
-#if (java || cs || hl || cpp)
+//#if (java || cs || hl || cpp)
 /**
 	Single-precision IEEE 32bit float (4-byte).
 **/
 @:coreType @:notNull @:runtimeValue abstract Single to Float from Float {}
-#end
+//#end
 
 /**
 	`Null<T>` is a wrapper that can be used to make the basic types `Int`,

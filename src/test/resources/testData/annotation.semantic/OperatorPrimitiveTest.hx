@@ -1,6 +1,12 @@
 package ;
 // more info at https://haxe.org/manual/expression-operators-binops.html
+
+    typedef TypeDefInt = Int;
+    typedef TypeDefNullInt = Null<Int>;
+
 class OperatorTest {
+    // only available on some targets
+    var si:Single = 1;
 
     // ints
     var i = 1;
@@ -14,14 +20,48 @@ class OperatorTest {
     //strings
     var s = "ABC";
     var t = "ZYX";
+    // typedefs and null
+    var td1:TypeDefInt = 1;
+    var td2:TypeDefNullInt = 2;
+
+    var ni:Null<Int>;
 
     var toDyn:Dynamic;
+    var toSingle:Single;
     var toInt:Int;
     var toFloat:Float;
     var toBool:Bool;
     var toString:String;
 
     public function new() {}
+    //NOTE: single is only supported on some targets
+    public function TestSingle() {
+
+        toSingle = si + j;
+        toSingle = si - j;
+        toSingle = si * j;
+        toSingle = si % j;
+
+
+        toFloat = si / j;
+
+        toBool = si == j;
+        toBool = si != j;
+        toBool = si <  j;
+        toBool = si <= j;
+        toBool = si >  j;
+        toBool = si >= j;
+
+        // unsupported
+        toInt = <error descr="Unable to apply operator ^ for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si ^  j</error>;
+        toInt = <error descr="Unable to apply operator | for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si |  j</error>;
+        toInt = <error descr="Unable to apply operator & for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si &  j</error>;
+        toInt = <error descr="Unable to apply operator << for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si << j</error>;
+        toInt = <error descr="Unable to apply operator >> for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si >> j</error>;
+        toInt = <error descr="Unable to apply operator >>> for types Single and Int" textAttributesKey="ERRORS_ATTRIBUTES">si >>> j</error>;
+
+
+    }
 
     public function TestInt(parameterA:Int, ParameterB = 0) {
         toInt = parameterA + ParameterB;
@@ -51,6 +91,12 @@ class OperatorTest {
         toBool = (i is Int);
         toDyn = i ?? j;
 
+
+        toBool = ni > j;  // null<int>
+        toBool = td1 > j; // typedef = int
+        toBool = td2 > j; // typedef = null<Int>
+
+        // wrong
         toInt =  <error descr="Incompatible type: Float should be Int" textAttributesKey="ERRORS_ATTRIBUTES">i / j</error> ; // WRONG,  result is float
         toBool = <error descr="Unable to apply operator && for types Int and Int" textAttributesKey="ERRORS_ATTRIBUTES">i && j</error>; // WRONG,  no operator for int
         toBool = <error descr="Unable to apply operator || for types Int and Int" textAttributesKey="ERRORS_ATTRIBUTES">i || j</error>; // WRONG,  no operator for int
