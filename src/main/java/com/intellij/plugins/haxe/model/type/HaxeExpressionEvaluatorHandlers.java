@@ -88,15 +88,6 @@ public class HaxeExpressionEvaluatorHandlers {
       String operatorText;
       if (children.length == 3) {
         operatorText = children[1].getText();
-
-        PsiElement LeftChild = children[0];
-        PsiElement rightChild = children[2];
-
-        HaxeGenericResolver lhsResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(LeftChild);
-        HaxeGenericResolver rhsResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(rightChild);
-        ResultHolder lhsType = HaxeTypeResolver.getPsiElementType(LeftChild, expression, lhsResolver);
-        ResultHolder rhsType = HaxeTypeResolver.getPsiElementType(rightChild, expression, rhsResolver);
-
         SpecificTypeReference left = handle(children[0], context, resolver).getType();
         SpecificTypeReference right = handle(children[2], context, resolver).getType();
         left = resolveAnyTypeDefs(left);
