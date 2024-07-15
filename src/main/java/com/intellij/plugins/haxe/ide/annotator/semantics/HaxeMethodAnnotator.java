@@ -119,6 +119,9 @@ public class HaxeMethodAnnotator implements Annotator {
     final HaxeClassModel parentClass = parentMethod != null ? parentMethod.getDeclaringClass() : null;
     final HaxeModifiersModel parentModifiers = (parentMethod != null) ? parentMethod.getModifiers() : null;
 
+    // ignore local functions
+    if (methodPsi instanceof HaxeLocalFunctionDeclaration) return;
+
     if (!METHOD_OVERRIDE_CHECK.isEnabled(methodPsi)) { // TODO: This check is not granular enough.
       // If the rest of the checks are disabled, we don't want to inhibit the signature check.
       if (null != parentMethod) {
