@@ -620,9 +620,10 @@ public class HaxeCallExpressionUtil {
 
 
     if (model == null || model.getEnumValuePsi() == null) return validation; // incomplete new expression
-
     ResultHolder type = HaxeTypeResolver.getEnumReturnType(model.getEnumValuePsi(), new HaxeGenericResolver());
     SpecificEnumValueReference enumValueType = type.getEnumValueType();
+    //guard against unexpected problems (enum usage that does not resolve to an enumValue)
+    if (enumValueType == null) return validation;
     SpecificHaxeClassReference declaringClass = enumValueType.getEnumClass();
 
     // if we cant find a constructor  ignore

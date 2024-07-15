@@ -105,6 +105,12 @@ public class HaxeTypeResolver {
 
   @NotNull
   public static ResultHolder getEnumReturnType(HaxeEnumValueDeclaration comp, HaxeGenericResolver resolver) {
+    HaxeEnumValueModel model = (HaxeEnumValueModel)comp.getModel();
+    HaxeClassModel declaringEnum = model.getDeclaringEnum();
+    // type tags on enum constructors should not affect the returned enumValue
+    if(declaringEnum!= null && !declaringEnum.isAbstractType()) {
+      return new SpecificEnumValueReference(comp, comp.getParent(), resolver).createHolder();
+    }
     ResultHolder result = getTypeFromTypeTag(comp.getReturnType(), comp.getParent());
     if (result.isUnknown()) {
       result = new SpecificEnumValueReference(comp, comp.getParent(), resolver).createHolder();
