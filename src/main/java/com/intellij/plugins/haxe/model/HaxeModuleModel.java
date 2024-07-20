@@ -96,6 +96,13 @@ public class HaxeModuleModel implements HaxeCommonMembersModel {
     return (HaxeFieldModel)HaxeBaseMemberModel.fromPsi(match);
   }
 
+  public HaxeBaseMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
+    final List<HaxeNamedComponent> allNamedComponents = HaxeResolveUtil.getAllNamedSubComponentsFromModule(module);
+    HaxeNamedComponent match = ContainerUtil.find(allNamedComponents, component -> name.equals(component.getName()));
+    if (match == null) return null;
+    return HaxeBaseMemberModel.fromPsi(match);
+  }
+
 
   @NotNull
   public List<HaxeNamedComponent>getAllHaxeNamedComponents(HaxeComponentType componentType) {

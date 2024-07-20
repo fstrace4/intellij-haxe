@@ -26,4 +26,6 @@ public interface HaxeCommonMembersModel extends HaxeExposableModel {
   HaxeFieldModel getField(String name, @Nullable HaxeGenericResolver resolver);
 
   HaxeMethodModel getMethod(String name, @Nullable HaxeGenericResolver resolver);
+
+  HaxeBaseMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver);
 }

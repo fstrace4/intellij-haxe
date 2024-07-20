@@ -272,15 +272,31 @@ public class HaxeFileModel implements HaxeExposableModel {
 
   public HaxeModel resolve(FullyQualifiedInfo info) {
     if (isReferencingCurrentFile(info)) {
-      if (info.className == null) return this;
+      String className = info.className;
+      String memberName = info.memberName;
+      if (className == null) return this;
 
-      HaxeClassModel classModel = getClassModel(info.className);
-      if (classModel != null) {
-        if (info.memberName != null) {
-          return classModel.getMember(info.memberName, null);
-        }
-        return classModel;
+      HaxeModel member = findMember(className, memberName);
+      if (member == null && info.fileName != null) {
+        // workaround to handle issue where member name values get "shifted" to the left because they look a class (starts uppercase)
+        // (className becomes filename, memberName becomes className)
+        // while packages should start lowercase and classes should start with uppercase,
+        // it's not obvious whether  `import somePackage.SomeName.SomeOtherName;` is an import of a non-module named class in a module or a static member in a class
+        // so we check  for "shifted" values
+        member = findMember(info.fileName, className);
       }
+      return member;
+    }
+    return null;
+  }
+
+  private HaxeModel findMember(String className, String memberName) {
+    HaxeClassModel classModel = getClassModel(className);
+    if (classModel != null) {
+      if (memberName != null) {
+        return classModel.getMember(memberName, null);
+      }
+      return classModel;
     }
 
     return null;
