@@ -68,7 +68,8 @@ public class HaxeColorSettingsPage implements ColorSettingsPage {
     new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.instance.member.function"), INSTANCE_MEMBER_FUNCTION),
     new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.static.member.function"), STATIC_MEMBER_FUNCTION),
     new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.instance.member.variable"), INSTANCE_MEMBER_VARIABLE),
-    new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.static.member.variable"), STATIC_MEMBER_VARIABLE)
+    new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.static.member.variable"), STATIC_MEMBER_VARIABLE),
+    new AttributesDescriptor(HaxeBundle.message("haxe.color.settings.description.injected"), HAXE_INJECTED_LANGUAGE_FRAGMENT),
   };
 
   @NonNls private static final Map<String, TextAttributesKey> ourTags = new HashMap<String, TextAttributesKey>();

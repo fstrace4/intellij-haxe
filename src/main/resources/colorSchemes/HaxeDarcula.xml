@@ -48,4 +48,8 @@
       <option name="BACKGROUND" value="3C3C3C"/>
     </value>
   </option>
+  <option name="haxe:INJECTED_LANGUAGE_FRAGMENT">
+    <value>
+    </value>
+  </option>
 </list>

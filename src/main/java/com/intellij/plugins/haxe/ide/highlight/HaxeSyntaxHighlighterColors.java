@@ -21,7 +21,10 @@ package com.intellij.plugins.haxe.ide.highlight;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.HighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.plugins.haxe.HaxeLanguage;
+import org.jetbrains.annotations.NotNull;
 
+import static com.intellij.openapi.editor.colors.EditorColors.INJECTED_LANGUAGE_FRAGMENT;
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
 /**
@@ -99,4 +102,13 @@ public class HaxeSyntaxHighlighterColors {
     createTextAttributesKey(HAXE_LOCAL_VARIABLE, DefaultLanguageHighlighterColors.LOCAL_VARIABLE);
   public static final TextAttributesKey PARAMETER =
     createTextAttributesKey(HAXE_PARAMETER, DefaultLanguageHighlighterColors.PARAMETER);
+
+
+  public static final TextAttributesKey HAXE_INJECTED_LANGUAGE_FRAGMENT = createInjectedLanguageFragmentKey();
+
+
+  static @NotNull TextAttributesKey createInjectedLanguageFragmentKey() {
+    return TextAttributesKey.createTextAttributesKey(  HaxeLanguage.INSTANCE.getID() + ":INJECTED_LANGUAGE_FRAGMENT", INJECTED_LANGUAGE_FRAGMENT);
+  }
+
 }

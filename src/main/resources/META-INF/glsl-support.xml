@@ -1,0 +1,5 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <languageInjector implementation="com.intellij.plugins.haxe.frameworks.openfl.OpenFLShaderLanguageInjector"/>
+  </extensions>
+</idea-plugin>

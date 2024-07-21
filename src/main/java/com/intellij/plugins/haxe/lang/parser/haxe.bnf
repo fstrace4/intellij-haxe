@@ -845,7 +845,7 @@ constantExpression ::= LITINT | LITHEX | LITOCT | LITFLOAT
 
 
 stringLiteralExpression ::= OPEN_QUOTE (REGULAR_STRING_PART | shortTemplateEntry | longTemplateEntry)* CLOSING_QUOTE
-{pin=1 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
+{pin=1 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStringLiteralImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
 
 shortTemplateEntry ::= SHORT_TEMPLATE_ENTRY_START (thisExpression | referenceExpression) {pin=1}
 longTemplateEntry ::= LONG_TEMPLATE_ENTRY_START expression LONG_TEMPLATE_ENTRY_END {pin=1 recoverWhile="long_template_entry_recover"}
