@@ -148,6 +148,7 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
       List<HaxeSwitchCaseExpr> list = switchCase.getSwitchCaseExprList();
       for (HaxeSwitchCaseExpr expr : list) {
         addDeclarations(result, PsiTreeUtil.findChildrenOfType(expr, HaxeSwitchCaseCapture.class));
+        addDeclarations(result, PsiTreeUtil.findChildrenOfType(expr, HaxeExtractorMatchAssignExpression.class));
       }
     }
 

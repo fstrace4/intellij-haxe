@@ -34,9 +34,8 @@ class PatternMachingTest {
                 trace(result > 1);
 
             // matching expression with capture
-            //TODO mlo: needs work
-            case value = <error descr="Incompatible type: Bool should be Int">isEven(_)</error> => true:
-                trace("even number: " + value);
+            case capture = add(_, 1) => mul(_, 3) => isEven(_) => true:
+                trace("even number: " + capture ? "A" : "B");
 
             // match anything
             case _: trace ("anything");

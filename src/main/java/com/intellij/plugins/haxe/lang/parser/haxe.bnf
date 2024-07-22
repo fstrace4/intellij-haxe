@@ -661,13 +661,14 @@ private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchEx
 switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
 // Should NOT be named Expression, because it should not be an expression.
 switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
+ExtractorMatchAssignExpression ::= referenceExpression "=";
 
-ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
+ExtractorMatchExpression ::=  expression '=>' switchCaseExpr {extends="expression"}
 
 switchEnumBitOperationExpression ::= enumValueReference (bitOperation enumValueReference)+ {extends="expression"}
 private switchExtractorPart ::= switchCaseExtractor (bitOperation switchCaseExtractor)*
 switchExtractorExpression ::=  "("switchExtractorPart")" | switchExtractorPart  {extends="expression"}
-private extractorMatchExpressionVariant::= '('ExtractorMatchExpression')' | '['ExtractorMatchExpression']'  | ExtractorMatchExpression
+private extractorMatchExpressionVariant::= ExtractorMatchAssignExpression? ('('ExtractorMatchExpression')' | '['ExtractorMatchExpression']'  | ExtractorMatchExpression)
 switchCaseExtractor ::= extractorMatchExpressionVariant | enumArgumentExtractor | variableCaptureExpression {extends="expression"}
 //TODO mlo: clean up and bind to classes
 switchExtractorExpressionArrayLiteral ::= '[' (enumExtractorArgumentList ','?)? ']'
@@ -696,7 +697,7 @@ enumArgumentExtractor ::= enumValueReference '(' enumExtractorArgumentList ')'  
 
 variableCaptureExpression ::= callOrArrayAccess ('=>' switchCaseExpr)+  {pin=2 extends="expression"}
 
-switchCaseCapture ::= <<startWithLowercaseOrUnderscoreCheck>> componentName varInit
+switchCaseCapture ::= <<startWithLowercaseOrUnderscoreCheck>> componentName (("=" extractorMatchExpressionVariant  ) | varInit)
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
 
 // This rule is superseded by localVarDeclarationList (in one of its degenerate configurations), as part of expression.
