@@ -13,7 +13,6 @@ public class HaxeUnresolvedSymbolQuickFixes {
 
 
   public static LocalQuickFix createFunctionQuickfix(HaxeCallExpression expression) {
-
     return new HaxeIntroduceFunctionIntention(expression);
   }
 

@@ -81,9 +81,25 @@ public class HaxeUnresolvedSymbolInspection extends LocalInspectionTool {
             isOnTheFly
           ));
         }
+
+        PsiElement element = nameIdentifier;
+        TextRange from = TextRange.from(0, element.getTextLength());
+        if (reference.getParent() instanceof HaxeCallExpression callExpression) {
+          //"expand" so quickfix covers entire call expression
+          element = callExpression;
+          HaxeExpression expression = callExpression.getExpression();
+          if (expression == null) return;
+          @NotNull PsiElement[] children = expression.getChildren();
+          PsiElement child = children[children.length - 1];
+          TextRange rangeInParent = child.getTextRangeInParent();
+          int offset = rangeInParent.getStartOffset();
+          from = TextRange.from(offset, callExpression.getTextLength() - offset);
+        }
+
+
         result.add(manager.createProblemDescriptor(
-          nameIdentifier,
-          TextRange.from(0, nameIdentifier.getTextLength()),
+          element,
+          from,
           getDisplayName(),
           ProblemHighlightType.LIKE_UNKNOWN_SYMBOL,
           isOnTheFly,
@@ -97,8 +113,13 @@ public class HaxeUnresolvedSymbolInspection extends LocalInspectionTool {
   private LocalQuickFix[] createQuickfixesIfAvailable(HaxeReferenceExpression reference) {
     List<LocalQuickFix> list = new ArrayList<>();
     if (reference.getParent() instanceof HaxeCallExpression callExpression) {
-      list.add(createMethodQuickfix(callExpression));
-      list.add(createFunctionQuickfix(callExpression));
+      HaxeExpression expression = callExpression.getExpression();
+      if (expression != null) {
+        list.add(createMethodQuickfix(callExpression));
+        if (expression.getChildren().length == 1) {
+          list.add(createFunctionQuickfix(callExpression));
+        }
+      }
     }else {
       list.add(createLocalVarQuickfix(reference));
       list.add(createFieldQuickfix(reference));

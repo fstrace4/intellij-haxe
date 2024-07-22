@@ -16,7 +16,7 @@ class PatternMachingTest {
         // correct
         switch(enumVal) {
             //TODO mlo : needs resolver work
-            case TString(x = <warning descr="Unresolved symbol">s</warning>): x.<warning descr="Unresolved symbol">toLowerCase</warning>();
+            case TString(x = <warning descr="Unresolved symbol">s</warning>): x.<warning descr="Unresolved symbol">toLowerCase()</warning>;
             case TString(s): s.toLowerCase();
             case TInt(i): i  * 2;
             case TAny(a): a.indexOf("");
@@ -29,7 +29,7 @@ class PatternMachingTest {
             case TString(s): <error descr="Unable to apply operator * for types String and Int = 2">s * 2</error>; // WRONG
             case TInt(i): i.<warning descr="Unresolved symbol">length</warning>; // WRONG
             case TAny(a): a.indexOf(<error descr="Type mismatch (Expected: 'String' got: 'Int')">1</error>);
-            case TDoubleVal(a, b): b.<warning descr="Unresolved symbol">charAt</warning>(a) ; // WRONG
+            case TDoubleVal(a, b): b.<warning descr="Unresolved symbol">charAt(a)</warning> ; // WRONG
         }
     }
 }

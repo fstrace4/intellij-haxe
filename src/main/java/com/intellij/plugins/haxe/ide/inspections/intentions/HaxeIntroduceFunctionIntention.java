@@ -25,7 +25,8 @@ public class HaxeIntroduceFunctionIntention extends HaxeUnresolvedSymbolIntentio
 
   public HaxeIntroduceFunctionIntention(HaxeCallExpression callExpression) {
     super(callExpression);
-    methodName = callExpression.getExpression().getText();
+    @NotNull PsiElement[] children = callExpression.getExpression().getChildren();
+    methodName = children[children.length-1].getText();
   }
 
 

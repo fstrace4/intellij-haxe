@@ -96,13 +96,10 @@ public class HaxeElementGenerator {
   private static List<HaxeNamedComponent> sortNamedSubComponents(List<HaxeNamedComponent> unsorted) {
     // Can't sort a hashed collection, so we must copy it to an orderable type.
     List<HaxeNamedComponent> sorted = new ArrayList<HaxeNamedComponent>(unsorted);
-    Collections.sort(sorted, new Comparator<HaxeNamedComponent>() {
-      @Override
-      public int compare(HaxeNamedComponent o1, HaxeNamedComponent o2) {
-        String name1 = o1.getName();
-        String name2 = o2.getName();
-        return name1.compareTo(name2);
-      }
+    sorted.sort((o1, o2) -> {
+      String name1 = o1.getName();
+      String name2 = o2.getName();
+      return name1.compareTo(name2);
     });
     return sorted;
   }

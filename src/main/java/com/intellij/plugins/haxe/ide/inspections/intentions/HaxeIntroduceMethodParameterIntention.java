@@ -21,7 +21,8 @@ public class HaxeIntroduceMethodParameterIntention extends HaxeUnresolvedSymbolI
 
   public HaxeIntroduceMethodParameterIntention(HaxeReferenceExpression expression, HaxeMethodDeclaration declaration) {
     super(expression);
-    expressionText = expression.getText();
+    @NotNull PsiElement[] children = expression.getChildren();
+    expressionText = children[children.length-1].getText();
     myDeclarationName = declaration.getName();
   }
 

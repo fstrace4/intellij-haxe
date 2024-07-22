@@ -25,7 +25,8 @@ public class HaxeIntroduceFieldIntention extends HaxeUnresolvedSymbolIntentionBa
 
   public HaxeIntroduceFieldIntention(HaxeReferenceExpression expression) {
     super(expression);
-    expressionText = expression.getText();
+    @NotNull PsiElement[] children = expression.getChildren();
+    expressionText = children[children.length-1].getText();
 
     HaxeClass aClass = PsiTreeUtil.getParentOfType(expression, HaxeClass.class);
 

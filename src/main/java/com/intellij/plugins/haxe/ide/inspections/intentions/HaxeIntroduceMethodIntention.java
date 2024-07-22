@@ -28,7 +28,8 @@ public class HaxeIntroduceMethodIntention
 
   public HaxeIntroduceMethodIntention(HaxeCallExpression callExpression) {
     super(callExpression);
-    methodName = callExpression.getExpression().getText();
+    @NotNull PsiElement[] children = callExpression.getExpression().getChildren();
+    methodName = children[children.length-1].getText();
   }
 
 
