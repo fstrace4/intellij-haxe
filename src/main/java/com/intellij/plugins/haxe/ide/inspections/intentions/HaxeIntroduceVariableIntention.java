@@ -8,6 +8,7 @@ import com.intellij.plugins.haxe.lang.psi.HaxeBlockStatement;
 import com.intellij.plugins.haxe.lang.psi.HaxeReferenceExpression;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +32,7 @@ public class HaxeIntroduceVariableIntention
 
 
   @Override
-  protected void perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor) {
+  protected PsiFile perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor, boolean preview) {
     HaxeBlockStatement block = PsiTreeUtil.getParentOfType(element, HaxeBlockStatement.class);
     if (block != null) {
       PsiElement insertBeforeElement = findInsertBeforeElement(element, block);
@@ -39,6 +40,7 @@ public class HaxeIntroduceVariableIntention
       block.addBefore(variableDeclaration, insertBeforeElement);
       block.addBefore(createNewLine(project), insertBeforeElement);
     }
+    return element.getContainingFile();
   }
 
 

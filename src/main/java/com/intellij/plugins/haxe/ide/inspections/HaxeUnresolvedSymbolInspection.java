@@ -21,6 +21,7 @@ import com.intellij.codeInspection.*;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.ide.annotator.HaxeAnnotatingVisitor;
+import com.intellij.plugins.haxe.ide.inspections.intentions.HaxeIntroduceFieldIntention;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -112,18 +113,26 @@ public class HaxeUnresolvedSymbolInspection extends LocalInspectionTool {
 
   private LocalQuickFix[] createQuickfixesIfAvailable(HaxeReferenceExpression reference) {
     List<LocalQuickFix> list = new ArrayList<>();
+    HaxeClass targetClass = HaxeIntroduceFieldIntention.getTargetClass(reference);
     if (reference.getParent() instanceof HaxeCallExpression callExpression) {
       HaxeExpression expression = callExpression.getExpression();
       if (expression != null) {
-        list.add(createMethodQuickfix(callExpression));
         if (expression.getChildren().length == 1) {
           list.add(createFunctionQuickfix(callExpression));
         }
+        if (targetClass instanceof HaxeClassDeclaration || targetClass instanceof HaxeExternClassDeclaration) {
+          list.add(createMethodQuickfix(callExpression, targetClass));
+        }
       }
     }else {
-      list.add(createLocalVarQuickfix(reference));
-      list.add(createFieldQuickfix(reference));
-      list.add(createMethodParameterQuickfix(reference));
+      @NotNull PsiElement[] children = reference.getChildren();
+      if (children.length  == 1) { // references is "local"
+        list.add(createLocalVarQuickfix(reference));
+        list.add(createMethodParameterQuickfix(reference));
+      }
+      if (targetClass instanceof HaxeClassDeclaration || targetClass instanceof HaxeExternClassDeclaration) {
+        list.add(createFieldQuickfix(reference, targetClass));
+      }
     }
     return list.stream().filter(Objects::nonNull).toArray(LocalQuickFix[]::new);
   }

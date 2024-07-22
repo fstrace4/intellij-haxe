@@ -27,7 +27,11 @@ public abstract class HaxeUnresolvedSymbolIntentionBase<T extends PsiElement> ex
 
   public HaxeUnresolvedSymbolIntentionBase(@NotNull T element) {
     super(element);
-    myPsiElementPointer = SmartPointerManager.getInstance(element.getProject()).createSmartPsiElementPointer(element);
+    myPsiElementPointer = createPointer(element);
+  }
+
+   protected <T extends PsiElement> @NotNull SmartPsiElementPointer<T> createPointer(@NotNull T element) {
+    return SmartPointerManager.getInstance(element.getProject()).createSmartPsiElementPointer(element);
   }
 
   @Override
@@ -37,22 +41,43 @@ public abstract class HaxeUnresolvedSymbolIntentionBase<T extends PsiElement> ex
 
 
 
+  public static @Nullable HaxeClass getTargetClass(HaxeReferenceExpression expression) {
+    @NotNull PsiElement[] children = expression.getChildren();
+
+    if(children.length == 1) {
+      return PsiTreeUtil.getParentOfType(expression, HaxeClass.class);
+    }else if (children[0] instanceof HaxeReference refChild) {
+      HaxeExpressionEvaluatorContext evaluate = HaxeExpressionEvaluator.evaluate(refChild, null);
+      ResultHolder result = evaluate.result;
+      if(!result.isUnknown() && result.isClassType()) {
+        if (result.getClassType() != null)return result.getClassType().getHaxeClass();
+      }
+    }
+    return null;
+  }
+
+
+
   @Override
   public @NotNull IntentionPreviewInfo generatePreview(@NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file) {
 
     PsiElement element = myPsiElementPointer.getElement();
 
-    PsiElement original = fileCopyClonePsiElement(element);
-    PsiElement copy = fileCopyClonePsiElement(element);
+    PsiElement original = copyFileAndReturnClonedPsiElement(element);
+    PsiElement copy = copyFileAndReturnClonedPsiElement(element);
 
-    perform(project, copy, editor);
+    copy = perform(project, copy, editor, true);
     // this might not be the best solution but it seems to work.
     // in order to get the correct line-number we need to compare the entire file and to only get the changes we need identical formatting
     String originalFormatted = CodeStyleManager.getInstance(project).reformat(original.getContainingFile(), true).getText();
     String copyReformated = CodeStyleManager.getInstance(project).reformat(copy.getContainingFile(), true).getText();
 
 
-    return new IntentionPreviewInfo.CustomDiff(HaxeFileType.INSTANCE, null, originalFormatted, copyReformated, true);
+    return new IntentionPreviewInfo.CustomDiff(HaxeFileType.INSTANCE, getPreviewName(), originalFormatted, copyReformated, true);
+  }
+
+  protected String getPreviewName() {
+    return null;
   }
 
 
@@ -63,10 +88,10 @@ public abstract class HaxeUnresolvedSymbolIntentionBase<T extends PsiElement> ex
                      @NotNull PsiElement startElement,
                      @NotNull PsiElement endElement) {
 
-    perform(project, myPsiElementPointer.getElement(), editor);
+    perform(project, myPsiElementPointer.getElement(), editor, false);
   }
 
-  protected abstract void perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor);
+  protected abstract PsiFile perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor, boolean preview);
 
 
 
@@ -83,10 +108,17 @@ public abstract class HaxeUnresolvedSymbolIntentionBase<T extends PsiElement> ex
     return false;
   }
 
-  protected PsiElement fileCopyClonePsiElement(PsiElement psiElement) {
+  protected <T extends PsiElement> T copyFileAndReturnClonedPsiElement(T psiElement) {
     PsiFile originalFile = psiElement.getContainingFile();
     PsiFile fileCopy = (PsiFile)originalFile.copy();
-    return fileCopy.findElementAt(psiElement.getTextOffset());
+    PsiElement element = fileCopy.findElementAt(psiElement.getTextOffset());
+    while(element != null
+          && (!element.getTextRange().equals(psiElement.getTextRange())
+              || element.getClass() != psiElement.getClass())
+    ) {
+      element = element.getParent();
+    }
+    return (T)element;
   }
 
 

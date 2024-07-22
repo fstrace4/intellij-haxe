@@ -11,6 +11,8 @@ import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.plugins.haxe.util.HaxeNameSuggesterUtil;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -24,12 +26,15 @@ public class HaxeIntroduceMethodIntention
   extends HaxeUnresolvedSymbolIntentionBase<HaxeCallExpression>
   implements HighPriorityAction {
 
+  protected final @NotNull SmartPsiElementPointer<HaxeClass> myPsiTargetPointer;
+
   private final String methodName;
 
-  public HaxeIntroduceMethodIntention(HaxeCallExpression callExpression) {
+  public HaxeIntroduceMethodIntention(@NotNull HaxeCallExpression callExpression, @NotNull HaxeClass targetClass) {
     super(callExpression);
     @NotNull PsiElement[] children = callExpression.getExpression().getChildren();
     methodName = children[children.length-1].getText();
+    myPsiTargetPointer  = createPointer(targetClass);
   }
 
 
@@ -38,15 +43,23 @@ public class HaxeIntroduceMethodIntention
     return "Create method '" + methodName + "'";
   }
 
+  @Override
+  protected String getPreviewName() {
+    HaxeClass aClass = myPsiTargetPointer.getElement();
+    return  aClass == null ? null : aClass.getQualifiedName();
+  }
+
 
   @Override
-  protected void perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor) {
-    PsiElement anchor = findInsertBeforeElement(element);
+  protected PsiFile perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor, boolean preview) {
+    PsiElement anchor = findInsertBeforeElement(element, preview);
+
     PsiElement methodDeclaration = generateDeclaration(project).copy();
     anchor.getParent().addBefore(methodDeclaration, anchor);
     anchor.getParent().addBefore(createNewLine(project), anchor);
 
     CodeStyleManager.getInstance(project).reformat(methodDeclaration);
+    return anchor.getContainingFile();
   }
 
 
@@ -109,15 +122,20 @@ public class HaxeIntroduceMethodIntention
   }
 
 
-  private static @NotNull PsiElement findInsertBeforeElement(@NotNull PsiElement startElement) {
-    HaxeClass aClass = PsiTreeUtil.getParentOfType(startElement, HaxeClass.class);
+  private @NotNull PsiElement findInsertBeforeElement(@NotNull PsiElement startElement, boolean readOnly) {
+    HaxeClass aClass = myPsiTargetPointer.getElement();
     if (aClass != null) {
+      if (readOnly) aClass = copyFileAndReturnClonedPsiElement(aClass);
+
       List<HaxeMethod> methodList = aClass.getHaxeMethodsSelf(null);
       if (!methodList.isEmpty()) {
         return methodList.get(methodList.size() - 1);
       }
+      if (aClass.getRBrace() != null) return aClass.getRBrace();
     }
     HaxeModule module = PsiTreeUtil.getParentOfType(startElement, HaxeModule.class);
     return module.getLastChild();
   }
+
+
 }

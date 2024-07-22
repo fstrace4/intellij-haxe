@@ -8,6 +8,7 @@ import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilCore;
@@ -18,20 +19,21 @@ import java.util.List;
 
 public class HaxeIntroduceFieldIntention extends HaxeUnresolvedSymbolIntentionBase<HaxeReferenceExpression> {
 
+  protected final @NotNull SmartPsiElementPointer<HaxeClass> myPsiTargetPointer;
+
   private final String myModuleName;
   private final String myClassName;
 
   private final String expressionText;
 
-  public HaxeIntroduceFieldIntention(HaxeReferenceExpression expression) {
+  public HaxeIntroduceFieldIntention(@NotNull HaxeReferenceExpression expression,  @NotNull HaxeClass targetClass) {
     super(expression);
     @NotNull PsiElement[] children = expression.getChildren();
     expressionText = children[children.length-1].getText();
-
-    HaxeClass aClass = PsiTreeUtil.getParentOfType(expression, HaxeClass.class);
+    myPsiTargetPointer = createPointer(targetClass);
 
     myModuleName = expression.getContainingFile().getName();
-    myClassName = aClass != null ? aClass.getName() : null;
+    myClassName = targetClass.getName();
 
   }
 
@@ -42,24 +44,36 @@ public class HaxeIntroduceFieldIntention extends HaxeUnresolvedSymbolIntentionBa
     return "Create field '" + expressionText + "' in " + scope;
   }
 
+  @Override
+  protected String getPreviewName() {
+    HaxeClass aClass = myPsiTargetPointer.getElement();
+    return  aClass == null ? null : aClass.getQualifiedName();
+  }
 
-  protected void perform(@NotNull Project project, PsiElement expression, @NotNull Editor editor) {
-    PsiFile containingFile = expression.getContainingFile();
-    InsertInfo insertInfo = findInsertInfo(expression);
 
-    HaxeFieldDeclaration variableDeclaration = (HaxeFieldDeclaration)generateDeclaration(project).copy();
+  protected PsiFile perform(@NotNull Project project, PsiElement element, @NotNull Editor editor, boolean preview) {
+    if (element instanceof  HaxeReferenceExpression expression) {
+      PsiFile containingFile = expression.getContainingFile();
+      InsertInfo insertInfo = findInsertInfo(expression, preview);
 
-    PsiElement anchor = insertInfo.element();
-    PsiUtilCore.ensureValid(anchor);
+      HaxeFieldDeclaration variableDeclaration = (HaxeFieldDeclaration)generateDeclaration(project).copy();
 
-    if (insertInfo.isAfter()) {
-      anchor.getParent().addAfter(variableDeclaration, anchor);
-    }else {
-      anchor.getParent().addBefore(variableDeclaration, anchor);
+      PsiElement anchor = insertInfo.element();
+      PsiUtilCore.ensureValid(anchor);
+
+      if (insertInfo.isAfter()) {
+        anchor.getParent().addAfter(variableDeclaration, anchor);
+      } else {
+        anchor.getParent().addBefore(variableDeclaration, anchor);
+      }
+
+      CodeInsightUtilCore.forcePsiPostprocessAndRestoreElement(containingFile);
+      CodeStyleManager.getInstance(project)
+        .reformatNewlyAddedElement(variableDeclaration.getParent().getNode(), variableDeclaration.getNode());
+
+      return variableDeclaration.getContainingFile();
     }
-
-    CodeInsightUtilCore.forcePsiPostprocessAndRestoreElement(containingFile);
-    CodeStyleManager.getInstance(project).reformatNewlyAddedElement(variableDeclaration.getParent().getNode(), variableDeclaration.getNode());
+    return element.getContainingFile();
   }
 
 
@@ -71,11 +85,11 @@ public class HaxeIntroduceFieldIntention extends HaxeUnresolvedSymbolIntentionBa
 
 
 
-  private @NotNull InsertInfo findInsertInfo(@NotNull PsiElement expression) {
+  private @NotNull InsertInfo findInsertInfo(@NotNull HaxeReferenceExpression expression, boolean readOnly) {
     HaxeModule myModule = PsiTreeUtil.getParentOfType(expression, HaxeModule.class);
-    HaxeClass myClass = PsiTreeUtil.getParentOfType(expression, HaxeClass.class);
-
+    HaxeClass myClass = myPsiTargetPointer.getElement();
     if (myClass != null) {
+      if (readOnly) myClass = copyFileAndReturnClonedPsiElement(myClass);
       return findInsertClass(expression, myClass);
     } else if (myModule != null) {
       List<? extends PsiElement> list = myModule.getModuleFieldDeclarationList();

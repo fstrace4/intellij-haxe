@@ -10,6 +10,7 @@ import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.plugins.haxe.util.HaxeNameSuggesterUtil;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public class HaxeIntroduceFunctionIntention extends HaxeUnresolvedSymbolIntentio
 
 
   @Override
-  protected void perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor) {
+  protected PsiFile perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor, boolean preview) {
     HaxeBlockStatement block = PsiTreeUtil.getParentOfType(element, HaxeBlockStatement.class);
     if (block != null) {
       PsiElement anchor = findInsertBeforeElement(element, block);
@@ -47,6 +48,7 @@ public class HaxeIntroduceFunctionIntention extends HaxeUnresolvedSymbolIntentio
 
       CodeStyleManager.getInstance(project).reformat(methodDeclaration);
     }
+    return element.getContainingFile();
   }
 
 

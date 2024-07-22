@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilCore;
@@ -35,7 +36,7 @@ public class HaxeIntroduceMethodParameterIntention extends HaxeUnresolvedSymbolI
 
 
   @Override
-  protected void perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor) {
+  protected PsiFile perform(@NotNull Project project, @NotNull PsiElement element, @NotNull Editor editor, boolean preview) {
     HaxeMethodDeclaration methodDeclaration = PsiTreeUtil.getParentOfType(element, HaxeMethodDeclaration.class);
 
     if (methodDeclaration != null) {
@@ -52,8 +53,8 @@ public class HaxeIntroduceMethodParameterIntention extends HaxeUnresolvedSymbolI
 
         CodeStyleManager.getInstance(project).reformat(parameterList);
       }
-
     }
+    return element.getContainingFile();
   }
 
 
