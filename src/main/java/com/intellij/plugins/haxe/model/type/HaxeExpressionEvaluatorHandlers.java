@@ -1683,12 +1683,12 @@ public class HaxeExpressionEvaluatorHandlers {
           }
 
           if (parentForLoop.getKeyValueIterator() == null) {
-            HaxeMemberModel iterator = haxeClassReference.getHaxeClassModel().getMember("iterator", resolver);
+            HaxeBaseMemberModel iterator = haxeClassReference.getHaxeClassModel().getMember("iterator", resolver);
             if (iterator instanceof HaxeMethodModel methodModel) {
               return methodModel.getReturnType(localResolver);
             }
           }else {
-            HaxeMemberModel iterator = haxeClassReference.getHaxeClassModel().getMember("keyValueIterator", resolver);
+            HaxeBaseMemberModel iterator = haxeClassReference.getHaxeClassModel().getMember("keyValueIterator", resolver);
             if (iterator instanceof HaxeMethodModel methodModel) {
               return methodModel.getReturnType(localResolver);
             }

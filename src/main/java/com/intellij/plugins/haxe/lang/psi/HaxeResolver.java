@@ -310,7 +310,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           SpecificHaxeClassReference type = possibleType.getClassType();
           HaxeClassModel classModel = type.getHaxeClassModel();
           if(classModel!= null) {
-            HaxeMemberModel member = classModel.getMember(reference.getText(), null);
+            HaxeBaseMemberModel member = classModel.getMember(reference.getText(), null);
             if (member != null) return List.of(member.getNameOrBasePsi());
           }
         }
@@ -947,7 +947,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
         if (enumClass != null) {
           HaxeClassModel model = enumClass.getHaxeClassModel();
           if (model != null) {
-            HaxeMemberModel enumValue = model.getMember(argumentExtractor.getEnumValueReference().getText(), null);
+            HaxeBaseMemberModel enumValue = model.getMember(argumentExtractor.getEnumValueReference().getText(), null);
             if (enumValue instanceof  HaxeEnumValueModel enumValueModel) {
               int argumentIndex = findExtractorIndex(switchCaseExpr.getChildren(), argumentExtractor);
               if (argumentIndex > -1) {
@@ -968,7 +968,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     HaxeClass aClass = result.getHaxeClass();
     if (aClass != null) {
       HaxeClassModel model = aClass.getModel();
-      HaxeMemberModel member = model.getMember(enumType.getText(), null);
+      HaxeBaseMemberModel member = model.getMember(enumType.getText(), null);
       if (member instanceof HaxeEnumValueModel enumValueModel) {
         HaxeParameterList parameters = enumValueModel.getConstructorParameters();
         if (parameters != null) {
@@ -1305,7 +1305,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     SpecificHaxeClassReference classType = result.getClassType();
     HaxeClass  haxeClass = classType != null ? classType.getHaxeClass() : null;
     if (haxeClass != null) {
-      HaxeMemberModel member = haxeClass.getModel().getMember(identifier, classType.getGenericResolver());
+      HaxeBaseMemberModel member = haxeClass.getModel().getMember(identifier, classType.getGenericResolver());
       if (member != null) {
         //return Collections.singletonList(member.getBasePsi());
         //debugList.add(Collections.singletonList(member.getNameOrBasePsi()));
@@ -1446,7 +1446,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           }
         }
 
-        HaxeMemberModel member = model.getMember(helperName, resolveResult.getGenericResolver());
+        HaxeBaseMemberModel member = model.getMember(helperName, resolveResult.getGenericResolver());
         if (member != null) return member.getNamePsi();
 
         if (model.isAbstractType() && ((HaxeAbstractClassModel)model).hasForwards()) {
@@ -1613,7 +1613,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
     if (leftClass != null) {
       final HaxeClassModel leftClassModel = leftClass.getModel();
-      HaxeMemberModel member = leftClassModel.getMember(reference.getReferenceName(), resolver);
+      HaxeBaseMemberModel member = leftClassModel.getMember(reference.getReferenceName(), resolver);
       if (member != null) return asList(member.getNamePsi());
 
       // if class is abstract try find in forwards

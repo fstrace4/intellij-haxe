@@ -28,6 +28,8 @@ import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificTypeReference;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
 import com.intellij.plugins.haxe.util.HaxePresentableUtil;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
@@ -138,6 +140,12 @@ abstract public class AbstractHaxeNamedComponent extends HaxePsiCompositeElement
             if (!typeName.isEmpty()) {
               result.append(':');
               result.append(typeName);
+            }
+          } else if (model instanceof HaxeObjectLiteralMemberModel objectLiteralMemberModel) {
+            ResultHolder type = objectLiteralMemberModel.getResultType(null);
+            if(type != null && !type.isUnknown()) {
+              result.append(':');
+              result.append(type.getType().withoutConstantValue().toPresentationString());
             }
           }
         }

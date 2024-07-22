@@ -53,7 +53,7 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      STRING_LITERAL_EXPRESSION
+                      OBJECT_LITERAL_NON_COMPONENT_NAME
                         HaxePsiToken:OPEN_QUOTE('"')
                         HaxePsiToken:REGULAR_STRING_PART('$set')
                         HaxePsiToken:CLOSING_QUOTE('"')
@@ -61,7 +61,7 @@ Haxe File
                       OBJECT_LITERAL
                         HaxePsiToken:{('{')
                         OBJECT_LITERAL_ELEMENT
-                          STRING_LITERAL_EXPRESSION
+                          OBJECT_LITERAL_NON_COMPONENT_NAME
                             HaxePsiToken:OPEN_QUOTE('"')
                             HaxePsiToken:REGULAR_STRING_PART('events.')
                             HaxePsiToken:REGULAR_STRING_PART('$')

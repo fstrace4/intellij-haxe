@@ -26,6 +26,7 @@ import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeObjectLiteralImpl;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.psi.*;
 import com.intellij.psi.search.LocalSearchScope;
@@ -316,6 +317,10 @@ public class HaxeExpressionEvaluator {
       return handleVarInit(context, resolver, varInit);
     }
 
+    if(element instanceof HaxeObjectLiteralElement objectLiteralElement) {
+      return handle(objectLiteralElement.getExpression(), context, resolver);
+    }
+
     if (element instanceof HaxeValueExpression valueExpression) {
       return handleValueExpression(context, resolver, valueExpression);
     }
@@ -330,6 +335,10 @@ public class HaxeExpressionEvaluator {
 
     if (element instanceof HaxeFunctionLiteral function) {
       return resolveWithCache(function, resolver, () -> handleFunctionLiteral(context, resolver, function));
+    }
+
+    if (element instanceof HaxeObjectLiteralImpl objectLiteral) {
+      return SpecificHaxeAnonymousReference.withoutGenerics(new HaxeClassReference(objectLiteral.getModel(), objectLiteral)).createHolder();
     }
 
     if (element instanceof HaxePsiToken primitive) {
@@ -408,13 +417,7 @@ public class HaxeExpressionEvaluator {
 
     }
     // TODO handle postfix (ex. myVar++ etc)
-    // todo handle object literals
-    if (element instanceof HaxeObjectLiteral objectLiteral) {
-      //TODO needs class or model to  extract fields and their corresponding values
-      // TODO we must also be able to do CanAssign
-      //return SpecificHaxeAnonymousReference.withoutGenerics(new HaxeClassReference("{...}", objectLiteral))
-      //  .createHolder();
-    }
+
 
     if(log.isDebugEnabled()) log.debug("Unhandled " + element.getClass());
     return createUnknown(element);

@@ -99,6 +99,17 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
   }
 
 
+  public static boolean isValidStringIdentifier(PsiBuilder builder_, int level_) {
+    IElementType elementType = builder_.rawLookup(0);
+    if (elementType == REGULAR_STRING_PART) {
+      String text = builder_.getTokenText();
+      if(text != null && text.matches("[a-zA-Z_][a-zA-Z_0-9]*")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Make a semi-colon optional in the case that it's preceded by a block statement.
    *

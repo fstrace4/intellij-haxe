@@ -476,6 +476,10 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   public void testAssignIntToString() throws Exception {
     doTestNoFixWithWarnings();
   }
+  @Test
+  public void testAssignObjectLiteral() throws Exception {
+    doTestNoFixWithWarnings();
+  }
 
 
   // var a:Float = 100;

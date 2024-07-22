@@ -948,10 +948,26 @@ anonymousTypeField ::= "?"? componentName typeTag
 private emptyObjectLiteral ::= '{' '}' {name="Object Literal"}
 private nonEmptyObjectLiteral ::= '{' objectLiteralElementList '}' {pin=2}
 objectLiteral ::= nonEmptyObjectLiteral | emptyObjectLiteral
+{mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeObjectLiteralTypeImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 
 private objectLiteralElementList ::= objectLiteralElement (',' objectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
 private object_literal_list_recover ::= !('}')
-// extractor match expression can contain ObjectLiterals and we need to allow extractors inside these expressions
+//TODO extractor match expression can contain ObjectLiterals and we need to allow extractors inside these expressions
 
-objectLiteralElement ::= (identifier | stringLiteralExpression) ':' expression {pin=2 recoverWhile="object_literal_part_recover"}
+objectLiteralIdentifier ::= (<<isValidStringIdentifier>> REGULAR_STRING_PART) | macroIdentifier | normalIdentifier  {extends=identifier}
+objectLiteralComponentName ::=  (OPEN_QUOTE objectLiteralIdentifier CLOSING_QUOTE) | objectLiteralIdentifier
+{ extends=componentName methods=[identifier="objectLiteralIdentifier"]}
+
+//lazy way to consume strings that are not valid as identifers
+objectLiteralNonComponentName ::= OPEN_QUOTE (REGULAR_STRING_PART | shortTemplateEntry | longTemplateEntry)* CLOSING_QUOTE
+
+objectLiteralElement ::=  (objectLiteralComponentName | objectLiteralNonComponentName) ':' expression
+{
+  pin=2
+  recoverWhile="object_literal_part_recover"
+  methods=[componentName="objectLiteralComponentName" other="stringLiteralExpression"]
+  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl"
+  implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"
+}
+
 private object_literal_part_recover ::= !(',' | '}')

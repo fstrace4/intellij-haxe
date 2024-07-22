@@ -68,8 +68,9 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('pos')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('pos')
                       HaxePsiToken::(':')
                       LITERAL_EXPRESSION
                         HaxePsiToken:LITINT('0')

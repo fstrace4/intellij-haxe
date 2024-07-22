@@ -27,6 +27,7 @@ import com.intellij.patterns.StandardPatterns;
 import com.intellij.plugins.haxe.HaxeLanguage;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
 import com.intellij.plugins.haxe.model.HaxeEnumValueModel;
 import com.intellij.plugins.haxe.model.HaxeMemberModel;
 import com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator;
@@ -235,8 +236,8 @@ public class HaxeKeywordCompletionContributor extends CompletionContributor {
       List<String> alreadyInUse =
         list.stream().map(HaxeSwitchCase::getSwitchCaseExprList).filter(not(List::isEmpty)).map(exprs -> exprs.get(0).getText())
           .toList();
-      List<HaxeMemberModel> members = classReference.getHaxeClassModel().getMembers(null);
-      for (HaxeMemberModel member : members) {
+      List<HaxeBaseMemberModel> members = classReference.getHaxeClassModel().getMembers(null);
+      for (HaxeBaseMemberModel member : members) {
 
         if (member instanceof HaxeEnumValueModel model) {
           String name = member.getName();

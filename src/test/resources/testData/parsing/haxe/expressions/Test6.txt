@@ -30,15 +30,17 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('age')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('age')
                       HaxePsiToken::(':')
                       LITERAL_EXPRESSION
                         HaxePsiToken:LITINT('26')
                     HaxePsiToken:,(',')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('name')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('name')
                       HaxePsiToken::(':')
                       STRING_LITERAL_EXPRESSION
                         HaxePsiToken:OPEN_QUOTE('"')

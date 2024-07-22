@@ -1279,8 +1279,9 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
         // TODO: fix haxeClass by type inference. Use compiler code assist?!
       }
       if (haxeClass != null) {
+        boolean isObjectLiteral = haxeClass instanceof HaxeObjectLiteral;
         boolean isSuper = leftReference instanceof HaxeSuperExpression;
-        addClassNonStaticMembersVariants(suggestedVariants, haxeClass, leftReference, resolver, !(isThis || isSuper));
+        addClassNonStaticMembersVariants(suggestedVariants, haxeClass, leftReference, resolver, !(isThis || isSuper || isObjectLiteral));
         addUsingVariants(suggestedVariants, suggestedVariantsExtensions, haxeClass, this);
       }
     }
@@ -1436,11 +1437,17 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
     final boolean isEnum = haxeClass.isEnum();
 
-    List<HaxeComponentName> staticMembers = haxeClass.getModel().getMembersSelf().stream()
-      .filter(member -> (isEnum && member instanceof HaxeEnumValueModel) || member.isStatic())
-      .filter(member -> !filterByAccess || member.isPublic())
-      .map(HaxeMemberModel::getNamePsi)
-      .collect(Collectors.toList());
+    List<HaxeComponentName> staticMembers = new ArrayList<>();
+    for (HaxeBaseMemberModel member : haxeClass.getModel().getMembersSelf()) {
+      if (member instanceof HaxeMemberModel memberModel) {
+        if (isEnum && member instanceof HaxeEnumValueModel || memberModel.isStatic()) {
+          if (!filterByAccess || memberModel.isPublic()) {
+            HaxeComponentName psi = member.getNamePsi();
+            staticMembers.add(psi);
+          }
+        }
+      }
+    }
 
     suggestedVariants.addAll(staticMembers);
   }

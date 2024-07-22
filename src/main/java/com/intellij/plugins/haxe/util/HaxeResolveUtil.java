@@ -55,6 +55,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.evaluate;
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findIteratorType;
@@ -480,7 +481,16 @@ public class HaxeResolveUtil {
       result.addAll(model.getAnonymousFieldDeclarations());
       result.addAll(model.getAnonymousOptionalFieldDeclarations());
       return result;
+
+    } else if (element instanceof HaxeObjectLiteral objectLiteral) {
+      HaxeClassModel model = objectLiteral.getModel();
+      List<HaxeNamedComponent> componentNames = model.getMembers(null)
+        .stream()
+        .map(HaxeBaseMemberModel::getNamedComponentPsi)
+        .toList();
+      result.addAll(componentNames);
     }
+
 
     if (body != null) {
       final HaxeNamedComponent[] namedComponents = PsiTreeUtil.getChildrenOfType(body, HaxeNamedComponent.class);
@@ -1535,7 +1545,7 @@ public class HaxeResolveUtil {
   }
   public static HaxeEnumValueDeclaration resolveExtractorEnumValueDeclaration(SpecificHaxeClassReference enumClass, String memberName) {
     if (enumClass != null) {
-      HaxeMemberModel member = enumClass.getHaxeClassModel().getMember(memberName, enumClass.getGenericResolver());
+      HaxeBaseMemberModel member = enumClass.getHaxeClassModel().getMember(memberName, enumClass.getGenericResolver());
       if (member instanceof HaxeEnumValueModel enumValueModel) {
         return enumValueModel.getEnumValuePsi();
       }

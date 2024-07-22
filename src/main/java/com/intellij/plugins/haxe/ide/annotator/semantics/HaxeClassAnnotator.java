@@ -117,21 +117,23 @@ public class HaxeClassAnnotator implements Annotator {
   static private void checkDuplicatedFields(final HaxeClassModel clazz, final AnnotationHolder holder) {
     if (!DUPLICATE_FIELDS.isEnabled(clazz.getBasePsi())) return;
 
-    Map<String, HaxeMemberModel> map = new HashMap<>();
-    Set<HaxeMemberModel> repeatedMembers = new HashSet<>();
-    for (HaxeMemberModel member : clazz.getMembersSelf()) {
+    Map<String, HaxeBaseMemberModel> map = new HashMap<>();
+    Set<HaxeBaseMemberModel> repeatedMembers = new HashSet<>();
+    for (HaxeBaseMemberModel member : clazz.getMembersSelf()) {
       final String memberName = member.getName();
-      HaxeMemberModel repeatedMember = map.get(memberName);
-      if (repeatedMember != null && !repeatedMember.isOverload()) {
-        repeatedMembers.add(member);
-        repeatedMembers.add(repeatedMember);
+      HaxeBaseMemberModel repeatedMember = map.get(memberName);
+      if (repeatedMember instanceof  HaxeMemberModel memberModel) {
+        if (!memberModel.isOverload()) {
+          repeatedMembers.add(member);
+          repeatedMembers.add(repeatedMember);
+        }
       }
       else {
         map.put(memberName, member);
       }
     }
 
-    for (HaxeMemberModel member : repeatedMembers) {
+    for (HaxeBaseMemberModel member : repeatedMembers) {
       holder.newAnnotation(HighlightSeverity.ERROR, "Duplicate class field declaration : " + member.getName())
         .range(member.getNameOrBasePsi())
         .create();

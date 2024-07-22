@@ -124,22 +124,22 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
   }
 
   @Override
-  public HaxeMemberModel getMember(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    HaxeMemberModel value = getValue(name);
+  public HaxeBaseMemberModel getMember(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
+    HaxeBaseMemberModel value = getValue(name);
     if (!isAbstractType() && value == null) value = getEnumValueMember(name, resolver);
     return  value;
   }
 
   @Nullable
-  private HaxeMemberModel getEnumValueMember(String name, HaxeGenericResolver resolver) {
+  private HaxeBaseMemberModel getEnumValueMember(String name, HaxeGenericResolver resolver) {
     HaxeClassModel model = HaxeEnumValueUtil.getEnumValueClassModel(this.getPsi());
     if(model == null) return null;
     return model.getMember(name, resolver);
   }
 
   @Override
-  public List<HaxeMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
-    List<HaxeMemberModel> members = getValuesStream().collect(Collectors.toList());
+  public List<HaxeBaseMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
+    List<HaxeBaseMemberModel> members = getValuesStream().collect(Collectors.toList());
     if (!isAbstractType()) {
       members.addAll(HaxeEnumValueUtil.getEnumValueClassMembers(this.getPsi(), resolver));
     }
@@ -148,7 +148,7 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @NotNull
   @Override
-  public List<HaxeMemberModel> getMembersSelf() {
+  public List<HaxeBaseMemberModel> getMembersSelf() {
     return getMembers(null);
   }
 

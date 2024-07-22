@@ -55,11 +55,13 @@ public abstract class HaxePsiFieldImpl extends AbstractHaxeNamedComponent implem
     super(node);
   }
 
-  private HaxeMemberModel _model = null;
+  private HaxeBaseMemberModel _model = null;
   @Override
-  public HaxeMemberModel getModel() {
+  public HaxeBaseMemberModel getModel() {
     if (_model == null) {
-      if (this instanceof HaxeEnumValueDeclaration enumValueDeclaration) {
+      if (this instanceof HaxeObjectLiteralElementImpl objectLiteralElement) {
+        _model = new  HaxeObjectLiteralMemberModel(objectLiteralElement);
+      } else if (this instanceof HaxeEnumValueDeclaration enumValueDeclaration) {
         _model = new HaxeEnumValueModel(enumValueDeclaration);
       }else if (HaxeAbstractEnumUtil.isAbstractEnum(getContainingClass()) && HaxeAbstractEnumUtil.couldBeAbstractEnumField(this)) {
           _model = new HaxeEnumValueModel((HaxeFieldDeclaration)this);

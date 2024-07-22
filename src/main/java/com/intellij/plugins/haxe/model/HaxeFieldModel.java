@@ -212,4 +212,8 @@ public class HaxeFieldModel extends HaxeMemberModel {
     }
     return null;
   }
+
+  public boolean isOptional() {
+    return getBasePsi() instanceof HaxeOptionalFieldDeclaration;
+  }
 }

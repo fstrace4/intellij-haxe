@@ -1723,8 +1723,9 @@ Haxe File
             OBJECT_LITERAL
               HaxePsiToken:{('{')
               OBJECT_LITERAL_ELEMENT
-                IDENTIFIER
-                  HaxePsiToken:ID('a')
+                OBJECT_LITERAL_COMPONENT_NAME
+                  IDENTIFIER
+                    HaxePsiToken:ID('a')
                 HaxePsiToken::(':')
                 LITERAL_EXPRESSION
                   HaxePsiToken:LITINT('1')

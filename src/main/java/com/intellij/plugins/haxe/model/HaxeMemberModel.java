@@ -89,8 +89,10 @@ abstract public class HaxeMemberModel extends HaxeBaseMemberModel {
 
   private boolean isOverriddenPublicMethod() {
     if (hasModifier(OVERRIDE)) {
-      final HaxeMemberModel parentMember = getParentMember();
-      return parentMember != null && parentMember.isPublic();
+      final HaxeBaseMemberModel parentMember = getParentMember();
+      if (parentMember instanceof HaxeMemberModel model) {
+        return model.isPublic();
+      }
     }
 
     return false;
@@ -134,12 +136,6 @@ abstract public class HaxeMemberModel extends HaxeBaseMemberModel {
     return hasModifier(INLINE);
   }
 
-  @NotNull
-  public PsiElement getNameOrBasePsi() {
-    PsiElement element = getNamePsi();
-    if (element == null) element = getBasePsi();
-    return element;
-  }
 
   private HaxeModifiersModel _modifiers;
 
@@ -149,7 +145,7 @@ abstract public class HaxeMemberModel extends HaxeBaseMemberModel {
     return _modifiers;
   }
 
-  public HaxeMemberModel getParentMember() {
+  public HaxeBaseMemberModel getParentMember() {
     final HaxeClassModel aClass = getDeclaringClass().getParentClass();
     return (aClass != null) ? aClass.getMember(this.getName(), null) : null;
   }

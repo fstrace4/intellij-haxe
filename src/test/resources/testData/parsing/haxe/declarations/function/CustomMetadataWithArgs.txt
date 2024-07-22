@@ -33,8 +33,9 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('next')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('next')
                       HaxePsiToken::(':')
                       FUNCTION_LITERAL
                         HaxePsiToken:(('(')

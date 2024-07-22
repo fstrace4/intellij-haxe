@@ -42,8 +42,9 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('i')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('i')
                       HaxePsiToken::(':')
                       LITERAL_EXPRESSION
                         HaxePsiToken:LITINT('32')

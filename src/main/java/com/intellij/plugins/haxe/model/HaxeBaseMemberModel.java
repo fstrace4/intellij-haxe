@@ -19,15 +19,12 @@
  */
 package com.intellij.plugins.haxe.model;
 
-import com.intellij.openapi.util.Key;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.HaxeTypeResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
-import com.intellij.plugins.haxe.util.HaxeAbstractEnumUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +50,7 @@ public abstract class HaxeBaseMemberModel implements HaxeModel {
     if (element instanceof HaxeEnumValueDeclaration enumValueDeclaration)  return (HaxeBaseMemberModel) enumValueDeclaration.getModel();
     if (element instanceof HaxeLocalVarDeclaration varDeclaration) return (HaxeBaseMemberModel) varDeclaration.getModel();
     if (element instanceof HaxeAnonymousTypeField anonymousTypeField) return (HaxeBaseMemberModel) anonymousTypeField.getModel();
+    if (element instanceof HaxeObjectLiteralElement objectLiteralElement) return (HaxeBaseMemberModel) objectLiteralElement.getModel();
 
     if (element instanceof HaxeParameter) return new HaxeParameterModel((HaxeParameter)element);
     if (element instanceof HaxeForStatement) return null;
@@ -64,6 +62,14 @@ public abstract class HaxeBaseMemberModel implements HaxeModel {
   public PsiElement getBasePsi() {
     return basePsi;
   }
+
+  @NotNull
+  public PsiElement getNameOrBasePsi() {
+    PsiElement element = getNamePsi();
+    if (element == null) element = getBasePsi();
+    return element;
+  }
+
 
   @NotNull
   public HaxeDocumentModel getDocument() {

@@ -8,6 +8,7 @@ import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeReference;
 import com.intellij.plugins.haxe.lang.psi.HaxeResolver;
+import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
 import com.intellij.plugins.haxe.model.HaxeMemberModel;
 import com.intellij.plugins.haxe.util.HaxeAddImportHelper;
 import com.intellij.plugins.haxe.util.HaxeElementGenerator;
@@ -88,7 +89,7 @@ public class HaxeStaticMemberLookupElement extends LookupElement implements Haxe
   public @Nullable PsiElement getPsiElement() {
     HaxeClass haxeClass = HaxeResolveUtil.findClassByQName(qname, helperPsi);
     if (haxeClass == null) return null;
-    HaxeMemberModel member = haxeClass.getModel().getMember(memberName, null);
+    HaxeBaseMemberModel member = haxeClass.getModel().getMember(memberName, null);
     if (member == null) return null;
     return member.getNameOrBasePsi();
   }

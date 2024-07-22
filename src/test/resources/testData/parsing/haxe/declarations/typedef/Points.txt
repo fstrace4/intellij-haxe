@@ -99,22 +99,25 @@ Haxe File
               OBJECT_LITERAL
                 HaxePsiToken:{('{')
                 OBJECT_LITERAL_ELEMENT
-                  IDENTIFIER
-                    HaxePsiToken:ID('x')
+                  OBJECT_LITERAL_COMPONENT_NAME
+                    IDENTIFIER
+                      HaxePsiToken:ID('x')
                   HaxePsiToken::(':')
                   LITERAL_EXPRESSION
                     HaxePsiToken:LITINT('0')
                 HaxePsiToken:,(',')
                 OBJECT_LITERAL_ELEMENT
-                  IDENTIFIER
-                    HaxePsiToken:ID('y')
+                  OBJECT_LITERAL_COMPONENT_NAME
+                    IDENTIFIER
+                      HaxePsiToken:ID('y')
                   HaxePsiToken::(':')
                   LITERAL_EXPRESSION
                     HaxePsiToken:LITINT('0')
                 HaxePsiToken:,(',')
                 OBJECT_LITERAL_ELEMENT
-                  IDENTIFIER
-                    HaxePsiToken:ID('z')
+                  OBJECT_LITERAL_COMPONENT_NAME
+                    IDENTIFIER
+                      HaxePsiToken:ID('z')
                   HaxePsiToken::(':')
                   LITERAL_EXPRESSION
                     HaxePsiToken:LITINT('0')

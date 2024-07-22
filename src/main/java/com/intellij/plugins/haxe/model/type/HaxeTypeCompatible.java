@@ -537,21 +537,28 @@ public class HaxeTypeCompatible {
     if (toClassModel == null ||  fromClassModel == null)
        return false;
 
-    List<HaxeMemberModel> toMembers = toClassModel.getAllMembers(to.getGenericResolver());
-    List<HaxeMemberModel> fromMembers = fromClassModel.getAllMembers(from.getGenericResolver());
-    for (HaxeMemberModel member : toMembers) {
+    List<HaxeBaseMemberModel> toMembers = toClassModel.getAllMembers(to.getGenericResolver());
+    List<HaxeBaseMemberModel> fromMembers = fromClassModel.getAllMembers(from.getGenericResolver());
+    for (HaxeBaseMemberModel member : toMembers) {
       String name = member.getName();
       // TODO  type check parameter and return type
       boolean memberExists;
+      boolean optional;
       if (member instanceof HaxeMethodModel methodModel){
+        optional = false;
         memberExists = fromMembers.stream().filter(model -> model instanceof HaxeMethodModel)
           .map(model -> (HaxeMethodModel) model)
           .filter(mm -> methodModel.getParameters().size() == mm.getParameters().size())
           .anyMatch(model -> model.getNamePsi().textMatches(name));
-      }else {
+      }else if (member instanceof HaxeFieldModel fieldModel) {
+        optional = fieldModel.isOptional();
+        memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
+      }else  {
+        optional = false;
         memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
       }
-      if (!memberExists) return false;
+
+      if (!memberExists && !optional) return false;
     }
 
 

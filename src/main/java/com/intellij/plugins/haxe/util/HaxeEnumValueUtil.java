@@ -17,6 +17,7 @@
  */
 package com.intellij.plugins.haxe.util;
 
+import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
 import com.intellij.plugins.haxe.model.HaxeClassModel;
 import com.intellij.plugins.haxe.model.HaxeMemberModel;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
@@ -48,7 +49,7 @@ public class HaxeEnumValueUtil {
   public static HaxeClassModel getEnumValueClassModel(@NotNull PsiElement context) {
     return getStdTypeModel("EnumValue", context);
   }
-  public static List<HaxeMemberModel> getEnumValueClassMembers(@NotNull PsiElement context, @Nullable HaxeGenericResolver resolver) {
+  public static List<HaxeBaseMemberModel> getEnumValueClassMembers(@NotNull PsiElement context, @Nullable HaxeGenericResolver resolver) {
     HaxeClassModel enumValueModel = getStdTypeModel("EnumValue", context);
     if(enumValueModel == null) return new LinkedList<>();
     return  enumValueModel.getMembers(resolver);

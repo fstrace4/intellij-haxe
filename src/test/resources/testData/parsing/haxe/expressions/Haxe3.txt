@@ -544,8 +544,9 @@ Haxe File
                   OBJECT_LITERAL
                     HaxePsiToken:{('{')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('name')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('name')
                       HaxePsiToken::(':')
                       STRING_LITERAL_EXPRESSION
                         HaxePsiToken:OPEN_QUOTE('"')
@@ -553,8 +554,9 @@ Haxe File
                         HaxePsiToken:CLOSING_QUOTE('"')
                     HaxePsiToken:,(',')
                     OBJECT_LITERAL_ELEMENT
-                      IDENTIFIER
-                        HaxePsiToken:ID('rating')
+                      OBJECT_LITERAL_COMPONENT_NAME
+                        IDENTIFIER
+                          HaxePsiToken:ID('rating')
                       HaxePsiToken::(':')
                       STRING_LITERAL_EXPRESSION
                         HaxePsiToken:OPEN_QUOTE('"')

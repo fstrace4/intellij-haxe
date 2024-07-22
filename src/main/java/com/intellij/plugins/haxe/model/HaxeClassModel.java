@@ -507,7 +507,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   }
 
   @Nullable
-  public HaxeMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
+  public HaxeBaseMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
     if (name == null) return null;
     HaxeNamedComponent component = haxeClass.findHaxeMemberByName(name, resolver);
     if (component != null) {
@@ -516,22 +516,22 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     return null;
   }
 
-  public List<HaxeMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
-    final List<HaxeMemberModel> members = new ArrayList<>();
+  public List<HaxeBaseMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
+    final List<HaxeBaseMemberModel> members = new ArrayList<>();
     members.addAll(getMethods(resolver));
     members.addAll(getFields());
     return members;
   }
-  public List<HaxeMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
-    final List<HaxeMemberModel> members = new ArrayList<>();
+  public List<HaxeBaseMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
+    final List<HaxeBaseMemberModel> members = new ArrayList<>();
     members.addAll(getAllMethods(resolver));
     members.addAll(getFields());// TODO add get all ?
     return members;
   }
 
   @NotNull
-  public List<HaxeMemberModel> getMembersSelf() {
-    final List<HaxeMemberModel> members = new ArrayList<>();
+  public List<HaxeBaseMemberModel> getMembersSelf() {
+    final List<HaxeBaseMemberModel> members = new ArrayList<>();
     HaxePsiCompositeElement body = getBodyPsi();
     if (body != null) {
       for (PsiElement element : body.getChildren()) {

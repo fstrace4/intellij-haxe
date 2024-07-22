@@ -126,19 +126,19 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
   }
 
   @Override
-  public @Nullable HaxeMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
+  public @Nullable HaxeBaseMemberModel getMember(String name, @Nullable HaxeGenericResolver resolver) {
     return getAllMembers(resolver).stream().filter(model -> model.getName().equals(name)).findFirst().orElse(null);
   }
 
-  public List<HaxeMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
+  public List<HaxeBaseMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
     return getMembers(resolver);
   }
   @Override
-  public List<HaxeMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
+  public List<HaxeBaseMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
     List<HaxeFieldModel> fields = getFields();
     List<HaxeMethodModel> methods = getMethods(resolver);
 
-    ArrayList<HaxeMemberModel> memberModels = new ArrayList<>();
+    ArrayList<HaxeBaseMemberModel> memberModels = new ArrayList<>();
     memberModels.addAll(fields);
     memberModels.addAll(methods);
     return memberModels;

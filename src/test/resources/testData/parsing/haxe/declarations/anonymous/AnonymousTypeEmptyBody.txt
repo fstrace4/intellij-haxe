@@ -86,8 +86,9 @@ Haxe File
                 OBJECT_LITERAL
                   HaxePsiToken:{('{')
                   OBJECT_LITERAL_ELEMENT
-                    IDENTIFIER
-                      HaxePsiToken:ID('hello')
+                    OBJECT_LITERAL_COMPONENT_NAME
+                      IDENTIFIER
+                        HaxePsiToken:ID('hello')
                     HaxePsiToken::(':')
                     STRING_LITERAL_EXPRESSION
                       HaxePsiToken:OPEN_QUOTE('"')
