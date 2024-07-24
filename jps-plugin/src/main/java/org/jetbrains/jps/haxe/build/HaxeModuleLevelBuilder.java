@@ -43,7 +43,6 @@ import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.java.JpsJavaProjectExtension;
-import org.jetbrains.jps.model.java.impl.JavaProjectExtensionRole;
 import org.jetbrains.jps.model.library.sdk.JpsSdk;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
@@ -222,7 +221,7 @@ public class HaxeModuleLevelBuilder extends ModuleLevelBuilder {
         //  return JpsPathUtil.urlToPath(outputRootUrl);
 
         // ... so we reach directly down to the project and grab its output path.
-        final JpsJavaProjectExtension projectExtension = module.getProject().getContainer().getChild(JavaProjectExtensionRole.INSTANCE);
+        final JpsJavaProjectExtension projectExtension = JpsJavaExtensionService.getInstance().getProjectExtension(module.getProject());
         if (projectExtension != null) {
           final String url = projectExtension.getOutputUrl();
           if (url != null) {
