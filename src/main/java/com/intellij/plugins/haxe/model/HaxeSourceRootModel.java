@@ -16,6 +16,7 @@
  */
 package com.intellij.plugins.haxe.model;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.plugins.haxe.util.HaxeStringUtil;
 import com.intellij.psi.PsiDirectory;
@@ -66,6 +67,8 @@ public class HaxeSourceRootModel {
       if (current == null) break;
       try {
         current = current.findSubdirectory(part);
+      }catch (ProcessCanceledException e) {
+        throw e;
       }catch (Exception e) {
         log.warn(e);
         current = null;

@@ -42,7 +42,14 @@ public class HaxeNameUtils {
       if (i > 0) fileName.append(HaxeFileUtil.SEPARATOR);
       fileName.append(parts[i]);
     }
-    return fileName.toString();
+
+    String result = fileName.toString();
+    // check if classname contained generics, if so remove
+    if(result.contains("<")) {
+      return  result.substring(0, result.indexOf("<"));
+    }else {
+    return result;
+    }
   }
 
   public static boolean isValidClassName(String className) {
