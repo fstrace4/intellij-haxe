@@ -162,7 +162,7 @@ intellijPlatform  {
 
     }
     verifyPlugin {
-        ignoredProblemsFile = file("${project.rootDir}/ignoredProblems.txt")
+        freeArgs.set(listOf("-mute TemplateWordInPluginId,ForbiddenPluginIdPrefix"))
         ides {
             recommended()
 
