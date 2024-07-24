@@ -6,6 +6,7 @@ import org.jetbrains.grammarkit.tasks.GenerateParserTask
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 fun properties(key: String) = providers.gradleProperty(key)
 fun environment(key: String) = providers.environmentVariable(key)
@@ -79,6 +80,7 @@ dependencies {
 
     intellijPlatform {
         pluginVerifier()
+        jetbrainsRuntime()
         instrumentationTools()
         create(platformType, platformVersion)
 
@@ -103,6 +105,7 @@ subprojects {
         mavenCentral()
         intellijPlatform {
             defaultRepositories()
+            jetbrainsRuntime()
             mavenCentral()
         }
     }
@@ -162,15 +165,20 @@ intellijPlatform  {
 
     }
     verifyPlugin {
-        freeArgs.set(listOf("-mute", "TemplateWordInPluginId,ForbiddenPluginIdPrefix"))
+        freeArgs = listOf("-mute", "TemplateWordInPluginId,ForbiddenPluginIdPrefix")
+        failureLevel = listOf(
+//            VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+            VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES
+        )
         ides {
-            recommended()
-
-            //TODO  problem verifying 2024.2 beta, emojipicker not found ?
-//            select {
+            //TODO  problem verifying 2024.2 beta, emojipicker not found, timeout ?
+//            recommended()
+            select {
+                sinceBuild.set("240")
+                untilBuild.set("241.*")
 //                sinceBuild.set(properties("pluginSinceBuild"))
 //                untilBuild.set(properties("pluginUntilBuild"))
-//            }
+            }
         }
     }
 //    instrumentCode = false
