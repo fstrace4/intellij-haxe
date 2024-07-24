@@ -80,7 +80,6 @@ dependencies {
 
     intellijPlatform {
         pluginVerifier()
-//        jetbrainsRuntime()
         instrumentationTools()
         create(platformType, platformVersion)
 
@@ -94,18 +93,24 @@ dependencies {
     }
 
 }
-
-subprojects {
+allprojects {
     apply(plugin = "java")
     apply(plugin = "idea")
     apply(plugin = "org.jetbrains.kotlin.jvm")
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+subprojects {
     apply(plugin = "org.jetbrains.intellij.platform.module")
 
     repositories {
         mavenCentral()
         intellijPlatform {
             defaultRepositories()
-//            jetbrainsRuntime()
             mavenCentral()
         }
     }
@@ -119,7 +124,6 @@ subprojects {
         intellijPlatform {
             instrumentationTools()
 
-
             val type = providers.gradleProperty("platformType")
             val version = providers.gradleProperty("platformVersion")
             create(type, version)
@@ -132,10 +136,6 @@ subprojects {
     }
 }
 
-
-apply(plugin = "java")
-apply(plugin = "idea")
-apply(plugin = "org.jetbrains.kotlin.jvm")
 apply(plugin = "org.jetbrains.intellij.platform")
 
 
@@ -144,15 +144,8 @@ repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
-//        jetbrainsRuntime()
         mavenCentral()
     }
-}
-
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 // Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
@@ -172,7 +165,7 @@ intellijPlatform  {
             VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES
         )
         ides {
-            //TODO  problem verifying 2024.2 beta, emojipicker not found, timeout ?
+            //TODO  problem verifying 2024.2 beta, emojipicker not found, + timeout ?
 //            recommended()
             select {
                 sinceBuild.set("240")
