@@ -113,6 +113,7 @@ subprojects {
         verifyPlugin { isEnabled = false }
         prepareSandbox { isEnabled = false }
         buildSearchableOptions { isEnabled = false }
+        prepareTestingSandbox { isEnabled = false }
     }
 }
 
