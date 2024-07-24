@@ -1,0 +1,2 @@
+TemplateWordInPluginId
+ForbiddenPluginIdPrefix
