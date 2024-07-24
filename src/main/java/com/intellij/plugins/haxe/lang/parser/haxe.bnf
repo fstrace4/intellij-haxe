@@ -683,7 +683,14 @@ enumExtractedValue::= enumExtractedValueReference | primitiveExtractedValue
 
 private primitiveExtractedValue  ::= enumExtractObjectLiteral | enumExtractArrayLiteral
 private expressionOrExtractorMatchExpression ::=  switchExtractorExpression | enumExtractArrayLiteral | enumExtractObjectLiteral  | expression   {extends=expression}
-private enumObjectLiteralElement ::= (identifier | stringLiteralExpression) ':' expressionOrExtractorMatchExpression {pin=2 recoverWhile="object_literal_part_recover"}
+enumObjectLiteralElement ::= objectLiteralComponentName ':' ( expressionOrExtractorMatchExpression)
+{
+  pin=2
+  recoverWhile="object_literal_part_recover"
+  methods=[componentName="objectLiteralComponentName" other="stringLiteralExpression"]
+  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl"
+  implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"
+}
 private enumObjectLiteralElementList ::= enumObjectLiteralElement (',' enumObjectLiteralElement)* ','? {pin=1 recoverWhile="object_literal_list_recover"}
 enumExtractObjectLiteral ::= '{' enumObjectLiteralElementList '}' {pin=2}
 enumExtractArrayLiteral ::= '[' expressionOrExtractorMatchExpression (','  expressionOrExtractorMatchExpression)* ']' {pin=2}

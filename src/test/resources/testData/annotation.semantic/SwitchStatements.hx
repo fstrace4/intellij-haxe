@@ -63,7 +63,7 @@ class PatternMachingTest {
     }
 
     public function  testSwitchOnStructure() {
-        var person = { name: "Mark", age: 33 };
+        var person = { name: "Mark", age: 33, subElement: {id:"abc"} };
 
         switch person {
             // match person with age older than 50
@@ -75,9 +75,11 @@ class PatternMachingTest {
                 trace('Found Jose, who is 42');
 
             // match on name
-            //TODO mlo: needs resolver work
-            case { name: <warning descr="Unresolved symbol">name</warning> }:
-                trace('Found someone called $<warning descr="Unresolved symbol">name</warning>');
+            case { name: name }:
+                trace('Found someone called $name');
+
+            case { name: name,  subElement: {id: id}}:
+                trace('Found someone called $name with id' + id);
 
             // matches anything
             case _:
