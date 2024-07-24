@@ -77,7 +77,7 @@ dependencies {
     testImplementation("org.opentest4j:opentest4j:1.3.0")
 
     intellijPlatform {
-//        testImplementation("junit:junit:4.13.2")
+        pluginVerifier()
         instrumentationTools()
         create(platformType, platformVersion)
 
@@ -114,6 +114,7 @@ subprojects {
 
         intellijPlatform {
             instrumentationTools()
+
 
             val type = providers.gradleProperty("platformType")
             val version = providers.gradleProperty("platformVersion")
