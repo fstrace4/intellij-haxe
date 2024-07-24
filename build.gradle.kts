@@ -162,7 +162,7 @@ intellijPlatform  {
 
     }
     verifyPlugin {
-        freeArgs.set(listOf("-mute TemplateWordInPluginId,ForbiddenPluginIdPrefix"))
+        freeArgs.set(listOf("-mute", "TemplateWordInPluginId,ForbiddenPluginIdPrefix"))
         ides {
             recommended()
 
