@@ -1,3 +1,4 @@
+import com.jetbrains.plugin.structure.intellij.problems.ignore
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
@@ -161,8 +162,10 @@ intellijPlatform  {
 
     }
     verifyPlugin {
+        freeArgs.set(listOf("-mute TemplateWordInPluginId,ForbiddenPluginIdPrefix"))
         ides {
             recommended()
+
             //TODO  problem verifying 2024.2 beta, emojipicker not found ?
 //            select {
 //                sinceBuild.set(properties("pluginSinceBuild"))
