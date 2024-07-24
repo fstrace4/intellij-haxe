@@ -2,6 +2,9 @@ import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.grammarkit.tasks.GenerateLexerTask
 import org.jetbrains.grammarkit.tasks.GenerateParserTask
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 
 fun properties(key: String) = providers.gradleProperty(key)
 fun environment(key: String) = providers.environmentVariable(key)
@@ -12,18 +15,16 @@ plugins {
     // Kotlin support
     id("org.jetbrains.kotlin.jvm") version "1.9.21"
     // Gradle IntelliJ Plugin
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.intellij.platform") version "2.0.0-rc1"
     // Gradle Changelog Plugin
     id("org.jetbrains.changelog") version "2.0.0"
     // Gradle Qodana Plugin
     id("org.jetbrains.qodana") version "0.1.13"
     // Gradle Kover Plugin
     id("org.jetbrains.kotlinx.kover") version "0.6.1"
-    // lombok
-    id("io.freefair.lombok") version "8.0.1"
     // generate parser and lexer
     id("org.jetbrains.grammarkit") version "2022.3.2.2"
-
+    // console output for tests
     id("com.adarshr.test-logger") version "3.2.0"
 }
 
@@ -36,7 +37,6 @@ var platformType = properties("platformType").get();
 
 val ideaBaseDir = "${project.rootDir}/idea"
 val ideaTargetDir = "${ideaBaseDir}/idea${platformType}-${platformVersion}"
-
 
 dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
@@ -66,56 +66,108 @@ dependencies {
     testCompileOnly(files("${ideaTargetDir}/lib/openapi.jar"))
     testCompileOnly(files("${ideaTargetDir}/lib/util.jar"))
 
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    testCompileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor ("org.projectlombok:lombok:1.18.34")
+    testAnnotationProcessor ("org.projectlombok:lombok:1.18.34")
+
+    // TODO upgrade to junit5 (testFramework(TestFrameworkType.JUnit5))
+    testImplementation("junit:junit:4.13.2")
+    // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1663#issuecomment-2182516044
+    testImplementation("org.opentest4j:opentest4j:1.3.0")
+
+    intellijPlatform {
+//        testImplementation("junit:junit:4.13.2")
+        instrumentationTools()
+        create(platformType, platformVersion)
+
+        plugins(properties("platformPlugins").map { it.split(',') })
+        bundledPlugins(properties("platformBundledPlugins").map { it.split(',') })
+
+        // TODO upgrade to JUnit5
+        //testFramework(TestFrameworkType.JUnit5)
+        testFramework(TestFrameworkType.Bundled)
+
+    }
+
 }
 
-
-allprojects {
+subprojects {
     apply(plugin = "java")
     apply(plugin = "idea")
-    apply(plugin = "io.freefair.lombok")
     apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.intellij")
+    apply(plugin = "org.jetbrains.intellij.platform.module")
 
-    // Configure project's dependencies
     repositories {
         mavenCentral()
+        intellijPlatform {
+            defaultRepositories()
+            mavenCentral()
+        }
     }
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    dependencies {
+        compileOnly("org.projectlombok:lombok:1.18.34")
+        testCompileOnly("org.projectlombok:lombok:1.18.34")
+        annotationProcessor ("org.projectlombok:lombok:1.18.34")
+        testAnnotationProcessor ("org.projectlombok:lombok:1.18.34")
+
+        intellijPlatform {
+            instrumentationTools()
+
+            val type = providers.gradleProperty("platformType")
+            val version = providers.gradleProperty("platformVersion")
+            create(type, version)
+
+            plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
+            bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
+
+            testFramework(TestFrameworkType.Bundled)
+        }
     }
-
-    // Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-    intellij {
-        pluginName.set(properties("pluginName"))
-        version.set(properties("platformVersion"))
-        type.set(properties("platformType"))
-
-        ideaDependencyCachePath.set("${project.rootDir}/idea")
-        sandboxDir.set("${project.rootDir}/build/idea-sandbox")
-
-        // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-        plugins.set(properties("platformPlugins").map { it.split(',').map(String::trim).filter(String::isNotEmpty) })
-    }
-
 }
+
+
+apply(plugin = "java")
+apply(plugin = "idea")
+apply(plugin = "org.jetbrains.kotlin.jvm")
+apply(plugin = "org.jetbrains.intellij.platform")
+
+
+// Configure project's dependencies
+repositories {
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+        mavenCentral()
+    }
+}
+
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
+intellijPlatform  {
+    pluginConfiguration   {
+    name = properties("pluginName").get()
+    group = properties("pluginGroup").get()
+
+    ideaVersion.sinceBuild.set(properties("pluginSinceBuild"))
+    ideaVersion.untilBuild.set(properties("pluginUntilBuild"))
+
+    }
+//    instrumentCode = false
+}
+
+
 
 grammarKit {
     jflexRelease.set("1.9.1")
 }
 
-subprojects {
-    tasks {
-        runIde { isEnabled = false }
-        patchPluginXml { isEnabled = false }
-        buildPlugin { isEnabled = false }
-        verifyPlugin { isEnabled = false }
-        prepareSandbox { isEnabled = false }
-        buildSearchableOptions { isEnabled = false }
-        prepareTestingSandbox { isEnabled = false }
-    }
-}
 
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -123,7 +175,7 @@ changelog {
     groups.empty()
     keepUnreleasedSection.set(false)
     headerParserRegex.set("(\\d+\\.\\d+(\\.\\d+)*)(.*)") // old version names does not conform to standard
-//    repositoryUrl.set(properties("pluginRepositoryUrl"))
+
 }
 
 
@@ -136,16 +188,21 @@ tasks {
         dependsOn(generateParser, generateLexer)
     }
 
+    printProductsReleases {
+        channels = listOf(ProductRelease.Channel.EAP)
+        types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
+        untilBuild = provider { null }
+
+        doLast {
+            val latestEap = productsReleases.get().max()
+        }
+    }
+
     patchPluginXml {
-        version.set(properties("pluginVersion"))
+        version =properties("pluginVersion").get();
         sinceBuild.set(properties("pluginSinceBuild"))
         untilBuild.set(properties("pluginUntilBuild"))
 
-        pluginXmlFiles.set(listOf(
-                file("src/main/resources/META-INF/plugin.xml"),
-                file("src/main/resources/META-INF/debugger-support.xml"),
-                file("src/main/resources/META-INF/flex-debugger-support.xml")
-        ))
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(providers.fileContents(layout.projectDirectory.file("DESCRIPTION.md")).asText.map {
@@ -174,14 +231,6 @@ tasks {
         })
     }
 
-    // Configure UI tests plugin
-    // Read more: https://github.com/JetBrains/intellij-ui-test-robot
-    runIdeForUiTests {
-        systemProperty("robot-server.port", "8082")
-        systemProperty("ide.mac.message.dialogs.as.sheets", "false")
-        systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-        systemProperty("jb.consents.confirmation.enabled", "false")
-    }
 
     signPlugin {
         certificateChain.set(environment("CERTIFICATE_CHAIN"))
