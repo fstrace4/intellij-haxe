@@ -160,6 +160,16 @@ intellijPlatform  {
     ideaVersion.untilBuild.set(properties("pluginUntilBuild"))
 
     }
+    verifyPlugin {
+        ides {
+            recommended()
+            //TODO  problem verifying 2024.2 beta, emojipicker not found ?
+//            select {
+//                sinceBuild.set(properties("pluginSinceBuild"))
+//                untilBuild.set(properties("pluginUntilBuild"))
+//            }
+        }
+    }
 //    instrumentCode = false
 }
 
