@@ -80,7 +80,7 @@ dependencies {
 
     intellijPlatform {
         pluginVerifier()
-        jetbrainsRuntime()
+//        jetbrainsRuntime()
         instrumentationTools()
         create(platformType, platformVersion)
 
@@ -105,7 +105,7 @@ subprojects {
         mavenCentral()
         intellijPlatform {
             defaultRepositories()
-            jetbrainsRuntime()
+//            jetbrainsRuntime()
             mavenCentral()
         }
     }
@@ -144,7 +144,7 @@ repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
-        jetbrainsRuntime()
+//        jetbrainsRuntime()
         mavenCentral()
     }
 }
