@@ -126,6 +126,12 @@ public class HaxeTypeResolver {
     if (abstractEnumType != null) {
       return abstractEnumType;
     }
+    if (comp instanceof HaxeObjectLiteralElement literalElement) {
+      HaxeExpression expression = literalElement.getExpression();
+      if(expression != null) {
+        return HaxeTypeResolver.getPsiElementType(expression, resolver);
+      }
+    }
 
     if (comp instanceof HaxePsiField psiField) {
       ResultHolder result = null;

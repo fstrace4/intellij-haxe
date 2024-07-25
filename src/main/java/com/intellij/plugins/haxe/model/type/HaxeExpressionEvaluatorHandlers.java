@@ -1002,6 +1002,10 @@ public class HaxeExpressionEvaluatorHandlers {
       if (valueReification != null) {
         return handle(valueReification, context, resolver);
       }
+      HaxeMacroExpReification expReification = reification.getMacroExpReification();
+      if(expReification != null) {
+        return SpecificHaxeClassReference.getDynamic(valueExpression).createHolder();
+      }
 
       HaxeMacroArrayReification arrayReification = reification.getMacroArrayReification();
       if (arrayReification != null) {
@@ -1550,13 +1554,12 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
   static ResultHolder handleIdentifier(HaxeExpressionEvaluatorContext context, HaxeIdentifier identifier) {
-    //if (isMacroVariable(identifier)) {
-    //
-    //  return SpecificTypeReference.getDynamic(identifier).createHolder();
-    //}
+    //makes sure its a variable and not a reification expression
+    if (isMacroVariable(identifier)) {
+      return SpecificTypeReference.getDynamic(identifier).createHolder();
+    }
     // If it has already been seen, then use whatever type is already known.
     ResultHolder holder = context.get(identifier.getText());
-
     if (holder == null) {
       // context.addError(element, "Unknown variable", new HaxeCreateLocalVariableFixer(element.getText(), element));
 

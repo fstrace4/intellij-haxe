@@ -24,8 +24,8 @@ class InlayHintReifiction {
         return macro ($p{field});
     }
 
-    macro public static function macroExpReification(e:String)/*<# :ExprOf<Void->String> #>*/
-    return macro (function() return $e);
+    macro public static function macroExpReification(str:String)/*<# :ExprOf<Void->Dynamic> #>*/
+    return macro (function() return $e{str});
 
     // type reifications
 

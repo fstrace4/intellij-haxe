@@ -106,6 +106,9 @@ public class HaxeResolveUtil {
         return new HaxeParenthesizedExpressionReferenceImpl(child);
       }
     }
+    if (leftExpression instanceof  HaxeObjectLiteral objectLiteral) {
+      return  new HaxeParenthesizedExpressionReferenceImpl(objectLiteral);
+    }
 
     return null;
   }

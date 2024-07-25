@@ -973,7 +973,7 @@ objectLiteralElement ::=  (objectLiteralComponentName | objectLiteralNonComponen
   pin=2
   recoverWhile="object_literal_part_recover"
   methods=[componentName="objectLiteralComponentName" other="stringLiteralExpression"]
-  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl"
+  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiObjectLiteralElement"
   implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"
 }
 

@@ -189,7 +189,9 @@ public enum HaxeComponentType {
     }
     if (element instanceof HaxeFieldDeclaration ||
         element instanceof HaxeEnumValueDeclaration ||
-        element instanceof HaxeAnonymousTypeField) {
+        element instanceof HaxeAnonymousTypeField ||
+        element instanceof HaxeObjectLiteralElement
+    ) {
       return FIELD;
     }
     if (element instanceof HaxeLocalVarDeclaration ||

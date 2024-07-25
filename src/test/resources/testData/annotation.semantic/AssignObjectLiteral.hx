@@ -12,9 +12,13 @@ class Test {
   };
 
   public function new() {
-    var i:Int = myObject.myInt;
-    var s:String = myObject.myString;
-    var f:Float = myObject.StringId;
-    var f:String = myObject.nested.subMember;
+    var a:Int = myObject.myInt;
+    var b:String = myObject.myString;
+    var c:Float = myObject.StringId;
+    var d:String = myObject.nested.subMember;
+
+    var e:String = {someElement:"String"}.someElement;
+    var f:Float = {"someElement":1.0}.someElement;
+    var g:Float = ({"someElement":0.1}).someElement;
   }
 }
