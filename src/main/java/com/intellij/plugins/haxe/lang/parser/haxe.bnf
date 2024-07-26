@@ -377,6 +377,8 @@ private interface_body_part_recover ::= !(ppToken | metaKeyWord | 'dynamic' | 'f
 enumDeclaration ::= externOrPrivate? 'enum' componentName genericParam? enumBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 enumBody ::= '{' enumValueDeclaration* '}'
+{ mixin="com.intellij.plugins.haxe.lang.psi.HaxeEnumBodyMixinImpl"}
+
 
 /*
  *  declarations
@@ -386,8 +388,24 @@ methodModifier ::= 'abstract' | 'extern' | 'final' | 'static' | 'inline' | 'dyna
 fieldModifier ::= 'extern' | 'static' | 'inline' | 'dynamic' | 'override' | 'macro' | 'public' | 'private' {implements="com.intellij.plugins.haxe.lang.psi.HaxePsiModifier"}
 mutabilityModifier ::= 'final' | 'var'
 
-enumValueDeclaration ::= componentName genericParam? enumConstructorParameters? typeTag? ';'
-{recoverWhile="enum_value_declaration_recovery" mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField" methods=[returnType="typeTag"]}
+
+enumValueDeclarationConstructor ::= componentName genericParam? enumConstructorParameters typeTag? ';'
+{
+  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl"
+  implements= ["com.intellij.plugins.haxe.lang.psi.HaxeMethod" "com.intellij.plugins.haxe.lang.psi.HaxeEnumValueDeclaration"]
+}
+
+enumValueDeclarationField ::= componentName genericParam?  typeTag? ';'
+{
+  mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl"
+  implements= ["com.intellij.plugins.haxe.lang.psi.HaxePsiField" "com.intellij.plugins.haxe.lang.psi.HaxeEnumValueDeclaration"]
+  methods=[returnType="typeTag"]
+}
+// todo make enumValueDeclaration
+private enumValueDeclaration ::= enumValueDeclarationConstructor |  enumValueDeclarationField
+
+//enumValueDeclaration ::= componentName genericParam? enumConstructorParameters? typeTag? ';'
+//{recoverWhile="enum_value_declaration_recovery" mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField" methods=[returnType="typeTag"]}
 
 private enum_value_declaration_recovery ::= !(ID | '}' | 'class' | 'enum' | 'abstract' | 'typedef' | 'extern' | 'interface')
 
@@ -657,7 +675,7 @@ switchBlock ::= '{' (switchCase | defaultCase)* '}'{pin=1}
 
 switchCaseBlock ::=  statementList | (literalExpression <<semicolonUnlessPrecededByStatement>>)
 switchCase ::= 'case'  switchCaseExpr ((','|'|') switchCaseExpr)* guard? ':' switchCaseBlock? {pin=1 recoverWhile="switch_case_recover"}
-private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>  (switchExtractorExpression  | switchCaseCaptureVar | switchCaseCapture | enumExtractObjectLiteral |  statement ) {hooks=[popCollectionInitializersRule]}
+private switchCaseExprElement ::= <<pushCollectionInitializersAllow>>   (switchExtractorExpression  | switchCaseCaptureVar | switchCaseCapture | switchEnumBitOperationExpression | enumExtractObjectLiteral |  statement ) {hooks=[popCollectionInitializersRule]}
 switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
 // Should NOT be named Expression, because it should not be an expression.
 switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
@@ -665,9 +683,12 @@ ExtractorMatchAssignExpression ::= referenceExpression "=";
 
 ExtractorMatchExpression ::=  expression '=>' switchCaseExpr {extends="expression"}
 
-switchEnumBitOperationExpression ::= enumValueReference (bitOperation enumValueReference)+ {extends="expression"}
-private switchExtractorPart ::= switchCaseExtractor (bitOperation switchCaseExtractor)*
+private switchEnumBitOperationElement ::= enumArgumentExtractor | enumValueReference;
+switchEnumBitOperationExpression ::=   switchEnumBitOperationElement (bitOperation switchEnumBitOperationElement)+ {extends="expression"}
+
+private switchExtractorPart ::=  switchCaseExtractor (bitOperation switchCaseExtractor)*
 switchExtractorExpression ::=  "("switchExtractorPart")" | switchExtractorPart  {extends="expression"}
+
 private extractorMatchExpressionVariant::= ExtractorMatchAssignExpression? ('('ExtractorMatchExpression')' | '['ExtractorMatchExpression']'  | ExtractorMatchExpression)
 switchCaseExtractor ::= extractorMatchExpressionVariant | enumArgumentExtractor | variableCaptureExpression {extends="expression"}
 //TODO mlo: clean up and bind to classes
@@ -696,7 +717,7 @@ enumExtractObjectLiteral ::= '{' enumObjectLiteralElementList '}' {pin=2}
 enumExtractArrayLiteral ::= '[' expressionOrExtractorMatchExpression (','  expressionOrExtractorMatchExpression)* ']' {pin=2}
 //{mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent" implements="com.intellij.plugins.haxe.lang.psi.HaxeComponent"}
 
-private switchExtractorExpressionArgument ::= (  extractorMatchExpressionVariant | switchExtractorExpressionArrayLiteral |  switchExtractorExpression  |  switchEnumBitOperationExpression | switchCaseCapture | enumExtractedValue  |<<startWithUppercaseCheck>> type)
+private switchExtractorExpressionArgument ::= (  extractorMatchExpressionVariant | switchExtractorExpressionArrayLiteral |  switchExtractorExpression  |  switchEnumBitOperationExpression | switchCaseCapture | enumExtractedValue  |<<startWithUppercaseCheck>> type | literalExpression)
 
 enumExtractorArgumentList ::= ( switchExtractorExpressionArgument) (',' (switchExtractorExpressionArgument))*
 enumValueReference ::= simpleQualifiedReferenceExpression

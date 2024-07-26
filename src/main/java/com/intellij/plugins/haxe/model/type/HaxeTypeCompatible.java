@@ -59,15 +59,10 @@ public class HaxeTypeCompatible {
            || ref.isFunction()
            || isTypeDefFunction(ref)
            || isAbstractAssignableToFunction(ref)
-           || enumValueWithConstructor(ref);
+           || isEnumValueConstructor(ref);
   }
 
-  private static boolean enumValueWithConstructor(SpecificTypeReference ref) {
-    if (ref instanceof  SpecificEnumValueReference enumValueReference) {
-      return enumValueReference.getModel().hasConstructor();
-    }
-    return false;
-  }
+
 
   private static boolean isAbstractAssignableToFunction(SpecificTypeReference ref) {
     if (ref instanceof  SpecificHaxeClassReference classReference) {
@@ -126,7 +121,7 @@ public class HaxeTypeCompatible {
 
   private static boolean isEnumValueConstructor(SpecificTypeReference ref) {
     if (ref instanceof SpecificEnumValueReference enumValueReference) {
-      return enumValueReference.getModel().hasConstructor();
+      return enumValueReference.getModel() instanceof HaxeEnumValueConstructorModel;
     }
     return false;
   }

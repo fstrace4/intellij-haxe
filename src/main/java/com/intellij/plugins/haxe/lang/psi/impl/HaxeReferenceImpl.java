@@ -817,8 +817,8 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
           }
           SpecificHaxeClassReference enumClass = HaxeResolveUtil.resolveExtractorEnum(extractor);
           HaxeEnumValueDeclaration enumValueDeclaration = HaxeResolveUtil.resolveExtractorEnumValueDeclaration(enumClass, extractor);
-          if (enumValueDeclaration  != null) {
-            HaxeParameter parameter = enumValueDeclaration.getParameterList().getParameterList().get(index);
+          if (enumValueDeclaration   instanceof  HaxeEnumValueDeclarationConstructor declaration) {
+            HaxeParameter parameter = declaration.getParameterList().getParameterList().get(index);
             HaxeGenericResolver resolver = enumClass.getGenericResolver();
             ResultHolder type = HaxeTypeResolver.getPsiElementType(parameter, resolver);
             ResultHolder resultHolder = resolver.resolve(type);

@@ -546,6 +546,11 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     return members;
   }
 
+  @Nullable
+  public HaxeBaseMemberModel getMemberSelf(String name, @Nullable HaxeGenericResolver resolver) {
+    return getMembersSelf().stream().filter(model -> model.getNamePsi().getIdentifier().textMatches(name)).findFirst().orElse(null);
+  }
+
   public HaxeFieldModel getField(String name, @Nullable HaxeGenericResolver resolver) {
     HaxePsiField field = (HaxePsiField)haxeClass.findHaxeFieldByName(name, resolver);
     if (field instanceof HaxeFieldDeclaration || field instanceof HaxeAnonymousTypeField || field instanceof HaxeEnumValueDeclaration) {
@@ -674,7 +679,8 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
 
     if (body != null) {
       List<HaxeFieldModel> list = new ArrayList<>();
-      List<HaxePsiField> children = PsiTreeUtil.getChildrenOfAnyType(body, HaxeFieldDeclaration.class, HaxeAnonymousTypeField.class, HaxeEnumValueDeclaration.class);
+      List<HaxePsiField> children = PsiTreeUtil.getChildrenOfAnyType(body, HaxeFieldDeclaration.class, HaxeAnonymousTypeField.class, HaxeEnumValueDeclarationField.class);
+
       for (HaxePsiField field : children) {
         HaxeFieldModel model = (HaxeFieldModel)field.getModel();
         list.add(model);
@@ -924,9 +930,11 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     } else if (isEnum()) {
       HaxeEnumBody body = UsefulPsiTreeUtil.getChild(haxeClass, HaxeEnumBody.class);
       if (body != null) {
-        List<HaxeEnumValueDeclaration> declarations = body.getEnumValueDeclarationList();
-        for (HaxeEnumValueDeclaration declaration : declarations) {
-          out.add(declaration.getModel());
+        for (HaxeEnumValueDeclarationField field : body.getEnumValueDeclarationFieldList()) {
+          out.add(field.getModel());
+        }
+        for (HaxeEnumValueDeclarationConstructor constructor : body.getEnumValueDeclarationConstructorList()) {
+          out.add(constructor.getModel());
         }
       }
     }

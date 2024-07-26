@@ -42,7 +42,6 @@ public class HaxeClassReference {
 
   public HaxeClass clazz;
 
-  private static final Key<Pair<Integer, String>> CLASS_NAME_KEY = new Key<>("HAXE_CLASS_NAME");
 
   public HaxeClassReference(@NotNull HaxeClassModel classModel, @NotNull PsiElement elementContext) {
     this.name = getClassName(classModel);

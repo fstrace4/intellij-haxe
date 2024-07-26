@@ -183,11 +183,6 @@ public class HaxeImportModel extends HaxeImportableModel {
   }
 
   @Override
-  protected void finalize() throws Throwable {
-    super.finalize();
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

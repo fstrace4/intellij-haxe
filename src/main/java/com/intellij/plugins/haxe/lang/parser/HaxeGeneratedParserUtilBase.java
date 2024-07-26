@@ -219,12 +219,12 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
   }
   public static boolean startWithUppercaseCheck(PsiBuilder builder_, int level_) {
     String text = builder_.getTokenText();
-    if (text != null) {
-      char c = text.charAt(0);
-      return Character.isUpperCase(c);
+      if (text != null) {
+          char c = text.charAt(0);
+          return Character.isUpperCase(c);
+        }
+      return false;
     }
-    return false;
-  }
 
 
   public static boolean isInitializersAllowed(PsiBuilder builder, int level) {

@@ -30,7 +30,7 @@ class TestAssignHints {
         var flt:Float;
 
         var enumVarA = ExtractableEnum("StringVal");
-        var enumVarB = ExtractableEnum(1,2);
+        var enumVarB = ExtractableEnum2(1,2);
         switch (enumVarA) {
             case ExtractableEnum(myVal) : str = myVal;
         }
@@ -40,6 +40,7 @@ class TestAssignHints {
             {
                 str = myValA; // correct
                 num = myValB; // correct
+                //TODO
                 flt = myValA; // wrong type
             }
         }

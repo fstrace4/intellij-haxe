@@ -7,22 +7,22 @@ Haxe File
           HaxePsiToken:ID('Color3')
       ENUM_BODY
         HaxePsiToken:{('{')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('red')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('green')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('blue')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('grey')
@@ -41,7 +41,7 @@ Haxe File
                         HaxePsiToken:ID('Int')
           HaxePsiToken:)(')')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('rgb')
@@ -84,7 +84,7 @@ Haxe File
                         HaxePsiToken:ID('Int')
           HaxePsiToken:)(')')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('alpha')

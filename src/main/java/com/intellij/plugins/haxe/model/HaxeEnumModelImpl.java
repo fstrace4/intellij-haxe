@@ -17,12 +17,14 @@
 package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeEnumBodyImpl;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.util.HaxeEnumValueUtil;
 import com.intellij.util.SmartList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -125,7 +127,8 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @Override
   public HaxeBaseMemberModel getMember(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-    HaxeBaseMemberModel value = getValue(name);
+    HaxeEnumValueModel valueModel = getValue(name);
+    HaxeBaseMemberModel value = valueModel instanceof HaxeBaseMemberModel model ? model : null;
     if (!isAbstractType() && value == null) value = getEnumValueMember(name, resolver);
     return  value;
   }
@@ -139,7 +142,7 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @Override
   public List<HaxeBaseMemberModel> getMembers(@Nullable HaxeGenericResolver resolver) {
-    List<HaxeBaseMemberModel> members = getValuesStream().collect(Collectors.toList());
+    List<HaxeBaseMemberModel> members = getValuesStream().map(HaxeBaseMemberModel.class::cast).collect(Collectors.toList());
     if (!isAbstractType()) {
       members.addAll(HaxeEnumValueUtil.getEnumValueClassMembers(this.getPsi(), resolver));
     }
@@ -170,18 +173,19 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   public Stream<HaxeEnumValueModel> getValuesStream() {
     return getValueDeclarationsStream()
-      .map(declaration -> (HaxeEnumValueModel)declaration.getModel());
+      .map(HaxeModelTarget::getModel)
+      .filter( model ->  model instanceof  HaxeEnumValueModel)
+      .map(HaxeEnumValueModel.class::cast);
   }
 
   private Stream<HaxeEnumValueDeclaration> getValueDeclarationsStream() {
-    HaxeEnumBody body = getEnumBodyPsi();
-
+    HaxeEnumBodyImpl body = getEnumBodyPsi();
     return body != null ? body.getEnumValueDeclarationList().stream() : Stream.empty();
   }
 
   @Nullable
-  private HaxeEnumBody getEnumBodyPsi() {
-    return getEnumDeclaration().getEnumBody();
+  private HaxeEnumBodyImpl getEnumBodyPsi() {
+    return (HaxeEnumBodyImpl)getEnumDeclaration().getEnumBody();
   }
 
   @Override
@@ -191,7 +195,7 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @Override
   public List<HaxeFieldModel> getFields() {
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @Override
@@ -201,17 +205,17 @@ public class HaxeEnumModelImpl extends HaxeClassModel implements HaxeEnumModel {
 
   @Override
   public List<HaxeMethodModel> getMethods(@Nullable HaxeGenericResolver resolver) {
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @Override
   public List<HaxeMethodModel> getMethodsSelf(@Nullable HaxeGenericResolver resolver) {
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @Override
   public List<HaxeMethodModel> getAncestorMethods(@Nullable HaxeGenericResolver resolver) {
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @NotNull

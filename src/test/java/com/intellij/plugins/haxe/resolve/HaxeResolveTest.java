@@ -22,6 +22,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.plugins.haxe.ide.module.HaxeModuleType;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeEnumBodyImpl;
 import com.intellij.plugins.haxe.util.HaxeTestUtils;
 import com.intellij.psi.PsiElement;
 import com.intellij.refactoring.MultiFileTestCase;
@@ -83,7 +84,7 @@ public class HaxeResolveTest extends MultiFileTestCase {
         HaxeFile haxeFile2 = (HaxeFile)file2;
         assert haxeFile2 != null;
         HaxeEnumDeclaration enumDeclaration = (HaxeEnumDeclaration)haxeFile2.getClasses()[0];
-        HaxeEnumBody enumBody = enumDeclaration.getEnumBody();
+        HaxeEnumBodyImpl enumBody = (HaxeEnumBodyImpl)enumDeclaration.getEnumBody();
         assert enumBody != null;
         assertTrue(enumBody.getEnumValueDeclarationList().contains(resolve));
       }

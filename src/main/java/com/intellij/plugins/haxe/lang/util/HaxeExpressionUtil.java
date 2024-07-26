@@ -250,19 +250,19 @@ public class HaxeExpressionUtil {
     if (is_type(expr, HaxeReferenceExpression.class)) {
       HaxeReferenceExpression ref = (HaxeReferenceExpression)expr;
       PsiElement resolved = ref.resolve();
-      if (resolved instanceof HaxeEnumValueDeclaration) { // sub-class of HaxeFieldDeclaration
+      if (resolved instanceof HaxeEnumValueDeclarationConstructor constructor) {
         // Only empty (non-parameterized) enumerations are constant.
-        HaxeParameterList parameterList = ((HaxeEnumValueDeclaration)resolved).getParameterList();
-        List<HaxeParameter> params = null == parameterList ? null : parameterList.getParameterList();
-        return null == params || params.isEmpty()
-               ? ConstantClass.ENUMERATION
-               : ConstantClass.NOT_CONSTANT;
+        return  ConstantClass.NOT_CONSTANT;
       }
-      if (resolved instanceof HaxeFieldDeclaration) {
-        HaxeFieldDeclaration fieldDeclaration = (HaxeFieldDeclaration)resolved;
+      if (resolved instanceof HaxeEnumValueDeclarationField field) {
+        return ConstantClass.ENUMERATION;
+      }
+
+      if (resolved instanceof HaxeFieldDeclaration fieldDeclaration) {
         HaxeFieldModel fieldModel = (HaxeFieldModel)fieldDeclaration.getModel();
         return classifyConstantExpression(fieldModel.getInitializerExpression());
       }
+
       return resolved instanceof HaxeExpression
              ? classifyConstantExpression((HaxeExpression)resolved)
              : ConstantClass.NOT_CONSTANT;

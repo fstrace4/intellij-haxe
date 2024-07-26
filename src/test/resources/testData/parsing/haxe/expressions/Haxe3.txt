@@ -28,7 +28,7 @@ Haxe File
         HaxePsiToken:>('>')
       ENUM_BODY
         HaxePsiToken:{('{')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('Leaf')
@@ -47,7 +47,7 @@ Haxe File
                         HaxePsiToken:ID('T')
           HaxePsiToken:)(')')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('Node')

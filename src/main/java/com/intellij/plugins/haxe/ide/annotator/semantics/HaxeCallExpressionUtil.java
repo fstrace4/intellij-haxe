@@ -614,180 +614,6 @@ public class HaxeCallExpressionUtil {
     return validation;
   }
 
-  public static CallExpressionValidation checkEnumConstructor(HaxeCallExpression expression, HaxeEnumValueModel model) {
-    CallExpressionValidation validation  = new CallExpressionValidation();
-    validation.isConstructor = true;
-
-
-    if (model == null || model.getEnumValuePsi() == null) return validation; // incomplete new expression
-    ResultHolder type = HaxeTypeResolver.getEnumReturnType(model.getEnumValuePsi(), new HaxeGenericResolver());
-    SpecificEnumValueReference enumValueType = type.getEnumValueType();
-    //guard against unexpected problems (enum usage that does not resolve to an enumValue)
-    if (enumValueType == null) return validation;
-    SpecificHaxeClassReference declaringClass = enumValueType.getEnumClass();
-
-    // if we cant find a constructor  ignore
-    // TODO (might add a missing constructor  annotation here)
-    if (!model.hasConstructor()) {
-      return validation;
-    }
-
-
-    if (expression.getExpressionList() == null)return validation;
-
-    List<HaxeParameterModel> parameterList = mapParametersToModel(model.getConstructorParameters());
-    List<HaxeExpression> argumentList = expression.getExpressionList().getExpressionList();
-
-
-    boolean hasVarArgs = hasVarArgs(parameterList);
-    long minArgRequired = countRequiredArguments(parameterList);
-    long maxArgAllowed = hasVarArgs ? Long.MAX_VALUE : parameterList.size();
-
-    // min arg check
-
-    if (argumentList.size() < minArgRequired) {
-      String message = HaxeBundle.message("haxe.semantic.method.parameter.missing", minArgRequired, argumentList.size());
-      if (argumentList.isEmpty()) {
-        @NotNull PsiElement[] children = expression.getChildren();
-        if (children.length > 0) {
-          PsiElement first = UsefulPsiTreeUtil.getNextSiblingSkipWhiteSpacesAndComments(children[0]);
-          if (first != null) {
-            PsiElement second = UsefulPsiTreeUtil.getNextSiblingSkipWhiteSpacesAndComments(first);
-            TextRange range = TextRange.create(first.getTextOffset(), second.getTextOffset() + 1);
-            //holder.newAnnotation(HighlightSeverity.ERROR, message).range(range).create();
-            validation.errors.add(new ErrorRecord(range, message));
-            return validation;
-          }
-        }
-      }
-      validation.errors.add(new ErrorRecord(expression.getTextRange(), message));
-      return validation;
-    }
-    //max arg check
-    if (argumentList.size() > maxArgAllowed) {
-      String message = HaxeBundle.message("haxe.semantic.method.parameter.too.many", maxArgAllowed, argumentList.size());
-      validation.errors.add(new ErrorRecord(expression.getTextRange(), message));
-      return validation;
-    }
-
-    // generics and type parameter
-    HaxeGenericSpecialization specialization = expression.getSpecialization();
-    HaxeGenericResolver resolver = null;
-
-
-    if (specialization != null) {
-      resolver = specialization.toGenericResolver(expression);
-    }
-    if (resolver == null) resolver = new HaxeGenericResolver();
-
-    resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(expression, resolver);
-
-    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(declaringClass.getHaxeClassModel().getGenericParams(), resolver);
-
-
-    int parameterCounter = 0;
-    int argumentCounter = 0;
-
-
-    boolean isRestArg = false;
-    HaxeParameterModel parameter = null;
-    HaxeExpression argument;
-
-    ResultHolder parameterType;
-    ResultHolder argumentType;
-
-    // checking arguments is a bit complicated, rest parameters allow "infinite" arguments and optional parameters can be "skipped"
-    // so we only want to break the loop once we have either exhausted the arguments or parameter list.
-    while (true) {
-      HaxeGenericResolver localResolver = new HaxeGenericResolver();
-      localResolver.addAll(resolver);
-
-      if (argumentList.size() > argumentCounter) {
-        argument = argumentList.get(argumentCounter++);
-      }
-      else {
-        // out of arguments
-        break;
-      }
-
-      if (!isRestArg) {
-        if (parameterList.size() > parameterCounter) {
-          parameter = parameterList.get(parameterCounter++);
-          if (isVarArg(parameter)) isRestArg = true;
-        }
-        else {
-          // out of parameters and last is not var arg
-          break;
-        }
-      }
-
-      localResolver.addAll(declaringClass.getGenericResolver().withoutUnknowns());
-
-      argumentType = resolveArgumentType(argument, localResolver);
-      parameterType = resolveParameterType(parameter, localResolver);
-
-      // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
-      if (containsTypeParameter(parameterType, typeParamTable)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, localResolver, resolver, typeParamTable);
-        // attempt re-resolve after adding inherited type parameters
-        parameterType = resolveParameterType(parameter, resolver);
-      }
-
-      //TODO properly resolve typedefs
-      SpecificHaxeClassReference argumentClass = argumentType.getClassType();
-      if (argumentClass != null && argumentClass.isFunction() && parameterType.isTypeDef()) {
-        // make sure that if  parameter type is typedef  try to convert to function so we can compare with argument
-        parameterType = resolveParameterType(parameterType, argumentClass);
-      }
-
-
-      //TODO mlo: note to self , when argument function, can assign to "Function"
-
-      Optional<ResultHolder> optionalTypeParameterConstraint = findConstraintForTypeParameter(parameter, parameterType, typeParamTable);
-
-      // check if  argument matches Type Parameter constraint
-      if (optionalTypeParameterConstraint.isPresent()) {
-        ResultHolder constraint = optionalTypeParameterConstraint.get();
-        if (canAssignToFrom(constraint, argumentType)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
-        } else {
-          if (parameter.isOptional()) {
-            argumentCounter--; //retry argument with next parameter
-          }
-          else {
-            validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument));
-            addToIndexMap(validation, argumentCounter, parameterCounter);
-          }
-        }
-      }
-      else {
-        ResultHolder resolvedParameterType = HaxeTypeResolver.resolveParameterizedType(parameterType, resolver.withoutUnknowns());
-
-
-        if (canAssignToFrom(resolvedParameterType, argumentType)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
-        }
-        else {
-          if (parameter.isOptional()) {
-            argumentCounter--; //retry argument with next parameter
-          }else {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument));
-            addToIndexMap(validation, argumentCounter, parameterCounter);
-          }
-        }
-      }
-    }
-    validation.completed = true;
-    validation.resolver = resolver;
-    return validation;
-  }
-
 
   @NotNull
   private static List<HaxeParameterModel> mapParametersToModel(HaxeParameterList parameterList) {
@@ -847,11 +673,12 @@ public class HaxeCallExpressionUtil {
         SpecificFunctionReference type = functionDeclaration.getModel().getFunctionType(null);
         expressionType = type.createHolder();
       }
-      else if (resolvedExpression instanceof HaxeMethodDeclaration methodDeclaration) {
-        SpecificFunctionReference type = methodDeclaration.getModel().getFunctionType(null);
+      // this one  also cover Enum constructors
+      else if (resolvedExpression instanceof HaxeMethod method) {
+        SpecificFunctionReference type = method.getModel().getFunctionType(null);
         expressionType = type.createHolder();
-      }else if (resolvedExpression instanceof HaxeEnumValueDeclaration valueDeclaration) {
-        ResultHolder type = HaxeTypeResolver.getEnumReturnType(valueDeclaration, referenceExpression.resolveHaxeClass().getGenericResolver());
+      }else if (resolvedExpression instanceof HaxeEnumValueDeclarationField enumValueField) {
+        ResultHolder type = HaxeTypeResolver.getEnumReturnType(enumValueField, referenceExpression.resolveHaxeClass().getGenericResolver());
         // convert any EnumValue to its parent enumClass so we can do proper assignCheck
         if (type.isEnumValueType()) {
           type = type.getEnumValueType().getEnumClass().createHolder();

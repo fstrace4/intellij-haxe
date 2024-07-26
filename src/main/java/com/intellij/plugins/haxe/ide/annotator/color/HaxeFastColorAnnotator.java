@@ -156,7 +156,11 @@ public class HaxeFastColorAnnotator implements Annotator , DumbAware {
   private static void checkComponentName(@NotNull HaxeComponentName node, @NotNull AnnotationHolder holder) {
     PsiElement element = node;
     final boolean isStatic = PsiTreeUtil.getParentOfType(node, HaxeImportStatement.class) == null && checkStatic(element.getParent());
-    final TextAttributesKey attribute = getAttributeByType(HaxeComponentType.typeOf(element.getParent()), isStatic);
+    TextAttributesKey attribute = getAttributeByType(HaxeComponentType.typeOf(element.getParent()), isStatic);
+    // TODO make a HaxeComponentType for enum values
+    if (element.getParent() instanceof  HaxeEnumValueDeclarationConstructor) {
+      attribute = getAttributeByType(HaxeComponentType.FIELD, false);
+    }
     if (attribute != null) {
       if (node instanceof HaxeReference reference) {
         element = reference.getReferenceNameElement();

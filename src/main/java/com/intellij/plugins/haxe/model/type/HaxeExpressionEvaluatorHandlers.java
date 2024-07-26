@@ -286,9 +286,9 @@ public class HaxeExpressionEvaluatorHandlers {
               }
             }
           }
-          else if (subelement instanceof HaxeMethodDeclaration methodDeclaration) {
+          else if (subelement instanceof HaxeMethod haxeMethod) {
             boolean isFromCallExpression = reference instanceof  HaxeCallExpression;
-            SpecificFunctionReference type = methodDeclaration.getModel().getFunctionType(isFromCallExpression ? resolver : resolver.withoutAssignHint());
+            SpecificFunctionReference type = haxeMethod.getModel().getFunctionType(isFromCallExpression ? resolver : resolver.withoutAssignHint());
             if (!isFromCallExpression) {
               //  expression is referring to the method not calling it.
               //  assign hint should be used for substituting parameters instead of being used as return type
@@ -304,12 +304,30 @@ public class HaxeExpressionEvaluatorHandlers {
           else if (subelement instanceof HaxeIteratorkey || subelement instanceof HaxeIteratorValue) {
             typeHolder = findIteratorType(subelement);
           }
-
-          else if (subelement instanceof HaxeSwitchCaseCaptureVar caseCaptureVar) {
-            HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(caseCaptureVar, HaxeSwitchStatement.class);
-            if (switchStatement.getExpression() != null) {
-              typeHolder = handle(switchStatement.getExpression(), context, resolver);
+          // case var x; / case x = ...;
+          else if (subelement instanceof HaxeSwitchCaseCaptureVar || subelement instanceof  HaxeSwitchCaseCapture) {
+            HaxeEnumArgumentExtractor argumentExtractor =  PsiTreeUtil.getParentOfType(subelement, HaxeEnumArgumentExtractor.class, true, HaxeSwitchStatement.class);
+            // if reference is in an argument extractor, get type from enum constructor parameter list (typical "case MyEnumVal( x = {..}")
+            if (argumentExtractor != null) {
+              List<@NotNull PsiElement> argExtractChildren = Arrays.asList(argumentExtractor.getEnumExtractorArgumentList().getChildren());
+              int index = argExtractChildren.indexOf(subelement);
+              if (index > -1) {
+                PsiElement enumConsPsi = argumentExtractor.getEnumValueReference().getReferenceExpression().resolve();
+                if (enumConsPsi instanceof HaxeEnumValueDeclarationConstructor constructor) {
+                  HaxeParameterList parameterList = constructor.getParameterList();
+                  List<HaxeParameter> list = parameterList.getParameterList();
+                  if (index < list.size()) {
+                    HaxeParameter parameter = list.get(index);
+                    return handle(parameter, context, resolver);
+                  }
+                }
+              }
             }
+            // if not in an arg extractor, then use type from switch (typical in  "case var x:" and "case x = ..." )
+            HaxeSwitchStatement switchStatement = PsiTreeUtil.getParentOfType(subelement, HaxeSwitchStatement.class);
+            if (switchStatement.getExpression() != null) {
+              return handle(switchStatement.getExpression(), context, resolver);
+          }
           }
 
           else if (subelement instanceof HaxeSwitchCaseExpr caseExpr) {
@@ -601,14 +619,14 @@ public class HaxeExpressionEvaluatorHandlers {
     // TODO mlo should probably move the haxe model logic to the PSI implementation so we can cache it
     HaxeEnumExtractorModel extractorModel =  new HaxeEnumExtractorModel(extractor);
     HaxeEnumValueModel enumValueModel =  extractorModel.getEnumValueModel();
-    if (enumValueModel != null) {
+    if (enumValueModel  instanceof  HaxeEnumValueConstructorModel constructorModel) {
       // check if in literal array
       HaxeSwitchExtractorExpressionArrayLiteral arrayLiteral =
         PsiTreeUtil.getParentOfType(extractedValue, HaxeSwitchExtractorExpressionArrayLiteral.class, true, HaxeEnumArgumentExtractor.class);
       if(arrayLiteral != null) {
         int index = extractorModel.findExtractValueIndex(arrayLiteral);
         HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
-        ResultHolder parameterType = enumValueModel.getParameterType(index, extractorResolver);
+        ResultHolder parameterType = constructorModel.getParameterType(index, extractorResolver);
         if (parameterType != null && parameterType.getClassType() != null)  {
           HaxeGenericResolver resolver = parameterType.getClassType().getGenericResolver();
           @NotNull ResultHolder[] specifics = resolver.getSpecifics();
@@ -617,7 +635,7 @@ public class HaxeExpressionEvaluatorHandlers {
       }else {
         int index = extractorModel.findExtractValueIndex(extractedValue);
         HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
-        ResultHolder parameterType = enumValueModel.getParameterType(index, extractorResolver);
+        ResultHolder parameterType = constructorModel.getParameterType(index, extractorResolver);
         if (parameterType != null) return parameterType;
       }
     }
@@ -1324,7 +1342,7 @@ public class HaxeExpressionEvaluatorHandlers {
       functionResolver.addAll(resolver.withoutArgumentType());
 
       // if reference to "real" method, try to use any argument to type parameter mapping
-      if (ftype.method != null && returnType.isTypeParameter()) {
+      if (ftype.method != null && returnType.containsTypeParameters()) {
         HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, ftype.method.getMethod());
         functionResolver.addAll(validation.getResolver());
       }

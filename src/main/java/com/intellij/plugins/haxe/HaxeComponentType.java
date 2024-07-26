@@ -180,7 +180,8 @@ public enum HaxeComponentType {
     if (element instanceof HaxeTypedefDeclaration) {
       return TYPEDEF;
     }
-    if (element instanceof HaxeMethodDeclaration) {
+    if (element instanceof HaxeMethodDeclaration ||
+        element instanceof HaxeEnumValueDeclarationConstructor) {
       return METHOD;
     }
     if (element instanceof HaxeLocalFunctionDeclaration ||
@@ -188,7 +189,7 @@ public enum HaxeComponentType {
       return FUNCTION;
     }
     if (element instanceof HaxeFieldDeclaration ||
-        element instanceof HaxeEnumValueDeclaration ||
+        element instanceof HaxeEnumValueDeclarationField ||
         element instanceof HaxeAnonymousTypeField ||
         element instanceof HaxeObjectLiteralElement
     ) {

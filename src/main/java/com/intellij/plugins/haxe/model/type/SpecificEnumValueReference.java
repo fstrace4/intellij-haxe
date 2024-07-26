@@ -16,8 +16,7 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.HaxeEnumModelImpl;
-import com.intellij.plugins.haxe.model.HaxeEnumValueModel;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
@@ -33,9 +32,7 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
   final HaxeGenericResolver resolver;
   final Object constantValue;
 
-  HaxeEnumValueModel model;
-
-  SpecificFunctionReference constructor;
+  SpecificFunctionReference constructor = null;
 
   // TODO: Need the parameter values???
 
@@ -76,10 +73,7 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
 
   @NotNull
   public HaxeEnumValueModel getModel() {
-    if (model == null) {
-      model = new HaxeEnumValueModel(declaration);
-    }
-    return model;
+    return (HaxeEnumValueModel)declaration.getModel();
   }
 
   @NotNull
@@ -154,20 +148,20 @@ public class SpecificEnumValueReference extends SpecificTypeReference {
 
   @Nullable
   public SpecificFunctionReference getConstructor() {
-    if(getModel().getConstructorParameters() == null) {
-      // should not happen, no arg constructors are not a thing and enum should be considered a field
-      return null;
+    if(getModel() instanceof  HaxeEnumValueConstructorModel constructorModel) {
+      if (constructor == null) {
+        HaxeClassModel declaringEnum = constructorModel.getDeclaringEnum();
+        if (declaringEnum != null) {
+          ResultHolder resultHolder = declaringEnum.getInstanceType();
+          List<SpecificFunctionReference.Argument> arguments = convertParameterList(constructorModel);
+          constructor = new SpecificFunctionReference(arguments, resultHolder, null, context, null);
+        }
+      }
     }
-    if (constructor == null){
-      HaxeEnumValueModel model = getModel();
-      ResultHolder resultHolder = model.getDeclaringClass().getInstanceType();
-      List<SpecificFunctionReference.Argument> arguments = convertParameterList(model);
-      constructor = new SpecificFunctionReference(arguments, resultHolder, null, context, null);
-    }
-    return constructor;
+  return constructor;
   }
 
-  private static List<SpecificFunctionReference.Argument> convertParameterList(HaxeEnumValueModel model) {
+  private static List<SpecificFunctionReference.Argument> convertParameterList(HaxeEnumValueConstructorModel model) {
     List<SpecificFunctionReference.Argument> arguments = new ArrayList<>();
     @NotNull List<HaxeParameter> list = model.getConstructorParameters().getParameterList();
     for (int i = 0; i < list.size(); i++) {

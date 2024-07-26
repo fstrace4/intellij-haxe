@@ -14,12 +14,12 @@ Haxe File
         HaxePsiToken:>('>')
       ENUM_BODY
         HaxePsiToken:{('{')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('empty')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('cons')

@@ -10,7 +10,7 @@ Haxe File
           HaxePsiToken:ID('Test')
       ENUM_BODY
         HaxePsiToken:{('{')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('TString')
@@ -29,7 +29,7 @@ Haxe File
                         HaxePsiToken:ID('String')
           HaxePsiToken:)(')')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_CONSTRUCTOR
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('TInt')

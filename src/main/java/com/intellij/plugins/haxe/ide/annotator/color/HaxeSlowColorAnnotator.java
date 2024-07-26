@@ -50,9 +50,9 @@ public class HaxeSlowColorAnnotator implements Annotator {
     }
 
     if (node instanceof HaxeReference reference) {
-      final boolean chain = PsiTreeUtil.getChildOfType(node, HaxeReference.class) != null;
+      final boolean chain = PsiTreeUtil.getChildOfType(reference, HaxeReference.class) != null;
       if (chain) {
-        if (tryAnnotateQName(node, holder)) return;
+        if (tryAnnotateQName(reference, holder)) return;
       }
       if(!(reference instanceof  HaxeReferenceExpression)
          && !(reference instanceof  HaxePropertyAccessor)
@@ -64,7 +64,11 @@ public class HaxeSlowColorAnnotator implements Annotator {
 
       if (element instanceof HaxeComponentName) {
         final boolean isStatic = PsiTreeUtil.getParentOfType(node, HaxeImportStatement.class) == null && checkStatic(element.getParent());
-        final TextAttributesKey attribute = getAttributeByType(HaxeComponentType.typeOf(element.getParent()), isStatic);
+        TextAttributesKey attribute = getAttributeByType(HaxeComponentType.typeOf(element.getParent()), isStatic);
+        // TODO make a HaxeComponentType for enum values
+        if (element.getParent() instanceof  HaxeEnumValueDeclarationConstructor) {
+          attribute = getAttributeByType(HaxeComponentType.FIELD, false);
+        }
         if (attribute != null) {
           element = reference.getReferenceNameElement();
           if (element != null) node = element;
@@ -74,7 +78,7 @@ public class HaxeSlowColorAnnotator implements Annotator {
     }
   }
 
-  private static boolean tryAnnotateQName(PsiElement node, AnnotationHolder holder) {
+  private static boolean tryAnnotateQName(HaxeReference node, AnnotationHolder holder) {
     // Maybe this is class name
     final HaxeClass resultClass = HaxeResolveUtil.tryResolveClassByQName(node);
     if (resultClass != null) {

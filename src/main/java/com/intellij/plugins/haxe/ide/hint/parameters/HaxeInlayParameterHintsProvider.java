@@ -6,10 +6,7 @@ import com.intellij.codeInsight.hints.Option;
 import com.intellij.plugins.haxe.HaxeHintBundle;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.lang.psi.*;
-import com.intellij.plugins.haxe.model.HaxeClassModel;
-import com.intellij.plugins.haxe.model.HaxeEnumValueModel;
-import com.intellij.plugins.haxe.model.HaxeMethodModel;
-import com.intellij.plugins.haxe.model.HaxeParameterModel;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -93,10 +90,9 @@ public class HaxeInlayParameterHintsProvider implements InlayParameterHintsProvi
     HaxeCallExpressionList expressionList = callExpression.getExpressionList();
     List<HaxeExpression> expressions = expressionList == null ? List.of() : expressionList.getExpressionList();
 
-    HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkEnumConstructor(callExpression, enumValueModel);
-
-    if (enumValueModel.getConstructorParameters() != null) {
-      List<HaxeParameterModel> parameters = MapParametersToModel(enumValueModel.getConstructorParameters());
+    if (enumValueModel instanceof HaxeEnumValueConstructorModel constructorModel && constructorModel.getConstructorParameters() != null) {
+      HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, constructorModel.getMethod());
+      List<HaxeParameterModel> parameters = MapParametersToModel(constructorModel.getConstructorParameters());
       processArguments(validation.getArgumentToParameterIndex(), expressions, parameters, infoList);
     }
   }

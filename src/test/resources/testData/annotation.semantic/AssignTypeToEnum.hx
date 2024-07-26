@@ -7,6 +7,10 @@ class ClassTypeAssignmentTest {
         var myClassObject:ClassTypeAssignmentTest = new ClassTypeAssignmentTest();
         var myEnumObject:TestEnum = TestEnum.SOME_VALUE;
 
+        // enums with constructor if referenced is a function (needs a call expression for type)
+        var myEnumFuctionRef:Int->TestEnum = TestEnum.SOME_CONSRUCTOR;
+        var myEnumFuctionCall:TestEnum = TestEnum.SOME_CONSRUCTOR(1);
+
         //Enum<Dynamic>
         var dynamicEnum01:Enum<Dynamic> = TestEnum;            // [OK] type is enum
         var dynamicEnum02:Enum<Dynamic> = null;                // [OK] Null allowed
@@ -44,5 +48,6 @@ class SecondExtended extends TestExtended{}
 class OtherClass {}
 enum TestEnum {
     SOME_VALUE;
+    SOME_CONSRUCTOR(i:Int);
 }
 enum OtherEnum {}

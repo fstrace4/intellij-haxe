@@ -177,10 +177,9 @@ public class HaxeFieldModel extends HaxeMemberModel {
    * @return true, if the field is a constant; false, otherwise.
    */
   public boolean isConstant() {
-    if (isEnumValue()) {
-      HaxeEnumValueDeclaration enumValue = (HaxeEnumValueDeclaration)getBasePsi();
-      return null == enumValue.getParameterList();  // Only enums without arguments are considered constants.
-    }
+      if (getBasePsi() instanceof HaxeEnumValueDeclarationField field) {
+        return true;
+      }
 
     return isStatic() && isInline() && HaxeExpressionUtil.isConstantExpression(getInitializerExpression());
   }
@@ -214,6 +213,7 @@ public class HaxeFieldModel extends HaxeMemberModel {
   }
 
   public boolean isOptional() {
-    return getBasePsi() instanceof HaxeOptionalFieldDeclaration;
+    if(getBasePsi() instanceof HaxeOptionalFieldDeclaration) return true;
+    return hasOptionalMeta();
   }
 }

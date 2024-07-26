@@ -111,11 +111,15 @@ public class HaxeTypeResolver {
     if(declaringEnum!= null && !declaringEnum.isAbstractType()) {
       return new SpecificEnumValueReference(comp, comp.getParent(), resolver).createHolder();
     }
-    ResultHolder result = getTypeFromTypeTag(comp.getReturnType(), comp.getParent());
-    if (result.isUnknown()) {
-      result = new SpecificEnumValueReference(comp, comp.getParent(), resolver).createHolder();
+    if (model instanceof HaxeEnumValueConstructorModel constructorModel) {
+      ResultHolder result = getTypeFromTypeTag(constructorModel.getEnumValuePsi().getTypeTag(), comp.getParent());
+      if (result.isUnknown()) {
+        return  new SpecificEnumValueReference(comp, comp.getParent(), resolver).createHolder();
+      }else {
+        return result;
+      }
     }
-    return result;
+    return SpecificHaxeClassReference.getUnknown(comp).createHolder();
   }
 
   @NotNull
@@ -202,23 +206,24 @@ public class HaxeTypeResolver {
       comp = null != typeParameterContributor ? typeParameterContributor : comp;
     }
 
-    if (comp instanceof HaxeTypedefDeclaration) {
+    if (comp instanceof HaxeTypedefDeclaration typedefDeclaration) {
       // TODO: Make a HaxeTypedefModel and use it here.
-      HaxeGenericParam param = ((HaxeTypedefDeclaration)comp).getGenericParam();
+      HaxeGenericParam param = typedefDeclaration.getGenericParam();
       genericParams = translateGenericParamsToModelList(param);
     }
-    else if (comp instanceof HaxeClass) {
-      HaxeClassModel model = ((HaxeClass)comp).getModel();
+    else if (comp instanceof HaxeClass haxeClass) {
+      HaxeClassModel model = haxeClass.getModel();
       genericParams = model.getGenericParams();
     }
-    else if (comp instanceof HaxeMethodDeclaration) {
-      HaxeMethodModel model = ((HaxeMethod)comp).getModel();
+    else if (comp instanceof HaxeMethodDeclaration methodDeclaration) {
+      HaxeMethodModel model = methodDeclaration.getModel();
       genericParams = model.getGenericParams();
     }
-    else if (comp instanceof HaxeEnumValueDeclaration) {
-      // TODO: HaxeEnumModel inheritance is screwed up. (It doesn't inherit from HaxeModel, among other things.) Fix it and use the model here.
-      HaxeGenericParam param = ((HaxeEnumValueDeclaration)comp).getGenericParam();
-      genericParams = translateGenericParamsToModelList(param);
+    else if (comp instanceof HaxeEnumValueDeclaration enumValueDeclaration) {
+      HaxeModel model =  enumValueDeclaration.getModel();
+      if (model instanceof  HaxeEnumValueConstructorModel constructorModel) {
+        genericParams = constructorModel.getGenericParams();
+      }
     }
 
     if (null != genericParams && !genericParams.isEmpty()) {

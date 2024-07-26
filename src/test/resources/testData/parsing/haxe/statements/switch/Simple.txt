@@ -45,12 +45,13 @@ Haxe File
                 SWITCH_CASE
                   HaxePsiToken:case('case')
                   SWITCH_CASE_EXPR
-                    CALL_EXPRESSION
-                      REFERENCE_EXPRESSION
-                        IDENTIFIER
-                          HaxePsiToken:ID('foo')
+                    ENUM_ARGUMENT_EXTRACTOR
+                      ENUM_VALUE_REFERENCE
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('foo')
                       HaxePsiToken:(('(')
-                      CALL_EXPRESSION_LIST
+                      ENUM_EXTRACTOR_ARGUMENT_LIST
                         LITERAL_EXPRESSION
                           HaxePsiToken:LITINT('1')
                       HaxePsiToken:)(')')

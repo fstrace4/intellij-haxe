@@ -63,8 +63,8 @@ public class HaxeEnumExtractorModel {
 
       int index = extractorModel.findExtractValueIndex(extractor);
       HaxeEnumValueModel valueModel = extractorModel.getEnumValueModel();
-      if(valueModel != null) {
-        ResultHolder parameterType = valueModel.getParameterType(index, parentResolver);
+      if(valueModel  instanceof  HaxeEnumValueConstructorModel constructorModel) {
+        ResultHolder parameterType = constructorModel.getParameterType(index, parentResolver);
         if (parameterType != null && parameterType.isClassType()) {
           return parameterType.getClassType().getGenericResolver();
         }

@@ -294,7 +294,9 @@ public class HaxeFileModel implements HaxeExposableModel {
     HaxeClassModel classModel = getClassModel(className);
     if (classModel != null) {
       if (memberName != null) {
-        return classModel.getMember(memberName, null);
+        // use self to avoid digging through inherited class members (we want what's in this file after all)
+        // (also prevents stackoverflow recursion issues when  2 files uses each others members)
+        return classModel.getMemberSelf(memberName, null);
       }
       return classModel;
     }

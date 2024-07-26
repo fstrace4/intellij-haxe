@@ -241,9 +241,9 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
               }
               // fallback, heck method parameters (needs work , optional are not handled)
               for (PsiElement element : matchesInImport) {
-                if (element instanceof HaxeEnumValueDeclaration enumValueDeclaration) {
+                if (element instanceof HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
                   int currentSize =
-                    Optional.ofNullable(enumValueDeclaration.getParameterList()).map(p -> p.getParameterList().size()).orElse(0);
+                    Optional.of(enumValueDeclaration.getParameterList()).map(p -> p.getParameterList().size()).orElse(0);
                   if (expectedSize == currentSize) {
                     LogResolution(reference, "via import  & enum value declaration");
                     return List.of(element);
@@ -639,7 +639,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
       HaxeEnumValueDeclaration enumDeclaration = PsiTreeUtil.getParentOfType(typeTag, HaxeEnumValueDeclaration.class);
       if (enumDeclaration != null) {
         // EnumValueDeclarations does not define TypeParameters, only the parent EnumType can have these.
-        HaxeClassModel declaringClass = ((HaxeEnumValueModel)enumDeclaration.getModel()).getDeclaringClass();
+        HaxeClassModel declaringClass = ((HaxeEnumValueModel)enumDeclaration.getModel()).getDeclaringEnum();
         if (declaringClass != null) {
           List<HaxeGenericParamModel> params = declaringClass.getGenericParams();
           return findTypeParameterPsi(reference, params);
@@ -990,7 +990,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           HaxeClassModel model = enumClass.getHaxeClassModel();
           if (model != null) {
             HaxeBaseMemberModel enumValue = model.getMember(argumentExtractor.getEnumValueReference().getText(), null);
-            if (enumValue instanceof  HaxeEnumValueModel enumValueModel) {
+            if (enumValue instanceof  HaxeEnumValueConstructorModel enumValueModel) {
               int argumentIndex = findExtractorIndex(switchCaseExpr.getChildren(), argumentExtractor);
               if (argumentIndex > -1) {
                 HaxeParameterList parameters = enumValueModel.getConstructorParameters();
@@ -1011,7 +1011,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     if (aClass != null) {
       HaxeClassModel model = aClass.getModel();
       HaxeBaseMemberModel member = model.getMember(enumType.getText(), null);
-      if (member instanceof HaxeEnumValueModel enumValueModel) {
+      if (member instanceof HaxeEnumValueConstructorModel enumValueModel) {
         HaxeParameterList parameters = enumValueModel.getConstructorParameters();
         if (parameters != null) {
           List<HaxeParameter> list = parameters.getParameterList();
@@ -1268,10 +1268,34 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   @Nullable
   private List<? extends PsiElement> checkIsType(HaxeReference reference) {
     final HaxeType type = PsiTreeUtil.getParentOfType(reference, HaxeType.class);
-    final HaxeClass haxeClassInType = HaxeResolveUtil.tryResolveClassByQName(type);
-    if (type != null && haxeClassInType != null) {
-      LogResolution(reference, "via parent type name.");
-      return asList(haxeClassInType.getComponentName());
+    if (type != null) {
+      final HaxeClass haxeClassInType = HaxeResolveUtil.tryResolveClassByQName(type);
+      if (type != null && haxeClassInType != null) {
+        LogResolution(reference, "via parent type name.");
+        return asList(haxeClassInType.getComponentName());
+      }
+      //  check if module member
+      //  we might get a match on class with module name (default class), but the type we are looking for is not a child of default class
+      //  so we search the parent file for other classes
+      @NotNull PsiElement[] children = reference.getChildren();
+      if(children.length > 1) {
+        if (children[0] instanceof HaxeReference child) {
+          List<? extends PsiElement> resolve = resolve(child, false);
+          if (!resolve.isEmpty()) {
+            PsiFile containingFile = resolve.get(0).getContainingFile();
+            if (containingFile instanceof  HaxeFile haxeFile) {
+              HaxeClassModel model = haxeFile.getModel().getClassModel(children[1].getText());
+              if (model != null) {
+                HaxeComponentName componentName = model.haxeClass.getComponentName();
+                if(componentName!= null){
+                  LogResolution(reference, "via module scan.");
+                  return List.of(componentName);
+                }
+              }
+            }
+          }
+        }
+      }
     }
     return null;
   }
@@ -1459,7 +1483,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private HaxeComponentName tryResolveHelperClass(HaxeReference leftReference, String helperName) {
     if (log.isTraceEnabled()) log.trace(traceMsg("leftReference=" + leftReference + " helperName=" + helperName));
     HaxeComponentName componentName = null;
-    HaxeClass leftResultClass = HaxeResolveUtil.tryResolveClassByQName(leftReference);
+    HaxeReferenceExpression referenceExpression = PsiTreeUtil.getChildOfType(leftReference, HaxeReferenceExpression.class);
+    HaxeClass leftResultClass = HaxeResolveUtil.tryResolveClassByQName(referenceExpression);
     if (leftResultClass != null) {
       if (log.isTraceEnabled()) {
         log.trace(traceMsg("Found a left result via QName: " + (leftResultClass.getText() != null ? leftResultClass : "<no text>")));

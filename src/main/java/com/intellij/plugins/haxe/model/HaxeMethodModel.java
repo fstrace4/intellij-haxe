@@ -22,6 +22,7 @@ package com.intellij.plugins.haxe.model;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
@@ -46,11 +47,11 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
 
   private static final Key<Boolean> isVoidReturn = Key.create("isReturnTypeVoid");
 
-  private HaxeMethodImpl haxeMethod;
+  private HaxeMethod haxeMethod;
   private String name;
 
 
-  public HaxeMethodModel(HaxeMethodImpl haxeMethod) {
+  public HaxeMethodModel(HaxeMethod haxeMethod) {
     super(haxeMethod);
     this.haxeMethod = haxeMethod;
     this.name = getName();
@@ -95,9 +96,9 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
     return null == parameterList ? 0 : parameterList.getParametersCount();
   }
 
-  public List<HaxeParameterModel> getParametersWithContext(HaxeMethodContext context) {
+  public List<HaxeParameterModel> getParametersWithContext(@Nullable HaxeMethodContext context) {
     List<HaxeParameterModel> params = getParameters();
-    if (context.isExtensionMethod()) {
+    if (context!= null && context.isExtensionMethod()) {
       params = new ArrayList<>(params);
       params.remove(0);
     }
@@ -135,7 +136,7 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
     return getPresentableText(context, null);
   }
   @Override
-  public String getPresentableText(HaxeMethodContext context, @Nullable HaxeGenericResolver resolver) {
+  public String getPresentableText(@Nullable HaxeMethodContext context, @Nullable HaxeGenericResolver resolver) {
     StringBuilder out = new StringBuilder();
     out.append(this.getName());
     out.append("(");
@@ -170,9 +171,9 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
         return SpecificHaxeClassReference.getVoid(haxeMethod).createHolder();
       }else {
         ResultHolder type = HaxeTypeResolver.getFieldOrMethodReturnType(haxeMethod, resolver);
-        if(type.isVoid()) {
-          haxeMethod.registerCacheKey(isVoidReturn);
-          haxeMethod.putUserData(isVoidReturn, Boolean.TRUE);
+        if(type.isVoid() && haxeMethod instanceof AbstractHaxeNamedComponent component) {
+          component.registerCacheKey(isVoidReturn);
+          component.putUserData(isVoidReturn, Boolean.TRUE);
         }
         return type;
       }

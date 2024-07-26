@@ -55,7 +55,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.evaluate;
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findIteratorType;
@@ -1112,15 +1111,23 @@ public class HaxeResolveUtil {
   }
 
   @Nullable
-  public static HaxeClass tryResolveClassByQName(@Nullable PsiElement type) {
-    if (type == null || type.getContext() == null) {
+  public static HaxeClass tryResolveClassByQName(@Nullable PsiElement element) {
+    if (element == null || element.getContext() == null) {
       return null;
     }
-
-    final String name = getQName(type);
-    HaxeClass result = name == null ? tryResolveClassByQNameWhenGetQNameFail(type) : findClassByQName(name, type.getContext());
+    String name = getQNameFromImportStatment(element);
+    PsiElement type = tryGetReferenceExpressionFromType(element);
+    HaxeClass result = name == null ? tryResolveClassByQNameWhenGetQNameFail(type) : findClassByQName(name, element.getContext());
     result = result != null ? result : findClassByQNameInSuperPackages(type);
     return result;
+  }
+
+  private static PsiElement tryGetReferenceExpressionFromType(@NotNull PsiElement element) {
+    if (element instanceof  HaxeType type) return type.getReferenceExpression();
+    if (element instanceof  HaxeTypeOrAnonymous typeOrAnonymous) {
+      if (typeOrAnonymous.getType() != null)  typeOrAnonymous.getType().getReferenceExpression();
+    }
+    return element;
   }
 
   private static String tryResolveFullyQualifiedHaxeReferenceExpression(PsiElement type) {
@@ -1169,7 +1176,7 @@ public class HaxeResolveUtil {
   }
 
   @Nullable
-  private static String getQName(@NotNull PsiElement type) {
+  private static String getQNameFromImportStatment(@NotNull PsiElement type) {
     HaxeImportStatement importStatement = PsiTreeUtil.getParentOfType(type, HaxeImportStatement.class, false);
     if (importStatement != null) {
       HaxeReferenceExpression referenceExpression = importStatement.getReferenceExpression();
@@ -1212,8 +1219,8 @@ public class HaxeResolveUtil {
             if(matchesInImport.size()> 1 &&  type.getParent() instanceof  HaxeCallExpression callExpression) {
               int expectedSize = Optional.ofNullable(callExpression.getExpressionList()).map(e -> e.getExpressionList().size()).orElse(0);
               for (PsiElement element : matchesInImport) {
-                if (element instanceof  HaxeEnumValueDeclaration enumValueDeclaration) {
-                  int currentSize = Optional.ofNullable(enumValueDeclaration.getParameterList()).map(p ->  p.getParameterList().size()).orElse(0);
+                if (element instanceof  HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
+                  int currentSize = Optional.of(enumValueDeclaration.getParameterList()).map(p ->  p.getParameterList().size()).orElse(0);
                   if (expectedSize == currentSize) {
                     result = element;
                     break;
@@ -1350,7 +1357,18 @@ public class HaxeResolveUtil {
           }
           if (model instanceof HaxeEnumModel enumModel) {
             Optional<HaxeEnumValueModel> match = enumModel.getValues().stream().filter(m -> name.equals(m.getName())).findFirst();
-            if (match.isPresent()) return match.get().getNamedComponentPsi().getComponentName();
+            if (match.isPresent()){
+              HaxeEnumValueModel valueModel = match.get();
+              if (valueModel instanceof  HaxeEnumValueFieldModel enumValueFieldModel) {
+                if(enumValueFieldModel.isAbstractType()) {
+                  return enumValueFieldModel.getAbstractEnumValuePsi().getComponentName();
+                }else {
+                  return enumValueFieldModel.getEnumValuePsi().getComponentName();
+                }
+              }else if (valueModel instanceof  HaxeEnumValueConstructorModel constructorModel) {
+                return constructorModel.getEnumValuePsi().getComponentName();
+              }
+            }
           }
         }
       }
@@ -1549,7 +1567,7 @@ public class HaxeResolveUtil {
   public static HaxeEnumValueDeclaration resolveExtractorEnumValueDeclaration(SpecificHaxeClassReference enumClass, String memberName) {
     if (enumClass != null) {
       HaxeBaseMemberModel member = enumClass.getHaxeClassModel().getMember(memberName, enumClass.getGenericResolver());
-      if (member instanceof HaxeEnumValueModel enumValueModel) {
+      if (member instanceof HaxeEnumValueConstructorModel enumValueModel) {
         return enumValueModel.getEnumValuePsi();
       }
     }

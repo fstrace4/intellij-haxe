@@ -105,6 +105,7 @@ public interface HaxeMeta extends HaxePsiCompositeElement {
   HaxeMetadataTypeName NULL_SAFETY = new HaxeMetadataTypeName("nullSafety"); // <Off | Loose | Strict>
   HaxeMetadataTypeName NS = new HaxeMetadataTypeName("ns");
   HaxeMetadataTypeName OP = new HaxeMetadataTypeName("op");  // <The operation>
+  HaxeMetadataTypeName OPTIONAL = new HaxeMetadataTypeName("optional");
   HaxeMetadataTypeName OVERLOAD = new HaxeMetadataTypeName("overload");
   HaxeMetadataTypeName PERSISTENT = new HaxeMetadataTypeName("persistent");
   HaxeMetadataTypeName POS = new HaxeMetadataTypeName("pos"); // <Position>

@@ -7,17 +7,17 @@ Haxe File
           HaxePsiToken:ID('Axis')
       ENUM_BODY
         HaxePsiToken:{('{')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('x')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('y')
           HaxePsiToken:;(';')
-        ENUM_VALUE_DECLARATION
+        ENUM_VALUE_DECLARATION_FIELD
           COMPONENT_NAME
             IDENTIFIER
               HaxePsiToken:ID('z')

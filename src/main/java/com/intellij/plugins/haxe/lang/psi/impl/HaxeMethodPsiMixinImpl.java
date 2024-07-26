@@ -24,6 +24,7 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.model.HaxeEnumValueConstructorModel;
 import com.intellij.plugins.haxe.model.HaxeMethodModel;
 
 import com.intellij.plugins.haxe.model.HaxeParameterModel;
@@ -86,7 +87,11 @@ public abstract class HaxeMethodPsiMixinImpl extends AbstractHaxeNamedComponent 
   private HaxeMethodModel _model = null;
   public HaxeMethodModel getModel() {
     if (_model == null) {
-      _model = new HaxeMethodModel((HaxeMethodImpl)this);
+      if (this instanceof  HaxeEnumValueDeclarationConstructor constructor) {
+        _model = new HaxeEnumValueConstructorModel(constructor);
+      }else {
+        _model = new HaxeMethodModel((HaxeMethodImpl)this);
+      }
     }
     return _model;
   }

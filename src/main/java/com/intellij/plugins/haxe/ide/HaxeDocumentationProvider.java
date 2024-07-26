@@ -320,7 +320,7 @@ public class HaxeDocumentationProvider implements DocumentationProvider {
       builder.br().appendRaw(renderer.languageHighlighting(signature));
       resolveTypeAndMakeHeader(builder, component);
     }
-    else if (component instanceof HaxeEnumValueDeclaration enumValueDeclaration) {
+    else if (component instanceof HaxeEnumValueDeclarationField enumValueDeclaration) {
       appendClassOrModuleReference(builder, enumValueDeclaration);
       String signature = getEnumValueSignature(enumValueDeclaration);
       builder.br().appendRaw(renderer.languageHighlighting(signature));

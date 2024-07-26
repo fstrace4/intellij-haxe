@@ -46,10 +46,12 @@ public class HaxeNameUtils {
     String result = fileName.toString();
     // check if classname contained generics, if so remove
     if(result.contains("<")) {
-      return  result.substring(0, result.indexOf("<"));
-    }else {
-    return result;
+      result =  result.substring(0, result.indexOf("<"));
     }
+    if(result.contains("(")) {
+      result =  result.substring(0, result.indexOf("("));
+    }
+    return result;
   }
 
   public static boolean isValidClassName(String className) {
