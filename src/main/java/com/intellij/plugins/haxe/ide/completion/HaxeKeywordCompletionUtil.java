@@ -41,7 +41,10 @@ public class HaxeKeywordCompletionUtil {
                                                                                      keywordWithSpace(KENUM),
                                                                                      keywordWithSpace(KEXTERN),
                                                                                      keywordWithSpace(KTYPEDEF),
-                                                                                     keywordWithSpace(KVAR));
+                                                                                     keywordWithSpace(KVAR),
+                                                                                     keywordWithSpace(KFUNCTION),
+                                                                                     keywordWithSpace(KPRIVATE)
+  );
 
   public static final Set<KeywordCompletionData> CLASS_DEFINITION_KEYWORDS = Set.of(keywordWithSpace(KEXTENDS),
                                                                                     keywordWithSpace(KIMPLEMENTS));
