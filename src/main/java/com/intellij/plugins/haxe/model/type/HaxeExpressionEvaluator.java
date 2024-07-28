@@ -236,7 +236,7 @@ public class HaxeExpressionEvaluator {
     }
 
     if (element instanceof HaxeEnumExtractedValueReference extractedValue) {
-      return resolveWithCache(extractedValue, resolver, () -> handleEnumExtractedValue(extractedValue));
+      return resolveWithCache(extractedValue, resolver, () -> handleEnumExtractedValue(extractedValue, resolver));
     }
 
 

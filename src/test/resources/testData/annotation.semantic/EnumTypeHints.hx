@@ -35,13 +35,32 @@ class TestAssignHints {
             case ExtractableEnum(myVal) : str = myVal;
         }
 
+        switch ({a :enumVarA}) {
+            case {a : ExtractableEnum(myValA  )} :
+            {
+                str = myValA; // correct
+
+                    // wrong type
+                flt = <error descr="Incompatible type: String should be Float">myValA</error>;
+            }
+        }
+
         switch ([enumVarA, enumVarB]) {
             case [ExtractableEnum(myValA), ExtractableEnum(myValB) ]:
             {
                 str = myValA; // correct
                 num = myValB; // correct
-                //TODO
-                flt = myValA; // wrong type
+
+                flt = <error descr="Incompatible type: String should be Float">myValA</error>; // wrong type
+            }
+        }
+        switch ({a :[enumVarA, enumVarB]}) {
+            case {a : [ExtractableEnum(myValA ), ExtractableEnum(myValB) ]}:
+            {
+                str = myValA; // correct
+                num = myValB; // correct
+
+                flt = <error descr="Incompatible type: String should be Float">myValA</error>; // wrong type
             }
         }
     }

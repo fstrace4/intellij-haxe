@@ -186,9 +186,8 @@ public class HaxePsiCompositeElementImpl extends ASTWrapperPsiElement implements
         if (captureVar!= null) {
           result.add(captureVar.getComponentName());
         }
-        HaxeExpression expression = expr.getExpression();
-        if (expression instanceof HaxeEnumArgumentExtractor extractor) {
-
+        Collection<HaxeEnumArgumentExtractor> extractors = PsiTreeUtil.findChildrenOfType(expr, HaxeEnumArgumentExtractor.class);
+        for (HaxeEnumArgumentExtractor extractor : extractors) {
           Collection<HaxeEnumExtractedValueReference> extractedValues = PsiTreeUtil.findChildrenOfType(extractor, HaxeEnumExtractedValueReference.class);
 
           List<HaxeComponentName> list = extractedValues.stream()

@@ -304,6 +304,11 @@ public class HaxeExpressionEvaluatorHandlers {
           else if (subelement instanceof HaxeIteratorkey || subelement instanceof HaxeIteratorValue) {
             typeHolder = findIteratorType(subelement);
           }
+          // case MyEnum(ref)
+          else if (subelement instanceof HaxeEnumExtractedValue extractedValue) {
+            typeHolder = handle(extractedValue.getExpression(),context,resolver);
+          }
+
           // case var x; / case x = ...;
           else if (subelement instanceof HaxeSwitchCaseCaptureVar || subelement instanceof  HaxeSwitchCaseCapture) {
             HaxeEnumArgumentExtractor argumentExtractor =  PsiTreeUtil.getParentOfType(subelement, HaxeEnumArgumentExtractor.class, true, HaxeSwitchStatement.class);
@@ -613,34 +618,15 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
 
-  static ResultHolder handleEnumExtractedValue(HaxeEnumExtractedValueReference extractedValue) {
+  static ResultHolder handleEnumExtractedValue(@NotNull HaxeEnumExtractedValueReference extractedValue, @NotNull HaxeGenericResolver resolver) {
     HaxeEnumArgumentExtractor extractor = PsiTreeUtil.getParentOfType(extractedValue, HaxeEnumArgumentExtractor.class);
-
-    // TODO mlo should probably move the haxe model logic to the PSI implementation so we can cache it
-    HaxeEnumExtractorModel extractorModel =  new HaxeEnumExtractorModel(extractor);
-    HaxeEnumValueModel enumValueModel =  extractorModel.getEnumValueModel();
-    if (enumValueModel  instanceof  HaxeEnumValueConstructorModel constructorModel) {
-      // check if in literal array
-      HaxeSwitchExtractorExpressionArrayLiteral arrayLiteral =
-        PsiTreeUtil.getParentOfType(extractedValue, HaxeSwitchExtractorExpressionArrayLiteral.class, true, HaxeEnumArgumentExtractor.class);
-      if(arrayLiteral != null) {
-        int index = extractorModel.findExtractValueIndex(arrayLiteral);
-        HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
-        ResultHolder parameterType = constructorModel.getParameterType(index, extractorResolver);
-        if (parameterType != null && parameterType.getClassType() != null)  {
-          HaxeGenericResolver resolver = parameterType.getClassType().getGenericResolver();
-          @NotNull ResultHolder[] specifics = resolver.getSpecifics();
-          if (specifics.length!= 0) return specifics[0];
-        }
-      }else {
-        int index = extractorModel.findExtractValueIndex(extractedValue);
-        HaxeGenericResolver extractorResolver = extractorModel.getGenericResolver();
-        ResultHolder parameterType = constructorModel.getParameterType(index, extractorResolver);
-        if (parameterType != null) return parameterType;
-      }
+    if (extractor != null) {
+      HaxeEnumExtractorModel extractorModel = (HaxeEnumExtractorModel)extractor.getModel();
+      return extractorModel.resolveExtractedValueType(extractedValue, resolver);
     }
     return createUnknown(extractedValue);
   }
+
 
 
   static ResultHolder handleForStatement(
