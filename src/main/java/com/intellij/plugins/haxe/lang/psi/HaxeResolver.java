@@ -239,7 +239,19 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
                   }
                 }
               }
-              // fallback, heck method parameters (needs work , optional are not handled)
+              // test  call expression if possible
+              for (PsiElement importElement : matchesInImport) {
+                if (importElement instanceof HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
+                  if (reference.getParent() instanceof HaxeCallExpression haxeCallExpression) {
+                    HaxeCallExpressionUtil.CallExpressionValidation validation =
+                      HaxeCallExpressionUtil.checkMethodCall(haxeCallExpression, enumValueDeclaration.getModel().getMethod());
+                    if (validation.isCompleted() && validation.getErrors().isEmpty()) {
+                      return List.of(importElement);
+                    }
+                  }
+                }
+              }
+              // fallback, check method parameters (needs work , optional are not handled)
               for (PsiElement element : matchesInImport) {
                 if (element instanceof HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
                   int currentSize =

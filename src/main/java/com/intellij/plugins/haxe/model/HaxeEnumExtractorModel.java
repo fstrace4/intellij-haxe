@@ -25,10 +25,11 @@ public class HaxeEnumExtractorModel implements HaxeModel {
     this.extractor = extractor;
   }
 
+  @Nullable
   public HaxeEnumValueModel getEnumValueModel() {
     PsiElement resolve = resolveEnumValueCached();
     if (resolve instanceof HaxeEnumValueDeclaration declaration) {
-      return (HaxeEnumValueModel)declaration.getModel();
+      if (declaration.getModel() instanceof HaxeEnumValueModel model) return  model;
     }
     return null;
   }
@@ -212,18 +213,23 @@ public class HaxeEnumExtractorModel implements HaxeModel {
     List<String> EnumValueNames = new ArrayList<>();
     PsiElement ref = value;
     HaxeEnumArgumentExtractor parent = PsiTreeUtil.getParentOfType(ref, HaxeEnumArgumentExtractor.class);
-    while (parent != null ){
-    HaxeEnumExtractorModel model = (HaxeEnumExtractorModel)parent.getModel();
+    while (parent != null && parent.getModel() instanceof  HaxeEnumExtractorModel model){
     int index = model.findArgumentIndex(ref, true);
-      HaxeModel valueModel = model.getEnumValueModel().getEnumValuePsi().getModel();
-      if (valueModel instanceof HaxeEnumValueConstructorModel constructorModel) {
-        List<HaxeParameterModel> parameters = constructorModel.getParameters();
-        if (index > -1 && index < parameters.size()) {
-            HaxeParameterModel parameterModel = parameters.get(index);
-            parameterNames.add(parameterModel.getName());
-            EnumValueNames.add(valueModel.getName());
+      HaxeEnumValueModel enumValueModel = model.getEnumValueModel();
+      if (enumValueModel != null) {
+        HaxeEnumValueDeclaration valueDeclaration = enumValueModel.getEnumValuePsi();
+        if (valueDeclaration != null) {
+          HaxeModel valueModel = valueDeclaration.getModel();
+          if (valueModel instanceof HaxeEnumValueConstructorModel constructorModel) {
+            List<HaxeParameterModel> parameters = constructorModel.getParameters();
+            if (index > -1 && index < parameters.size()) {
+              HaxeParameterModel parameterModel = parameters.get(index);
+              parameterNames.add(parameterModel.getName());
+              EnumValueNames.add(valueModel.getName());
+            }
           }
         }
+      }
       ref = parent;
       parent =  PsiTreeUtil.getParentOfType(parent, HaxeEnumArgumentExtractor.class, true, HaxeSwitchCase.class);
     }

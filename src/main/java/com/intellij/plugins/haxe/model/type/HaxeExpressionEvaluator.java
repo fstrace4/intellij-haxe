@@ -756,7 +756,8 @@ public class HaxeExpressionEvaluator {
                       type.getSpecifics()[i] = handle;
                     }
                     else {
-                      ResultHolder unified = HaxeTypeUnifier.unify(handle, type.getSpecifics()[i]);
+                      ResultHolder specific = type.getSpecifics()[i];
+                      ResultHolder unified = specific.isTypeParameter() ? handle : HaxeTypeUnifier.unify(handle, specific);
                       type.getSpecifics()[i] = unified;
                     }
                   }
@@ -770,7 +771,8 @@ public class HaxeExpressionEvaluator {
                         type.getSpecifics()[i] = handle;
                       }
                       else {
-                        ResultHolder unified = HaxeTypeUnifier.unify(handle, type.getSpecifics()[i]);
+                        ResultHolder specific = type.getSpecifics()[i];
+                        ResultHolder unified = specific.isTypeParameter() ? handle : HaxeTypeUnifier.unify(handle, specific);
                         type.getSpecifics()[i] = unified;
                       }
                     }

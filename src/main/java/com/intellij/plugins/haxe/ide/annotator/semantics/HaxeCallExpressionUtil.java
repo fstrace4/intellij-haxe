@@ -166,7 +166,9 @@ public class HaxeCallExpressionUtil {
       }
 
 
-      argumentType = resolveArgumentType(argument, argumentResolver);
+      HaxeGenericResolver callieResolver = Optional.ofNullable(callieType.getClassType())
+        .map(SpecificHaxeClassReference::getGenericResolver).orElse(new HaxeGenericResolver());
+      argumentType = resolveArgumentType(argument, argumentResolver, callieResolver);
       // parameters might have type parameters with same name as a parent so we need to make sure we are not resolving parents type
       //HaxeGenericResolver parameterResolver = ((HaxeMethodModel)parameter.getMemberModel()).getGenericResolver(localResolver);
       parameterType = resolveParameterType(parameter, parameterResolver);
@@ -394,7 +396,7 @@ public class HaxeCallExpressionUtil {
           }
         }
 
-        argumentType = resolveArgumentType(argument, localResolver);
+        argumentType = resolveArgumentType(argument, localResolver, null);
         parameterType = parameter.getType();
 
 
@@ -549,7 +551,7 @@ public class HaxeCallExpressionUtil {
         }
       }
 
-      argumentType = resolveArgumentType(argument, argumentResolver);
+      argumentType = resolveArgumentType(argument, argumentResolver, null);
       parameterType = resolveParameterType(parameter, parameterResolver);
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
@@ -664,7 +666,7 @@ public class HaxeCallExpressionUtil {
     }
   }
 
-  private static ResultHolder resolveArgumentType(HaxeExpression argument, HaxeGenericResolver resolver) {
+  private static ResultHolder resolveArgumentType(HaxeExpression argument, HaxeGenericResolver argumentResolver, HaxeGenericResolver callieResolver) {
     ResultHolder expressionType = null;
     // try to resolve methods/function types
     if (argument instanceof HaxeReferenceExpression referenceExpression) {
@@ -698,8 +700,11 @@ public class HaxeCallExpressionUtil {
       HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(argument);
       HaxeGenericResolver genericResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(argument);
       expressionType = HaxeExpressionEvaluator.evaluateWithRecursionGuard(argument, context, genericResolver.withoutUnknowns()).result;
-      if (expressionType.containsTypeParameters()){
-        expressionType = genericResolver.resolve(expressionType);
+      //TODO
+      //function literals can inherit from method parameters, and if parameter list contains type parameters then
+      // it should be ok to use callies resolver values here, but currently it might add a bit much
+      if (argument instanceof HaxeFunctionLiteral && expressionType.containsTypeParameters()){
+        //if (callieResolver != null) expressionType = callieResolver.resolve(expressionType);
       }
     }
 

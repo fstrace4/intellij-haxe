@@ -21,7 +21,8 @@ public abstract class HaxeEnumArgumentExtractorMixinImpl extends HaxeExpressionI
 
   public HaxeModel getModel() {
     if (model == null) {
-      model = new HaxeEnumExtractorModel((HaxeEnumArgumentExtractor)this);
+      if (this instanceof HaxeEnumArgumentExtractor argumentExtractor)
+      model = new HaxeEnumExtractorModel(argumentExtractor);
     }
     return model;
   }

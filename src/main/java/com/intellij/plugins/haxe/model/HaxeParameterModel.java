@@ -126,17 +126,12 @@ public class HaxeParameterModel extends HaxeBaseMemberModel implements HaxeModel
           ResultHolder resolve = resolver.resolve(classReference.getClassName());
           if (resolve != null && !resolve.isUnknown()) return resolve;
         }
-        type = propagateGenericsToType(classReference.createHolder(), resolver).getType();
+        return propagateGenericsToType(classReference.createHolder(), resolver);
+
       }
       else if(type instanceof SpecificFunctionReference functionReference) {
         return propagateGenericsToFunction(functionReference, resolver).createHolder();
       }
-
-      if(type instanceof SpecificHaxeClassReference classReference) {
-        ResultHolder resolved = resolver.resolve(classReference.getClassName());
-        if (resolved != null && !resolved.isUnknown()) return resolved;
-      }
-
     }
     return typeResult;
   }

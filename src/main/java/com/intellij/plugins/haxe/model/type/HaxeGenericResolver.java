@@ -122,14 +122,21 @@ public class HaxeGenericResolver {
   }
 
   private void addForTypeParameterConstraints(@NotNull String name, @NotNull ResultHolder specificType) {
-    specificType = replaceAnyEnumValueWithEnumClass(specificType);
-    if(specificType.isTypeParameter()) return;
+    ResultHolder updatedSpecificType = replaceAnyEnumValueWithEnumClass(specificType);
+    if(updatedSpecificType.isTypeParameter()) return;
     Optional<ResolverEntry> constraint = findConstraint(name);
     if (constraint.isPresent()) {
       ResolverEntry entry = constraint.get();
       if(entry.type().isTypeParameter()) {
         String typeName = ((SpecificHaxeClassReference)entry.type().getType()).getClassName();
-        add(typeName, specificType, entry.resolveSource());
+        boolean match = resolvers.stream().anyMatch(e -> e.name().equals(typeName)
+                                                     && e.type().equals(updatedSpecificType)
+                                                     && e.resolveSource().equals(entry.resolveSource())
+        );
+        // recursion guard
+        if(!match) {
+          add(typeName, updatedSpecificType, entry.resolveSource());
+        }
       }
     }
   }

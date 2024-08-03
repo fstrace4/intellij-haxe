@@ -685,6 +685,8 @@ public class HaxeExpressionEvaluatorHandlers {
           }
         return handle(body, context, resolver);
       }
+      //attempt to get type from body (could be function call etc.)
+      if (body != null) return handle(body, context, resolver);
     }
     finally {
       context.endScope();
@@ -761,9 +763,39 @@ public class HaxeExpressionEvaluatorHandlers {
       HaxeParameterList parameterList = function.getParameterList();
       if (openParamList != null) {
         // Arrow function with a single, unparenthesized, parameter.
-        // TODO: Infer the type from first usage in the function body.
+        // TODO: Infer the type from first usage in the function body. (or parameter list if used in function)
         ResultHolder argumentType = SpecificTypeReference.getUnknown(function).createHolder();
         String argumentName = openParamList.getUntypedParameter().getComponentName().getName();
+        // if defined in a call expression (as an argument) we can match definitions with corresponding method  parameter
+        if(function.getParent() instanceof  HaxeCallExpressionList callExpressionList
+           && callExpressionList.getParent() instanceof  HaxeCallExpression callExpression
+          && callExpression.getExpression() instanceof HaxeReferenceExpression referenceExpression) {
+
+          PsiElement resolve = referenceExpression.resolve();
+          if(resolve instanceof  HaxeMethod method) {
+            int index = callExpressionList.getExpressionList().indexOf(function);
+            HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
+            Map<Integer, Integer> indexMap = validation.getArgumentToParameterIndex();
+            Integer parameterIndex = indexMap.get(index);
+            ResultHolder holder = validation.getParameterIndexToType().get(parameterIndex);
+            if (holder != null && !holder.isUnknown()) {
+              SpecificTypeReference reference;
+              if (holder.getClassType() != null){
+                reference = holder.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
+              }else {
+                reference = holder.getFunctionType();
+              }
+              if (reference instanceof  SpecificFunctionReference functionReference) {
+                  // if type found in param, override  argumentType (default is unknown)
+                  if (argumentType.isUnknown() && !functionReference.getArguments().isEmpty()) {
+                    SpecificFunctionReference.Argument argument = functionReference.getArguments().get(0);
+                    argumentType = argument.getType();
+                }
+              }
+            }
+          }
+
+        }
         context.setLocal(argumentName, argumentType);
         // TODO check if rest param?
         arguments.add(new SpecificFunctionReference.Argument(0, false, false, argumentType, argumentName));

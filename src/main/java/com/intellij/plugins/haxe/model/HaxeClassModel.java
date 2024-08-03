@@ -42,6 +42,7 @@ import java.util.*;
 import static com.intellij.plugins.haxe.HaxeComponentType.*;
 import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.canAssignToFrom;
 import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.getUnderlyingClassIfAbstractNull;
+import static com.intellij.plugins.haxe.model.type.HaxeTypeResolver.getTypeFromFunctionType;
 import static com.intellij.plugins.haxe.util.HaxeGenericUtil.*;
 import static com.intellij.plugins.haxe.util.HaxeMetadataUtil.getMethodsWithMetadata;
 
@@ -215,6 +216,20 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
       if (type != null) {
         ResultHolder resultHolder = HaxeTypeResolver.getTypeFromType(type);
         if (!resultHolder.isUnknown()) return resultHolder.getType();
+      }
+    }
+    HaxeFunctionType type = getUnderlyingFunctionType();
+    if (type != null){
+      return getTypeFromFunctionType(type).getFunctionType();
+    }
+    return null;
+  }
+
+  private @Nullable HaxeFunctionType getUnderlyingFunctionType() {
+    if (isAbstractType() &&  haxeClass instanceof  HaxeAbstractTypeDeclaration abstractDeclaration) {
+      HaxeUnderlyingType underlyingType = abstractDeclaration.getUnderlyingType();
+      if (underlyingType != null) {
+        return underlyingType.getFunctionType();
       }
     }
     return null;
