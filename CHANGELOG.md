@@ -1,7 +1,9 @@
 # Changelog
 ## 1.5.7
 * Bugfix: Import of static members starting with uppercase would in some cases not resolve.
-* improvement: Code and build system updated to support  Intellij 2024.2
+* Added: Support for `@:using` and `@:structInit`
+* improvement: Code and build system updated to support Intellij 2024.2
+* improvement: Setter switch case extractor and capturing variable handling.
 * improvement: Values from Object literals can now be used without type tag.  
 * improvement: Object literals can now be used in switch case expression   
 * Experimental: inject GLSL language in OpenFL for vertex and fragment annotations if GLSL plugin installed.
