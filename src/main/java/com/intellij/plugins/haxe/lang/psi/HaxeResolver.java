@@ -1360,6 +1360,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     }
   }
 
+  private static final RecursionGuard<PsiElement> extensionsFromMetaGuard = RecursionManager.createGuard("extensionsFromMetaGuard");
+
   /**
    * Resolve a chain reference, given two references: the qualifier, and the name.
    *
@@ -1380,23 +1382,46 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     String identifier = reference instanceof HaxeReferenceExpression referenceExpression ? referenceExpression.getIdentifier().getText() : reference.getText();
     HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(lefthandExpression);
     ResultHolder result = HaxeExpressionEvaluator.evaluateWithRecursionGuard(lefthandExpression, context, null).result;
+
+
     SpecificHaxeClassReference classType = result.getClassType();
     HaxeClass  haxeClass = classType != null ? classType.getHaxeClass() : null;
-    if (haxeClass != null) {
-      HaxeBaseMemberModel member = haxeClass.getModel().getMember(identifier, classType.getGenericResolver());
+
+    // To avoid incorrect extension method results we avoid any results where we don't know type of left reference.
+    // this is important as recursion guards might prevent us from getting the type and returning a different result depending on
+    // whether or not we got the type is bad and causes issues.
+    if (haxeClass != null && !result.isUnknown()) {
+      HaxeClassModel classModel = haxeClass.getModel();
+      HaxeBaseMemberModel member = classModel.getMember(identifier, classType.getGenericResolver());
       if (member != null) {
-        //return Collections.singletonList(member.getBasePsi());
-        //debugList.add(Collections.singletonList(member.getNameOrBasePsi()));
         HaxeNamedComponent psi = member.getNamedComponentPsi();
         if (psi != null) {
           HaxeComponentName name = psi.getComponentName();
           if (name != null) {
-            //debugList.add(Collections.singletonList(name));
             return Collections.singletonList(name);
           }
         }
       }
-
+      // check extension methods from meta
+      HaxeComponentName match = extensionsFromMetaGuard.doPreventingRecursion(lefthandExpression, true, () -> {
+        int size = classModel.getUsingMetaReferences().size();
+        List<HaxeMethodModel> meta = classModel.getExtensionMethodsFromMeta();
+        if (size != meta.size()) {
+          resolveInnerRecursionGuard.prohibitResultCaching(lefthandExpression);
+        }
+        for (HaxeMethodModel model : meta) {
+          HaxeNamedComponent psi = model.getNamedComponentPsi();
+          if (psi != null) {
+            HaxeComponentName name = psi.getComponentName();
+            if (name != null && name.getIdentifier().textMatches(identifier)) {
+              if (log.isTraceEnabled()) log.trace(traceMsg("Found component name in extension methods"));
+              return name;
+            }
+          }
+        }
+        return null;
+      });
+      if (match != null) return Collections.singletonList(match);
 
     // Check 'using' classes.
       HaxeFileModel fileModel = HaxeFileModel.fromElement(reference.getContainingFile());
@@ -1438,21 +1463,18 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           }
         }
       }
+
     if (log.isTraceEnabled()) log.trace(traceMsg(null));
+
     final HaxeComponentName componentName = tryResolveHelperClass(lefthandExpression, identifier);
     if (componentName != null) {
       if (log.isTraceEnabled()) log.trace("Found component " + componentName.getText());
-      //return Collections.singletonList(componentName);
-      //debugList.add(Collections.singletonList(componentName));
       return Collections.singletonList(componentName);
     }
     if (log.isTraceEnabled()) log.trace(traceMsg("trying keywords (super, new) arrays, literals, etc."));
     // Try resolving keywords (super, new), arrays, literals, etc.
-    //return resolveByClassAndSymbol(haxeClass, reference);
-    //debugList.add(resolveByClassAndSymbol(haxeClass, reference));
     return resolveByClassAndSymbol(haxeClass, reference);
 
-    //return debugList.isEmpty() ? null : debugList.get(0);
   }
 
   private PsiElement resolveQualifiedReference(HaxeReference reference) {

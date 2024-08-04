@@ -655,7 +655,7 @@ public class HaxeExpressionEvaluator {
             if (resolved instanceof HaxeMethod method ) {
               HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
               ResultHolder hintResolved = validation.getResolver().resolve(hint);
-              if (hintResolved != null && !hintResolved.isUnknown()) return hintResolved;
+              if (hintResolved != null && hintResolved.getType() != hintResolved.getType()) return hintResolved;
             }
           }
         }

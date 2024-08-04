@@ -21,15 +21,15 @@ package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass;
+import com.intellij.plugins.haxe.metadata.HaxeMetadataList;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
+import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
 import com.intellij.plugins.haxe.metadata.psi.impl.HaxeMetadataTypeName;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
+import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.*;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -190,6 +190,25 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     }
     return null;
   }
+
+  public List<HaxeReferenceExpression> getUsingMetaReferences() {
+    HaxeMetadataList meta = haxeClass.getCompileTimeMeta(HaxeMeta.USING);
+    if(meta != null) {
+      List<HaxeMetadataCompileTimeMeta> compileTimeMeta = meta.getCompileTimeMeta();
+
+      return compileTimeMeta.stream().map(HaxeMetadataCompileTimeMeta::getContent)
+        .filter(Objects::nonNull)
+        .map(PsiElement::getFirstChild)// Metadata content is lazy so we access it be sure its parsed
+        .map(content ->  Arrays.asList(content.getChildren()))
+        .flatMap(Collection::stream)
+        .map(e -> PsiTreeUtil.getChildOfType(e, HaxeReferenceExpression.class))
+        .filter(Objects::nonNull)
+        .toList();
+    }
+    return List.of();
+  }
+
+
 
   @Nullable
   public HaxeTypeOrAnonymous getUnderlyingTypeOrAnonymous() {
@@ -984,5 +1003,42 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     HaxeModifiersModel modifiers = getModifiers();
     if (modifiers == null) return false;
     return modifiers.hasModifier(HaxePsiModifier.FINAL);
+  }
+
+  public List<HaxeMethodModel>  getExtensionMethodsFromMeta() {
+    List<HaxeReferenceExpression> referenceExpressions = getUsingMetaReferences();
+    if(referenceExpressions.isEmpty()) return List.of();
+
+    HaxeGenericResolver genericResolver = getGenericResolver(null);
+    SpecificHaxeClassReference classReference = SpecificHaxeClassReference.withoutGenerics(getReference());
+    ResultHolder classRef = classReference.createHolder();
+
+    // NOTE!: DO NOT USE "PsiReference::resolve", on referenceExpressions here.
+    // it will in some cases fail to resolve, probably due to recursion guards and other "active" resolves in same package
+    // use findClassByQName instead to be sure we try to find the class directly
+    List<HaxeClassModel> classModels = referenceExpressions.stream().map(PsiElement::getText)
+      .map(qname -> HaxeResolveUtil.findClassByQName(qname, haxeClass))
+      .filter(Objects::nonNull)
+      .map(HaxeClass::getModel)
+      .toList();
+
+    return  classModels.stream()
+      .map(classModel -> classModel.getMethods(genericResolver))
+      .flatMap(Collection::stream)
+      .filter(method -> !method.isConstructor() && method.isStatic() && method.isPublic())
+      .filter(method ->  canAssignToFirstParam(method, classRef, genericResolver))
+      .toList();
+
+  }
+
+  private boolean canAssignToFirstParam(HaxeMethodModel method, ResultHolder classRef, HaxeGenericResolver resolver) {
+    List<HaxeParameterModel> parameters = method.getParameters();
+    if (!parameters.isEmpty()) {
+      HaxeParameterModel paramModel = parameters.get(0);
+      ResultHolder paramResult = paramModel.getType(resolver);
+      boolean b = paramResult.canAssign(classRef);
+      return b;
+    }
+    return false;
   }
 }

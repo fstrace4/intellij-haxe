@@ -55,7 +55,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.intellij.openapi.util.text.StringUtil.defaultIfEmpty;
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.searchReferencesForType;
@@ -979,6 +978,9 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
           HaxeParameterModel model = parameters.get(parameterIndex);
           ResultHolder type = model.getType();
+          if (type.getClassType() != null) {
+            type = type.getClassType().fullyResolveUnderlyingTypeUnwrapNullTypeReference().createHolder();
+          }
           if (type.isFunctionType()) {
             SpecificFunctionReference functionType = type.getFunctionType();
             if (functionType == null) return null;
@@ -1405,6 +1407,16 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
         variants.add(name);
         variantsWithExtension.add(name);
       });
+
+    List<HaxeMethodModel> extensionMethodsFromMeta = ourClass.getModel().getExtensionMethodsFromMeta();
+    extensionMethodsFromMeta.stream()
+      .map(HaxeMemberModel::getNamePsi)
+      .forEach(name -> {
+        variants.add(name);
+        variantsWithExtension.add(name);
+      });
+
+
   }
 
   private static void addClassVariants(Set<HaxeComponentName> suggestedVariants, @Nullable HaxeClass haxeClass, boolean filterByAccess,

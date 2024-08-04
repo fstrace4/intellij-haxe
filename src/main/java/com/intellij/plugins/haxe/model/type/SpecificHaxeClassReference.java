@@ -635,7 +635,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   private static RecursionGuard<PsiElement> fullyresolveRecursionGuard = RecursionManager.createGuard("fullyresolveRecursionGuard");
 
   public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference() {
-    return fullyresolveRecursionGuard.computePreventingRecursion(this.context, false, () ->
+    return fullyresolveRecursionGuard.computePreventingRecursion(this.context, true, () ->
     {
     if (isTypeParameter()) return this;
     if (isNullType()) {
@@ -687,6 +687,42 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     return this;
     });
   }
+
+  public SpecificTypeReference fullyResolveUnderlyingTypeUnwrapNullTypeReference() {
+    return fullyresolveRecursionGuard.computePreventingRecursion(this.context, true, () -> {
+      SpecificTypeReference reference = this;
+      while (reference != null) {
+        if (reference instanceof SpecificHaxeClassReference cs) {
+          if (cs.isNullType() || cs.isTypeDef())  {
+            reference = fullyResolveTypeDefAndUnwrapNullTypeReference();
+            continue;
+          }
+          if(cs.isAbstractType()) {
+            if (cs.getHaxeClassModel() instanceof  HaxeAbstractClassModel abstractClassModel) {
+              HaxeGenericResolver resolver = cs.getGenericResolver();
+              SpecificTypeReference underlyingType = abstractClassModel.getUnderlyingType();
+              if (underlyingType instanceof  SpecificFunctionReference functionReference) {
+                reference = resolver.resolve(functionReference);
+              }else if  (underlyingType instanceof  SpecificHaxeClassReference haxeClassReference) {
+                ResultHolder resolve = resolver.resolve(haxeClassReference.createHolder());
+                if (resolve != null && !resolve.isUnknown()) {
+                  reference = resolve.getType();
+                }else {
+                  reference = underlyingType;
+                }
+              }else {
+                reference = underlyingType;
+              }
+              continue;
+            }
+          }
+        }
+        break;
+      }
+      return reference;
+    });
+  }
+
 
   public SpecificTypeReference unwrapNullType() {
     if (specifics.length == 1) {

@@ -655,6 +655,9 @@ public class HaxeCallExpressionUtil {
           if (constraint == null) {
             typeParamTable.put(name, type, resolveSource);
           }
+          else if (type.isTypeParameter() && !constraint.isTypeParameter()) {
+            continue;// skipping as we dont want to replace a real type with typeParameter
+          }
           else if (constraint.canAssign(type)) {
             typeParamTable.put(name, type, resolveSource);
           }
