@@ -21,6 +21,7 @@ package com.intellij.plugins.haxe.model;
 
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeObjectLiteralImpl;
 import com.intellij.plugins.haxe.metadata.HaxeMetadataList;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
@@ -132,6 +133,9 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   }
   public boolean isAnonymous() {
     return haxeClass instanceof HaxeAnonymousType;
+  }
+  public boolean isObjectLiteral() {
+    return haxeClass instanceof HaxeObjectLiteralImpl;
   }
 
   public boolean isCoreType() {
@@ -1040,5 +1044,9 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
       return b;
     }
     return false;
+  }
+
+  public boolean isStructInit() {
+    return hasCompileTimeMeta(HaxeMeta.STRUCT_INIT);
   }
 }

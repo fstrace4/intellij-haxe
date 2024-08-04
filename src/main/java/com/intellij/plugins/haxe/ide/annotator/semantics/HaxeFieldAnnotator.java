@@ -43,7 +43,7 @@ public class HaxeFieldAnnotator implements Annotator {
                     .range(var)
                     .create();
                 }
-                else if (!isFieldInitializedInTheConstructor(field)) {
+                else if (!isFieldInitializedInTheConstructor(field) && !field.getDeclaringClass().isStructInit()) {
                   holder.newAnnotation(HighlightSeverity.ERROR, HaxeBundle.message("haxe.semantic.final.var.init", field.getName()))
                     .range(var)
                     .create();

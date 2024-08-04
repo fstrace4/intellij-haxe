@@ -475,7 +475,8 @@ public class HaxeTypeCompatible {
         }
       }
     }
-    if (to.getHaxeClassModel() != null && to.getHaxeClassModel().isAnonymous()) {
+    if (to.getHaxeClassModel() != null
+        && ( to.getHaxeClassModel().isAnonymous() || to.getHaxeClassModel().isStructInit()) ) {
       // compare members (Anonymous stucts can be "used" as interface)
       if (containsAllMembers(to, from)) return true;
     }
@@ -532,28 +533,44 @@ public class HaxeTypeCompatible {
     if (toClassModel == null ||  fromClassModel == null)
        return false;
 
+    boolean isStruct = toClassModel.isStructInit();
     List<HaxeBaseMemberModel> toMembers = toClassModel.getAllMembers(to.getGenericResolver());
     List<HaxeBaseMemberModel> fromMembers = fromClassModel.getAllMembers(from.getGenericResolver());
+
     for (HaxeBaseMemberModel member : toMembers) {
       String name = member.getName();
       // TODO  type check parameter and return type
-      boolean memberExists;
-      boolean optional;
+      boolean memberExists = false;
+      boolean optional = false;
+      boolean ignored = false;
       if (member instanceof HaxeMethodModel methodModel){
-        optional = false;
-        memberExists = fromMembers.stream().filter(model -> model instanceof HaxeMethodModel)
-          .map(model -> (HaxeMethodModel) model)
-          .filter(mm -> methodModel.getParameters().size() == mm.getParameters().size())
-          .anyMatch(model -> model.getNamePsi().textMatches(name));
+        if(!isStruct) {
+          memberExists = fromMembers.stream().filter(model -> model instanceof HaxeMethodModel)
+            .map(model -> (HaxeMethodModel)model)
+            .filter(mm -> methodModel.getParameters().size() == mm.getParameters().size())
+            .anyMatch(model -> model.getNamePsi().textMatches(name));
+        }else {
+          // ignore methods in @:structInit classes
+          ignored = true;
+        }
       }else if (member instanceof HaxeFieldModel fieldModel) {
         optional = fieldModel.isOptional();
+        ignored = fieldModel.isStatic();
         memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
       }else  {
-        optional = false;
         memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
       }
 
-      if (!memberExists && !optional) return false;
+      if (!ignored && !memberExists && !optional) return false;
+    }
+    // check object literals for too many fields
+    if (isStruct && fromClassModel.isObjectLiteral()) {
+      for (HaxeBaseMemberModel member : fromMembers) {
+        if(toMembers.stream().noneMatch(model -> model.getNamePsi().textMatches(member.getName()))) {
+          //  too many fields
+          return false;
+        }
+      }
     }
 
 
