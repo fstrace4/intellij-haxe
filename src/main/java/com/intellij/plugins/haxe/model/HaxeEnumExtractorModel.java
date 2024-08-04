@@ -158,7 +158,7 @@ public class HaxeEnumExtractorModel implements HaxeModel {
 
           if (parentExtractors.size() > 1) {
             ResultHolder switchExpressionType = evaluate(switchStatementExpression, parentResolver).result;
-
+            HaxeGenericResolver pathResolver =  switchExpressionType.getClassType().getGenericResolver();
             SpecificHaxeClassReference classType = switchExpressionType.getClassType();
             if (classType != null) {
               // LinkedHashMap because order matters
@@ -181,10 +181,13 @@ public class HaxeEnumExtractorModel implements HaxeModel {
                 }
                 }
               }
-              if(classType != null) return classType.createHolder();
-
+              if(classType != null) {
+                pathResolver =  classType.getGenericResolver();
+              }
             }
-
+            ResultHolder resolve = pathResolver.resolve(parameterType);
+            if(resolve != null && !resolve.isUnknown()) return resolve;
+            return parameterType;
           }
 
           ResultHolder result = evaluate(lookupElement, parentResolver).result;
