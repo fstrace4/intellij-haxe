@@ -277,7 +277,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
           HaxeClass aClass = classType.getHaxeClass();
           if (aClass != null) {
             ResultHolder[] specifics = HaxeTypeResolver.resolveDeclarationParametersToTypes(aClass, localResolver);
-            return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(aClass.getModel(), element), specifics, element);
+            return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(aClass.getModel(), aClass.getModel().haxeClass), specifics, element);
           }
         }
       } else { // Anonymous type

@@ -635,6 +635,9 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   private static RecursionGuard<PsiElement> fullyresolveRecursionGuard = RecursionManager.createGuard("fullyresolveRecursionGuard");
 
   public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference() {
+    return fullyResolveTypeDefAndUnwrapNullTypeReference(false);
+  }
+  public SpecificTypeReference fullyResolveTypeDefAndUnwrapNullTypeReference(boolean unwrapExprOf) {
     return fullyresolveRecursionGuard.computePreventingRecursion(this.context, true, () ->
     {
     if (isTypeParameter()) return this;
@@ -651,15 +654,36 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     }
 
     if (isTypeDefOfClass()) {
-      SpecificHaxeClassReference reference = resolveTypeDefClass();
+      SpecificHaxeClassReference reference;
+      if(unwrapExprOf && this.isExprOf()) {
+        reference = this;
+      }else {
+        reference = resolveTypeDefClass();
+      }
+
 
       HaxeClass haxeClass = getHaxeClass();
       HaxeGenericResolver resolver = getGenericResolver();
+
       while (haxeClass instanceof AbstractHaxeTypeDefImpl typeDef) {
         HaxeFunctionType functionType = typeDef.getFunctionType();
         if (functionType != null) {
           SpecificFunctionReference reference1 = reference.resolveTypeDefFunction();
           return resolver.resolve(reference1);
+        }
+
+        if(unwrapExprOf) {
+          if (reference.isExprOf()) {
+            SpecificTypeReference unwrapped = HaxeMacroTypeUtil.extractTypeFromExprOf(this);
+            if (unwrapped != null) {
+              if (unwrapped instanceof SpecificHaxeClassReference exprOfClass ) {
+                reference =  exprOfClass;
+                continue;
+              }else {
+                return unwrapped;
+              }
+            }
+          }
         }
 
         reference = typeDef.getTargetClass(resolver);

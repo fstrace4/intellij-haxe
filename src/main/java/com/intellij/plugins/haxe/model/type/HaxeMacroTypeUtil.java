@@ -18,10 +18,28 @@ public class HaxeMacroTypeUtil {
   private static final  Key<ParameterizedCachedValue<HaxeClass, PsiElement>> COMPLEX_TYPE_KEY = Key.create("COMPLEX_TYPE_KEY");
   private static final  Key<ParameterizedCachedValue<HaxeClass, PsiElement>> TYPE_DEFINITION_KEY = Key.create("TYPE_DEFINITION_KEY");
 
-  private static final String EXPR_OF = "haxe.macro.Expr.ExprOf";
-  private static final String EXPR = "haxe.macro.Expr";
-  private static final String COMPLEX_TYPE = "haxe.macro.Expr.ComplexType";
-  private static final String TYPE_DEFINITION = "haxe.macro.Expr.TypeDefinition";
+  public static final String EXPR_OF = "haxe.macro.Expr.ExprOf";
+  public static final String EXPR = "haxe.macro.Expr";
+  public static final String COMPLEX_TYPE = "haxe.macro.Expr.ComplexType";
+  public static final String TYPE_DEFINITION = "haxe.macro.Expr.TypeDefinition";
+
+
+  public static SpecificTypeReference extractTypeFromExprOf(SpecificHaxeClassReference haxeClassReference) {
+    if(haxeClassReference == null) return null;
+    HaxeClass aClass = haxeClassReference.getHaxeClass();
+    if(aClass != null) {
+      if (aClass.getQualifiedName().equals(HaxeMacroTypeUtil.EXPR_OF)
+          // TODO : TEMP hack since typeDef is resolved and `ExprOf` is typedef of `Expr`
+          || aClass.getQualifiedName().equals(HaxeMacroTypeUtil.EXPR)) {
+        HaxeGenericResolver resolver = haxeClassReference.getGenericResolver();
+        ResultHolder resolve = resolver.resolve("T");
+        if (resolve != null && !resolve.isUnknown()) {
+          return resolve.getType();
+        }
+      }
+    }
+    return null;
+  }
 
   public static SpecificTypeReference getExpr(@NotNull PsiElement context) {
     HaxeClass classByQName = getCachedExpr(context, context.getProject());

@@ -902,7 +902,7 @@ public class HaxeCallExpressionUtil {
 
   private static boolean isMacroExpr(SpecificHaxeClassReference classReference) {
     if (classReference.getHaxeClass() == null) return false;
-    return classReference.getHaxeClass().getQualifiedName().equals("haxe.macro.Expr");
+    return classReference.getHaxeClass().getQualifiedName().equals(HaxeMacroTypeUtil.EXPR);
   }
 
   private static boolean isRestClass(SpecificHaxeClassReference classReference) {

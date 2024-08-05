@@ -383,10 +383,10 @@ public class HaxeExpressionEvaluatorHandlers {
     SpecificHaxeClassReference type = typeHolder.getClassType();
     if (type != null && type.getHaxeClass() != null) {
       String qualifiedName = type.getHaxeClass().getQualifiedName();
-      if (qualifiedName.equals("haxe.macro.Expr.ExprOf")){
+      if (qualifiedName.equals(HaxeMacroTypeUtil.EXPR_OF)){
         @NotNull ResultHolder[] specifics = type.getSpecifics();
         if (specifics.length == 1) return specifics[0];
-      }else if (qualifiedName.equals("haxe.macro.Expr")){
+      }else if (qualifiedName.equals(HaxeMacroTypeUtil.EXPR)){
         SpecificTypeReference.getDynamic(element).createHolder();
       }
     }

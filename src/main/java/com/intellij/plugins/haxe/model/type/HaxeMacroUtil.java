@@ -57,8 +57,8 @@ public class HaxeMacroUtil {
     if (classReference == null  || classReference.getHaxeClass() == null) return classReference;
     String qualifiedName = classReference.getHaxeClass().getQualifiedName();
     return  switch (qualifiedName) {
-      case "haxe.macro.Expr"  -> SpecificTypeReference.getDynamic(classReference.getElementContext());
-      case "haxe.macro.Expr.ExprOf" -> classReference.getSpecifics()[0].getClassType();
+      case HaxeMacroTypeUtil.EXPR  -> SpecificTypeReference.getDynamic(classReference.getElementContext());
+      case HaxeMacroTypeUtil.EXPR_OF -> classReference.getSpecifics()[0].getClassType();
       default -> classReference;
     };
   }
@@ -69,7 +69,7 @@ public class HaxeMacroUtil {
     if (classReference == null  || classReference.getHaxeClass() == null) return false;
     String qualifiedName = classReference.getHaxeClass().getQualifiedName();
     return  switch (qualifiedName) {
-      case "haxe.macro.Expr", "haxe.macro.Expr.ExprOf" -> true;
+      case HaxeMacroTypeUtil.EXPR, HaxeMacroTypeUtil.EXPR_OF -> true;
       default -> false;
     };
   }

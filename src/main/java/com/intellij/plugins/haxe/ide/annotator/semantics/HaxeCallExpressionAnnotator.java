@@ -5,14 +5,12 @@ import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.FullyQualifiedInfo;
-import com.intellij.plugins.haxe.model.HaxeClassModel;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
 
 import static com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil.*;
-import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.getUnderlyingFunctionIfAbstractNull;
 
 public class HaxeCallExpressionAnnotator implements Annotator {
   @Override
@@ -25,64 +23,20 @@ public class HaxeCallExpressionAnnotator implements Annotator {
           HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(reference);
 
           ResultHolder callieType = tryGetCallieType(expression);
-          if (!callieType.isUnknown() && callieType.isClassType()) {
+          if (!callieType.isUnknown() && callieType.getClassType() != null) {
             resolver.addAll(callieType.getClassType().getGenericResolver());
           }
 
 
           ResultHolder type = HaxeTypeResolver.getFieldOrMethodReturnType(component, resolver);
-          SpecificFunctionReference functionType = type.getFunctionType();
-          if (type.isTypeDef()) {
-            SpecificTypeReference typeReference = type.getClassType().fullyResolveTypeDefReference();
-            if (typeReference instanceof SpecificFunctionReference functionReference) {
-              functionType = functionReference;
-            }
-          }
-
-
-          // handle Null<FunctionType>
+          SpecificTypeReference typeReference;
           if (type.getClassType() != null) {
-            SpecificHaxeClassReference classReference = type.getClassType();
-            if (classReference.isNullType()) {
-              SpecificFunctionReference functionReference = getUnderlyingFunctionIfAbstractNull(classReference);
-              if (functionReference != null) {
-                functionType = functionReference;
-              }
-            }
-
-            SpecificTypeReference resolvedTypeDef = classReference.fullyResolveTypeDefReference();
-            if (resolvedTypeDef instanceof  SpecificFunctionReference functionReference) {
-              functionType = functionReference;
-            } else if (resolvedTypeDef instanceof  SpecificHaxeClassReference resolvedClassRefrence) {
-              classReference  = resolvedClassRefrence;
-            }
-
-            //// resolve typedef of function
-            //if (classReference.isTypeDefOfFunction()) {
-            //  SpecificFunctionReference functionReference = classReference.resolveTypeDefFunction();
-            //  functionType = functionReference;
-            //}
-            //
-            //if (classReference.isTypeDefOfClass()) {
-            //  classReference = classReference.fullyResolveTypeDefReference();
-            //}
-            if (functionType == null) {
-              HaxeClassModel model = classReference.getHaxeClassModel();
-              if (model != null) {
-                boolean callable = model.isCallable();
-                if (callable) {
-                  type = SpecificTypeReference.getDynamic(classReference.getElementContext()).createHolder();
-                }
-              }
-              // if we could not resolve the type "ignore" for now
-              else if (classReference.isTypeParameter()) {
-                type = SpecificTypeReference.getDynamic(classReference.getElementContext()).createHolder();
-              }
-            }
+             typeReference = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference(true);
+          } else  {
+            typeReference = type.getType();
           }
 
-
-          if (functionType != null) {
+          if (typeReference  instanceof  SpecificFunctionReference functionType) {
             // function type or function literal
             if ( functionType.method == null) {
               CallExpressionValidation validation = checkFunctionCall(expression, functionType);
@@ -91,18 +45,9 @@ public class HaxeCallExpressionAnnotator implements Annotator {
               CallExpressionValidation validation = checkMethodCall(expression, functionType.method.getMethod());
               createAnnotations(holder, validation);
             }
-          }else {
-            SpecificTypeReference typeReference = type.getType();
-
-            if (type.isClassType()) {
-              SpecificTypeReference specificType = type.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
-              if (specificType instanceof SpecificFunctionReference) {
-                return;
-              }else if(specificType instanceof SpecificHaxeClassReference classReference){
-                if (classReference.getHaxeClassModel() != null) {
-                  if (classReference.getHaxeClassModel().isCallable()) return;
-                }
-              }
+          } else if (typeReference instanceof SpecificHaxeClassReference classReference) {
+            if (classReference.getHaxeClassModel() != null) {
+              if (classReference.getHaxeClassModel().isCallable()) return;
             }
             // if not enum value constructor or dynamic, show error
             if (!type.isEnumValueType() && !type.isDynamic() && !type.isUnknown()) {

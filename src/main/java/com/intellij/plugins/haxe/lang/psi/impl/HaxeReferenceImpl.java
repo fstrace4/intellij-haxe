@@ -377,16 +377,14 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
   private static HaxeResolveResult extractTypeFromMacro(HaxeResolveResult result) {
     HaxeClass aClass = result.getHaxeClass();
     if(aClass != null) {
-      if (aClass.getQualifiedName().equals("haxe.macro.ExprOf")
+      if (aClass.getQualifiedName().equals(HaxeMacroTypeUtil.EXPR_OF)
           // TODO : TEMP hack since typeDef is resolved and `ExprOf` is typedef of `Expr`
-          || aClass.getQualifiedName().equals("haxe.macro.Expr")) {
+          || aClass.getQualifiedName().equals(HaxeMacroTypeUtil.EXPR)) {
         HaxeGenericResolver resolver = result.getGenericResolver();
-        if (resolver.isEmpty()) {
-          ResultHolder resolve = resolver.resolve("T");
-          if (resolve != null && !resolve.isUnknown()) {
-            SpecificHaxeClassReference type = resolve.getClassType();
-            if (type != null) return type.asResolveResult();
-          }
+        ResultHolder resolve = resolver.resolve("T");
+        if (resolve != null && !resolve.isUnknown()) {
+          SpecificHaxeClassReference type = resolve.getClassType();
+          if (type != null) return type.asResolveResult();
         }
       }
     }
