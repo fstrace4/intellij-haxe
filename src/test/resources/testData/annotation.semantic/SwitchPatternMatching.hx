@@ -27,6 +27,7 @@ class PatternMachingTest {
             case TAny(a): a.indexOf("");
             case TDoubleVal(a, b): a.charAt(b) ;
             case TNone: null;
+            case TAny(var x) : trace(x);
             case var value: trace(value);
         }
 

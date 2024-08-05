@@ -721,7 +721,7 @@ private switchExtractorExpressionArgument ::= (  extractorMatchExpressionVariant
 
 enumExtractorArgumentList ::= ( switchExtractorExpressionArgument) (',' (switchExtractorExpressionArgument))*
 enumValueReference ::= simpleQualifiedReferenceExpression
-enumArgumentExtractor ::= enumValueReference '(' enumExtractorArgumentList ')'
+enumArgumentExtractor ::= enumValueReference '(' 'var'? enumExtractorArgumentList ')'
  {extends="expression" mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeEnumArgumentExtractorMixinImpl" implements="com.intellij.plugins.haxe.model.HaxeModelTarget"}
 
 variableCaptureExpression ::= callOrArrayAccess ('=>' switchCaseExpr)+  {pin=2 extends="expression"}
