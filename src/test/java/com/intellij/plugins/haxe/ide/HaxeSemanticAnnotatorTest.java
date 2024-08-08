@@ -527,6 +527,10 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   public void testInitializeIntWithTypedef() throws Exception {
     doTestNoFixWithWarnings();
   }
+  @Test
+  public void testInitializeTypedefWithOptionalFields() throws Exception {
+    doTestNoFixWithWarnings();
+  }
 
   @Test
   public void testAssignTypedefToInt() throws Exception {
