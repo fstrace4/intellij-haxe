@@ -214,6 +214,9 @@ public class HaxeFieldModel extends HaxeMemberModel {
 
   public boolean isOptional() {
     if(getBasePsi() instanceof HaxeOptionalFieldDeclaration) return true;
+    if(getBasePsi() instanceof HaxeAnonymousTypeField anonymous) {
+      if (anonymous.getOptionalMark() != null)return true;
+    }
     return hasOptionalMeta();
   }
 }

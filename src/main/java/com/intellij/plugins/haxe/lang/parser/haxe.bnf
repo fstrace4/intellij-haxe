@@ -413,7 +413,7 @@ private enumConstructorParameters ::= parenthesizedParameterList
 
 fieldDeclaration ::= fieldModifier* mutabilityModifier componentName propertyDeclaration? typeTag? varInit? <<semicolonUnlessPrecededByStatement>>
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
-optionalFieldDeclaration ::= fieldModifier* mutabilityModifier '?' componentName propertyDeclaration? typeTag? varInit? <<semicolonUnlessPrecededByStatement>>
+optionalFieldDeclaration ::= fieldModifier* mutabilityModifier optionalMark componentName propertyDeclaration? typeTag? varInit? <<semicolonUnlessPrecededByStatement>>
 {pin=3 implements=fieldDeclaration mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
 //NOTE: static local variable is a haxe 4.3+ feature
 localVarDeclarationList ::='static'? mutabilityModifier localVarDeclaration (',' localVarDeclaration)* <<semicolonUnlessPrecededByStatement>>{pin=3}
@@ -969,7 +969,7 @@ typeExtendsList ::= '>' type (',' '>' type)* {pin=1}
 
 anonymousTypeFieldList ::= anonymousTypeField (',' anonymousTypeField)* ','? {recoverWhile="object_literal_part_recover" pin=1}
 private sep ::= ',' | ';'
-anonymousTypeField ::= "?"? componentName typeTag
+anonymousTypeField ::= optionalMark? componentName typeTag
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxePsiFieldImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxePsiField"}
 
 // Do NOT genericize objectLiteral by making objectLiteralElementList optional.  Doing so
