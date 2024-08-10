@@ -386,10 +386,10 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
 
     if(reference.isAbstractType()) {
       SpecificHaxeClassReference underlying = reference.getHaxeClassModel().getUnderlyingClassReference(reference.getGenericResolver());
-      if(canAssignToFrom(parameterWithRealRealSpecifics, underlying, false, null,  null)) return true;
+      if(canAssignToFrom(parameterWithRealRealSpecifics, underlying, false, null)) return true;
     }
 
-    return canAssignToFrom(parameterWithRealRealSpecifics, reference, false, null, null);
+    return canAssignToFrom(parameterWithRealRealSpecifics, reference, false, null);
   }
 
   public List<SpecificHaxeClassReference> getImplicitCastFromTypesListClassOnly(SpecificHaxeClassReference targetType) {
@@ -412,7 +412,7 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     List<SpecificTypeReference> list = new ArrayList<>();
     for (HaxeMethodModel m : methodsWithMetadata) {
       // TODO consider applying generics from targetType to be more strict about what methods are supported ?
-      if (canAssignToFrom(targetType, setSpecificsConstraints(m, getReturnType(m), targetType.getGenericResolver().withoutUnknowns()), false,  null, null)) {
+      if (canAssignToFrom(targetType, setSpecificsConstraints(m, getReturnType(m), targetType.getGenericResolver().withoutUnknowns()), false,  null)) {
         SpecificTypeReference type = getImplicitCastFromType(m, resolver);
         if (type != null) {
           list.add(type);

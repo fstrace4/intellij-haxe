@@ -19,6 +19,8 @@
  */
 package com.intellij.plugins.haxe.model.type;
 
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
@@ -36,12 +38,18 @@ import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.getStdC
 @CustomLog
 public class HaxeTypeCompatible {
 
+  // disabling for now, too many mismatches (seems to struggle with resolving correct enum types)
+  static boolean checkAnonymousMemberTypes = false;
+
   static public boolean canAssignToFrom(@Nullable SpecificTypeReference to, @Nullable ResultHolder from) {
     if (null == to || null == from) return false;
     return canAssignToFrom(to, from.getType());
   }
 
   static public boolean canAssignToFrom(@Nullable ResultHolder to, @Nullable ResultHolder from) {
+    return  canAssignToFrom(to, from, null);
+  }
+  static public boolean canAssignToFrom(@Nullable ResultHolder to, @Nullable ResultHolder from, HaxeAssignContext  context) {
     if (null == to || null == from) return false;
     if (to.isUnknown()) {
       return true;
@@ -49,8 +57,10 @@ public class HaxeTypeCompatible {
     else if (from.isUnknown()) {
       return true;
     }
-
-    return canAssignToFrom(to.getType(), from.getType(), true,  to.getOrigin(), from.getOrigin());
+    if (context == null) {
+      context = new HaxeAssignContext(to.getOrigin(),  from.getOrigin());
+    }
+    return canAssignToFrom(to.getType(), from.getType(), true,  context);
   }
 
 
@@ -130,18 +140,18 @@ public class HaxeTypeCompatible {
     @Nullable SpecificTypeReference to,
     @Nullable SpecificTypeReference from
   ) {
-    return canAssignToFrom(to,from, true, null, null);
+    return canAssignToFrom(to,from, true, null);
   }
 
   static public boolean canAssignToFrom(
     @Nullable SpecificTypeReference to,
     @Nullable SpecificTypeReference from,
     Boolean includeImplicitCast,
-    @Nullable PsiElement toOrigin,
-    @Nullable PsiElement fromOrigin
+    @Nullable HaxeAssignContext context
   ) {
     if (to == null || from == null) return false;
 
+    PsiElement fromOrigin = context == null ? null : context.fromOrigin;
 
     from = replaceMacroExprIfFromMacroMethod(from, fromOrigin);
 
@@ -237,7 +247,7 @@ public class HaxeTypeCompatible {
     }
 
     if (to instanceof SpecificHaxeClassReference toClassReference && from instanceof SpecificHaxeClassReference fromClassReference) {
-      return canAssignToFromType(toClassReference, fromClassReference, includeImplicitCast, toOrigin, fromOrigin) ;
+      return canAssignToFromType(toClassReference, fromClassReference, includeImplicitCast, context) ;
     }
 
     if (to instanceof SpecificEnumValueReference toReference && from instanceof SpecificEnumValueReference fromReference) {
@@ -434,16 +444,17 @@ public class HaxeTypeCompatible {
     @NotNull SpecificHaxeClassReference to,
     @NotNull SpecificHaxeClassReference from
   ) {
-    return canAssignToFromType(to,from, true, null ,null);
+    return canAssignToFromType(to,from, true, null);
   }
 
   static private boolean canAssignToFromType(
     @NotNull SpecificHaxeClassReference to,
     @NotNull SpecificHaxeClassReference from,
     Boolean includeImplicitCast,
-    @Nullable PsiElement toOrigin,
-    @Nullable PsiElement fromOrigin
+    @Nullable HaxeAssignContext context
   ) {
+
+    PsiElement fromOrigin = context == null ? null : context.fromOrigin;
 
     // Null<T> is a special case.  It must act like a T in all ways.  Whereas,
     // any other abstract must act like it hides its internal types.
@@ -475,10 +486,12 @@ public class HaxeTypeCompatible {
         }
       }
     }
-    if (to.getHaxeClassModel() != null
-        && ( to.getHaxeClassModel().isAnonymous() || to.getHaxeClassModel().isStructInit()) ) {
-      // compare members (Anonymous stucts can be "used" as interface)
-      if (containsAllMembers(to, from)) return true;
+    if(to.getHaxeClassModel() != null && !to.isTypeParameter()) { // typeParameters can be Anonymous but is not part of the anonymous "interface" check here
+      HaxeClassModel classModel = to.getHaxeClassModel();
+      if (classModel.isAnonymous() || classModel.isStructInit() || classModel.isObjectLiteral()){
+        // compare members (Anonymous stucts can be "used" as interface)
+        return containsAllMembers(to, from, context);
+      }
     }
 
     if (canAssignToFromSpecificType(to, from)) return true;
@@ -517,7 +530,10 @@ public class HaxeTypeCompatible {
     return to.toStringWithoutConstant().equals(from.toStringWithoutConstant());
   }
 
-  private static boolean containsAllMembers(SpecificHaxeClassReference to, SpecificHaxeClassReference from) {
+  private static RecursionGuard<PsiElement> containsMembersRecursionGuard = RecursionManager.createGuard("containsMembersRecursionGuard");
+
+  private static boolean containsAllMembers(SpecificHaxeClassReference to, SpecificHaxeClassReference from,
+                                            @Nullable HaxeAssignContext context) {
     if (to.isTypeParameter() || from.isTypeParameter() ) return false; // unable to evaluate members when type is not resolved
 
     // if one of the types is a Class<T>  its was probably wrapped so we unwrap to T
@@ -537,13 +553,14 @@ public class HaxeTypeCompatible {
     List<HaxeBaseMemberModel> toMembers = toClassModel.getAllMembers(to.getGenericResolver());
     List<HaxeBaseMemberModel> fromMembers = fromClassModel.getAllMembers(from.getGenericResolver());
 
-    for (HaxeBaseMemberModel member : toMembers) {
-      String name = member.getName();
+    boolean allMembersMatches = true;
+    for (HaxeBaseMemberModel toMember : toMembers) {
+      String name = toMember.getName();
       // TODO  type check parameter and return type
       boolean memberExists = false;
       boolean optional = false;
       boolean ignored = false;
-      if (member instanceof HaxeMethodModel methodModel){
+      if (toMember instanceof HaxeMethodModel methodModel){
         if(!isStruct) {
           memberExists = fromMembers.stream().filter(model -> model instanceof HaxeMethodModel)
             .map(model -> (HaxeMethodModel)model)
@@ -553,15 +570,43 @@ public class HaxeTypeCompatible {
           // ignore methods in @:structInit classes
           ignored = true;
         }
-      }else if (member instanceof HaxeFieldModel fieldModel) {
+      }else if (toMember instanceof HaxeFieldModel fieldModel) {
         optional = fieldModel.isOptional();
         ignored = fieldModel.isStatic();
-        memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
+
+          Optional<HaxeBaseMemberModel> first = fromMembers.stream().filter(model -> model.getNamePsi().textMatches(name)).findFirst();
+          if (first.isPresent()) {
+            memberExists = true;
+            if (checkAnonymousMemberTypes) {
+            HaxeBaseMemberModel fromMember = first.get();
+            if (context != null && context.getFromOrigin() != null) {
+              Boolean canAssign = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () -> {
+                ResultHolder fromType = fromMember.getResultType();
+                ResultHolder toType = toMember.getResultType();
+                return fromType.canAssign(toType);
+              });
+
+              // in case recursion guard is triggered
+              if (canAssign == null) {
+                log.warn("Unable to evaluate fieldType compatibility");
+              }
+              else if (!canAssign) {
+                context.addWrongTypeMember(fromMember.getPresentableText(null), toMember.getPresentableText(null));
+                allMembersMatches = false;
+              }
+            }
+          }
+        }
       }else  {
         memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
       }
 
-      if (!ignored && !memberExists && !optional) return false;
+      if (!ignored && !memberExists && !optional){
+        String missingFieldName = toMember.getPresentableText(null);
+        if(context != null)context.addMissingMember(missingFieldName);
+        allMembersMatches = false;
+      }
+
     }
     // check object literals for too many fields
     if (isStruct && fromClassModel.isObjectLiteral()) {
@@ -574,7 +619,7 @@ public class HaxeTypeCompatible {
     }
 
 
-    return true;
+    return allMembersMatches;
   }
 
   private static boolean handleEnumValue(SpecificHaxeClassReference to, SpecificHaxeClassReference from, @Nullable PsiElement fromOrigin) {
@@ -607,6 +652,8 @@ public class HaxeTypeCompatible {
         SpecificHaxeClassReference specificToReference = specificsTo[0].getClassType();
         SpecificHaxeClassReference specificFromReference = specificsFrom[0].getClassType();
 
+        if (specificToReference == null || specificFromReference == null) return false;
+
         HaxeClassReference toReference = specificToReference.getHaxeClassReference();
         HaxeClassReference fromReference = specificFromReference.getHaxeClassReference();
 
@@ -614,8 +661,15 @@ public class HaxeTypeCompatible {
         // if "target" has dynamic specific, anything from "source" should be allowed
         if (specificToReference.isDynamic()) return true;
 
+
+        SpecificTypeReference toType = specificToReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+        SpecificTypeReference fromType = specificFromReference.fullyResolveTypeDefAndUnwrapNullTypeReference();
+
+        if(toType instanceof  SpecificHaxeClassReference ref) specificToReference = ref;
+        if(fromType instanceof  SpecificHaxeClassReference ref) specificFromReference = ref;
+
         //test can assign but do not include implicit cast for abstracts (@:to/@:from methods), only underlying types to/from  casts allowed.
-        if(canAssignToFromType(specificToReference, specificFromReference, false, null, null)) return true;
+        if(canAssignToFromType(specificToReference, specificFromReference, false, null)) return true;
       }
     }
 
@@ -717,6 +771,10 @@ public class HaxeTypeCompatible {
 
     if (from.isUnknown()) {
       return true;
+    }
+    // anonymous and object literal definitions does not have specifics
+    if (to.isAnonymousType() || from.isAnonymousType()) {
+      return to.getHaxeClass() == from.getHaxeClass();
     }
 
     if (to.getHaxeClassReference().refersToSameClass(from.getHaxeClassReference())) {
@@ -826,6 +884,7 @@ public class HaxeTypeCompatible {
       return false;
     return holder.isClassType()
            && !holder.isFunctionType()
+           && !holder.isAnonymousType()
            && !holder.isUnknown()
            && !holder.isVoid()
            && !holder.isDynamic();

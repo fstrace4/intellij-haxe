@@ -34,8 +34,8 @@ public class HaxeSemanticsUtil {
       final ResultHolder varType = HaxeTypeResolver.getTypeFromTypeTag(tag, erroredElement);
       final ResultHolder initType = getTypeFromVarInit(initExpression, varType);
       if (initType.isInvalid()) return;
-
-      if (!varType.canAssign(initType)) {
+      HaxeAssignContext  context = new HaxeAssignContext(erroredElement, initExpression);
+      if (!varType.canAssign(initType, context)) {
 
         AnnotationBuilder builder =
           typeMismatch(holder, erroredElement, initType.toStringWithoutConstant(), varType.toStringWithoutConstant());

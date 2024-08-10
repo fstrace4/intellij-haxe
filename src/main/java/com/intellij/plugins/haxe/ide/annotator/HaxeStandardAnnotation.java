@@ -18,9 +18,14 @@ package com.intellij.plugins.haxe.ide.annotator;
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.util.text.Strings;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A library of annotations that can be re-used.  Place annotations that are used more than
@@ -28,17 +33,45 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HaxeStandardAnnotation {
 
-  private HaxeStandardAnnotation() {}
-
-  public static @NotNull AnnotationBuilder typeMismatch(@NotNull AnnotationHolder holder,@NotNull PsiElement incompatibleElement, String incompatibleType, String correctType) {
-    String message = HaxeBundle.message("haxe.semantic.incompatible.type.0.should.be.1", incompatibleType, correctType);
-    return holder.newAnnotation(HighlightSeverity.ERROR,message).range(incompatibleElement);
-
+  private HaxeStandardAnnotation() {
   }
 
-  public static @NotNull AnnotationBuilder returnTypeMismatch(@NotNull AnnotationHolder holder, @NotNull PsiElement incompatibleElement, String incompatibleType, String correctType) {
-    String message = HaxeBundle.message("haxe.semantic.incompatible.return.type.0.should.be.1", incompatibleType, correctType);
+  public static @NotNull AnnotationBuilder typeMismatch(@NotNull AnnotationHolder holder,
+                                                        @NotNull PsiElement incompatibleElement,
+                                                        String incompatibleType,
+                                                        String correctType) {
+
+    String message = HaxeBundle.message("haxe.semantic.incompatible.type.0.should.be.1", incompatibleType, correctType);
     return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
   }
 
+  public static @NotNull AnnotationBuilder typeMismatchMissingMembers(@NotNull AnnotationHolder holder,
+                                                                      @NotNull PsiElement incompatibleElement,
+                                                                      List<String> missingFields) {
+
+    String message = HaxeBundle.message("haxe.semantic.incompatible.type.missing.members.0",
+                                        Strings.join(missingFields, ","));
+    return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
+  }
+  public static @NotNull AnnotationBuilder typeMismatchWrongTypeMembers(@NotNull AnnotationHolder holder,
+                                                                      @NotNull PsiElement incompatibleElement,
+                                                                      Map<String, String> wrongTypes) {
+
+    String wrongTypeText = wrongTypes.entrySet().stream()
+      .map(entry -> "have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
+      .collect(Collectors.joining(", "));
+
+    String message = HaxeBundle.message("haxe.semantic.incompatible.type.wrong.member.types.0",  wrongTypeText);
+                                        
+    return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
+  }
+
+  public static @NotNull AnnotationBuilder returnTypeMismatch(@NotNull AnnotationHolder holder,
+                                                              @NotNull PsiElement incompatibleElement,
+                                                              String incompatibleType,
+                                                              String correctType) {
+
+    String message = HaxeBundle.message("haxe.semantic.incompatible.return.type.0.should.be.1", incompatibleType, correctType);
+    return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
+  }
 }

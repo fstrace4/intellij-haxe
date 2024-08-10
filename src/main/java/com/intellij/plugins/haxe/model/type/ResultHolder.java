@@ -68,6 +68,10 @@ public class ResultHolder {
   public boolean isFunctionType() {
     return (type instanceof SpecificFunctionReference);
   }
+  public boolean isAnonymousType() {
+    if(type instanceof SpecificHaxeClassReference classReference) return classReference.isAnonymousType();
+    return false;
+  }
 
   public boolean isClassType() {
     return (type instanceof SpecificHaxeClassReference);
@@ -142,8 +146,11 @@ public class ResultHolder {
     return out;
   }
 
+  public boolean canAssign(ResultHolder that, HaxeAssignContext  context) {
+    return HaxeTypeCompatible.canAssignToFrom(this, that, context);
+  }
   public boolean canAssign(ResultHolder that) {
-    return HaxeTypeCompatible.canAssignToFrom(this, that);
+    return HaxeTypeCompatible.canAssignToFrom(this, that, null);
   }
 
   public void removeConstant() {

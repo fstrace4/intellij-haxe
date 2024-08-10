@@ -1,0 +1,39 @@
+package com.intellij.plugins.haxe.model.type;
+
+import com.intellij.psi.PsiElement;
+import lombok.Data;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Data
+public class HaxeAssignContext {
+
+  @Nullable PsiElement toOrigin;
+  @Nullable PsiElement fromOrigin;
+
+  public HaxeAssignContext(@Nullable PsiElement toOrigin, @Nullable PsiElement fromOrigin) {
+    this.toOrigin = toOrigin;
+    this.fromOrigin = fromOrigin;
+  }
+
+  final List<String> missingMembers = new ArrayList<>();
+  final Map<String, String> wrongTypeMembers = new HashMap<>();
+
+  public void addMissingMember(String name) {
+    missingMembers.add(name);
+  }
+  public void addWrongTypeMember(String have, String wants) {
+    wrongTypeMembers.put(have, wants);
+  }
+
+  public boolean hasMissingMembers() {
+    return !missingMembers.isEmpty();
+  }
+  public boolean hasWrongTypeMembers() {
+    return !wrongTypeMembers.isEmpty();
+  }
+}

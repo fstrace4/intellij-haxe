@@ -29,6 +29,7 @@ import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeElementType;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
+import com.intellij.plugins.haxe.lang.psi.HaxeObjectLiteral;
 import com.intellij.plugins.haxe.lang.psi.HaxeParenthesizedExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxePsiCompositeElement;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxePsiDocComment;
@@ -273,6 +274,8 @@ public class UsefulPsiTreeUtil {
 
   static public <T extends PsiElement> T getAncestor(PsiElement element, Class<T> clazz) {
     if (element == null) return null;
+    // skip object literals
+    if(element instanceof HaxeObjectLiteral literal) return getAncestor(literal.getParent(), clazz);
     if (clazz.isAssignableFrom(element.getClass())) return (T)element;
     return getAncestor(element.getParent(), clazz);
   }

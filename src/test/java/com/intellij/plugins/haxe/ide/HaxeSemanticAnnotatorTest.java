@@ -424,6 +424,10 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   public void testAssignStructInit() throws Exception {
     doTestNoFixWithWarnings();
   }
+  @Test
+  public void testAssignAnonymousType() throws Exception {
+    doTestNoFixWithWarnings();
+  }
 
   @Test
   public void testAssignStringToDynamic() throws Exception {

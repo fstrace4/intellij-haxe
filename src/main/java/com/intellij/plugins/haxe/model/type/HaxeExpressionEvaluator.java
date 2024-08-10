@@ -67,7 +67,6 @@ public class HaxeExpressionEvaluator {
   private static final ThreadLocal<Stack<PsiElement>> processingStack = ThreadLocal.withInitial(Stack::new);
 
 
-  private static RecursionGuard<PsiElement> evaluationRecursionGuard = RecursionManager.createGuard("evaluationRecursionGuard");
 
   @NotNull
   static public HaxeExpressionEvaluatorContext evaluate(PsiElement element, HaxeExpressionEvaluatorContext context,

@@ -356,9 +356,12 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
             if (expression instanceof HaxeArrayLiteral arrayLiteral) {
               HaxeExpressionList list = arrayLiteral.getExpressionList();
               if (list != null && index > -1) {
-                HaxeExpression haxeExpression = list.getExpressionList().get(index);
-                List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, haxeExpression);
-                if (components != null) return components;
+                List<HaxeExpression> expressionList = list.getExpressionList();
+                if (expressionList.size()> index) {
+                  HaxeExpression haxeExpression = expressionList.get(index);
+                  List<HaxeComponentName> components = evaluateAndFindEnumMember(reference, haxeExpression);
+                  if (components != null) return components;
+                }
               }
             }
 
@@ -982,6 +985,11 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
   @Nullable
   private List<PsiElement> checkIfDefaultValueInMatchExpression(HaxeReference reference, HaxeSwitchCaseExpr switchCaseExpr) {
+    //TODO/NOTE:
+    // There seems to be an issue where method calls in extractor match expressions would be mapped to the parameter type of the same index
+    // this is usually wrong  so we avoid this here, there could maybe be cases where the parameter type is a function and you want to call it
+    // as part of the  matching (not sure if its allowed, needs testing)
+    if(reference.getParent() instanceof  HaxeCallExpression callExpression &&  PsiTreeUtil.getParentOfType(callExpression, HaxeExtractorMatchExpression.class ) != null) return null;
 
     HaxeEnumArgumentExtractor argumentExtractorBeforeAntSwitchExpr = PsiTreeUtil.getParentOfType(reference, HaxeEnumArgumentExtractor.class, true, HaxeSwitchCaseExpr.class);
     if (argumentExtractorBeforeAntSwitchExpr != null) {

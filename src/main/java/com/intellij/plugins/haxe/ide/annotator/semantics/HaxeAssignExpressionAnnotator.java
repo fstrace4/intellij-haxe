@@ -5,6 +5,7 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.plugins.haxe.HaxeBundle;
+import com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation;
 import com.intellij.plugins.haxe.lang.psi.HaxeArrayLiteral;
 import com.intellij.plugins.haxe.lang.psi.HaxeAssignExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeMapLiteral;
@@ -68,14 +69,24 @@ public class HaxeAssignExpressionAnnotator implements Annotator {
     if (lhsType.getType().isString() &&  assignOperation.textMatches("+=")) {
       return;
     }
+    HaxeAssignContext  context = new HaxeAssignContext(lhs, rhs);
+    if (!lhsType.canAssign(rhsType, context)) {
+      List<HaxeExpressionConversionFixer> fixers = HaxeExpressionConversionFixer.createStdTypeFixers(rhs, rhsType.getType(), lhsType.getType());
 
-    if (!lhsType.canAssign(rhsType)) {
-      List<HaxeExpressionConversionFixer> fixers =
-        HaxeExpressionConversionFixer.createStdTypeFixers(rhs, rhsType.getType(), lhsType.getType());
-
-      AnnotationBuilder builder = typeMismatch(holder, rhs, rhsType.toPresentationString(), lhsType.toPresentationString());
-      fixers.forEach(builder::withFix);
-      builder.create();
+      if(context.hasMissingMembers() || context.hasWrongTypeMembers()) {
+        if(context.hasMissingMembers()) {
+          HaxeStandardAnnotation.typeMismatchMissingMembers(holder, rhs, context.getMissingMembers())
+            .create();
+        }
+        if(context.hasWrongTypeMembers()) {
+          HaxeStandardAnnotation.typeMismatchWrongTypeMembers(holder, rhs, context.getWrongTypeMembers())
+            .create();
+        }
+      }else {
+        AnnotationBuilder builder = typeMismatch(holder, rhs, rhsType.toPresentationString(), lhsType.toPresentationString());
+        fixers.forEach(builder::withFix);
+        builder.create();
+      }
     }
     if (lhsType.isImmutable()) {
       // TODO: Think about providing a quick-fix for immutability; remember final markings come from metadata, too.
