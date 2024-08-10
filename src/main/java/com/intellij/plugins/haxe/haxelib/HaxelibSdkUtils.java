@@ -49,10 +49,12 @@ public class HaxelibSdkUtils {
   private static void tryToSetDefaultSdk() {
     if (defaultSDK == null) {
       HaxeSdkType sdkType = HaxeSdkType.getInstance();
-      defaultSDK = new ProjectJdkImpl(sdkType.suggestSdkName(null, sdkType.suggestHomePath()),
-                                      sdkType,
-                                      sdkType.suggestHomePath(),
-                                      sdkType.getVersionString(sdkType.suggestHomePath()));
+      String path = sdkType.suggestHomePath();
+      if (path != null) {
+        defaultSDK = new ProjectJdkImpl(sdkType.suggestSdkName(null, path), sdkType, path, sdkType.getVersionString(path));
+      } else {
+        defaultSDK = new ProjectJdkImpl("Haxe SDK not found", sdkType);
+      }
       ApplicationManager.getApplication().invokeLaterOnWriteThread(() -> {
         sdkType.setupSdkPaths(defaultSDK);
       });
