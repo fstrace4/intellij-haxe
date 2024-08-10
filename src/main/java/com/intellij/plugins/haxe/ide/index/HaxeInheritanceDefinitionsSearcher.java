@@ -51,6 +51,7 @@ public class HaxeInheritanceDefinitionsSearcher extends QueryExecutorBase<PsiEle
         .allowParallelProcessing()
         .filtering(element -> element instanceof HaxeClass)
         .mapping( element -> (HaxeClass) element)
+        .filtering(aClass -> !aClass.isAnonymousType())// ignore anonymous as they do not inherit
         .filtering(element ->
             Arrays.stream(element.getSuperTypes()).map(PsiClassType::resolve).anyMatch(psiClass -> psiClass == haxeClass)
       ).findAll();
