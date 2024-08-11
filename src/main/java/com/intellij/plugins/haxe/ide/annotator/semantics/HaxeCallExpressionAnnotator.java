@@ -49,8 +49,8 @@ public class HaxeCallExpressionAnnotator implements Annotator {
             if (classReference.getHaxeClassModel() != null) {
               if (classReference.getHaxeClassModel().isCallable()) return;
             }
-            // if not enum value constructor or dynamic, show error
-            if (!type.isEnumValueType() && !type.isDynamic() && !type.isUnknown()) {
+            // if not enum value constructor, expr, dynamic or unknown, show error
+            if (!type.isEnumValueType() && !type.isDynamic() && !type.isUnknown() && !type.getType().isExpr()) {
               // TODO bundle
               holder.newAnnotation(HighlightSeverity.ERROR, typeReference.toPresentationString() + " is not a callable type")
                 .range(element)
