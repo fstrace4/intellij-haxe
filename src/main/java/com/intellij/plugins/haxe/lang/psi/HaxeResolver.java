@@ -1392,7 +1392,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     ResultHolder result = HaxeExpressionEvaluator.evaluateWithRecursionGuard(lefthandExpression, context, null).result;
 
 
-    SpecificHaxeClassReference classType = result.getClassType();
+    SpecificHaxeClassReference classType = result.isUnknown() ? null : result.getClassType();
     HaxeClass  haxeClass = classType != null ? classType.getHaxeClass() : null;
 
     // To avoid incorrect extension method results we avoid any results where we don't know type of left reference.
