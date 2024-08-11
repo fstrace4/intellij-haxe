@@ -571,7 +571,7 @@ public class HaxeTypeCompatible {
           ignored = true;
         }
       }else if (toMember instanceof HaxeFieldModel fieldModel) {
-        optional = fieldModel.isOptional();
+        optional = fieldModel.isOptional() || fieldModel.hasInitializer();
         ignored = fieldModel.isStatic();
 
           Optional<HaxeBaseMemberModel> first = fromMembers.stream().filter(model -> model.getNamePsi().textMatches(name)).findFirst();
