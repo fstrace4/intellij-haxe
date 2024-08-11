@@ -1,9 +1,19 @@
 # Changelog
+## 1.5.8
+* Bugfix: Fixed issue where result of `ExprOf` with functionType was annotated as not callable 
+* Bugfix: `var` keyword in enum extractors where marked as error by the parser.
+* Bugfix: Optional fields in typedefs where not always treated as optional. (#1181)
+* Bugfix: Fixed default SDK issue (reported by jetbrains)
+* Bugfix: Fixed issue where resolver would resolve incorrect extension method. 
+* Bugfix: inheritance search was checking object literals (#1182)
+* improvement: Better type resolve for members in object literals 
+* improvement: Better error messages when object literals does not match assigned type.
+
 ## 1.5.7
 * Bugfix: Import of static members starting with uppercase would in some cases not resolve.
 * Added: Support for `@:using` and `@:structInit`
 * improvement: Code and build system updated to support Intellij 2024.2
-* improvement: Setter switch case extractor and capturing variable handling.
+* improvement: Better switch-case extractor and capturing variable handling.
 * improvement: Values from Object literals can now be used without type tag.  
 * improvement: Object literals can now be used in switch case expression   
 * Experimental: inject GLSL language in OpenFL for vertex and fragment annotations if GLSL plugin installed.
