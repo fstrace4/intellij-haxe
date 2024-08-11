@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation.typeMismatch;
+import static com.intellij.plugins.haxe.ide.annotator.HaxeStandardAnnotation.*;
 
 public class HaxeSemanticsUtil {
   public static class TypeTagChecker {
@@ -37,18 +37,24 @@ public class HaxeSemanticsUtil {
       HaxeAssignContext  context = new HaxeAssignContext(erroredElement, initExpression);
       if (!varType.canAssign(initType, context)) {
 
-        AnnotationBuilder builder =
-          typeMismatch(holder, erroredElement, initType.toStringWithoutConstant(), varType.toStringWithoutConstant());
-        if (null != initType.getClassType()) {
-          builder.withFix(
-            new HaxeTypeTagChangeFixer(HaxeBundle.message("haxe.quickfix.change.variable.type"), tag, initType.getClassType()));
+        if(context.hasMissingMembers()) {
+          typeMismatchMissingMembers(holder, erroredElement, context).create();
+        }else if(context.hasWrongTypeMembers()) {
+          typeMismatchWrongTypeMembers(holder, erroredElement, context).create();
+        }else {
+          AnnotationBuilder builder = typeMismatch(holder, erroredElement, initType.toStringWithoutConstant(), varType.toStringWithoutConstant());
+          if (null != initType.getClassType()) {
+            builder.withFix(new HaxeTypeTagChangeFixer(HaxeBundle.message("haxe.quickfix.change.variable.type"), tag, initType.getClassType()));
+          }
+
+          List<HaxeExpressionConversionFixer> fixes =
+            HaxeExpressionConversionFixer.createStdTypeFixers(initExpression.getExpression(), initType.getType(), varType.getType());
+          builder.withFix(new HaxeRemoveElementFixer(HaxeBundle.message("haxe.quickfix.remove.initializer"), initExpression));
+          fixes.forEach(builder::withFix);
+          builder.create();
         }
 
-        List<HaxeExpressionConversionFixer> fixes =
-          HaxeExpressionConversionFixer.createStdTypeFixers(initExpression.getExpression(), initType.getType(), varType.getType());
-        builder.withFix(new HaxeRemoveElementFixer(HaxeBundle.message("haxe.quickfix.remove.initializer"), initExpression));
-        fixes.forEach(builder::withFix);
-        builder.create();
+
       }
       else if (requireConstant && !isConstant(initType, initExpression)) {
         holder.newAnnotation(HighlightSeverity.ERROR,

@@ -14,8 +14,8 @@ class Test {
     var s1:MyStruct = {name:"name", age:30};
     var s2:MyStruct = {name:"name", age:30, height:1.0, address:"address 1"};
 
-    // wrong (TODO better error messages)
-    var <error descr="Incompatible type: {...} should be MyStruct">s3:MyStruct = {name:"name"}</error>; // missing field
+    // WRONG
+    var <error descr="Incompatible type: missing member(s) age:Int">s3:MyStruct = {name:"name"}</error>; // missing field
     var <error descr="Incompatible type: {...} should be MyStruct">s4:MyStruct = {name:"name", age:30, address:"address 1", extra:"field"}</error>; // to many fields
 
   }
