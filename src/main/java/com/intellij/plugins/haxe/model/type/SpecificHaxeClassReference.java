@@ -718,7 +718,9 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   public SpecificTypeReference fullyResolveUnderlyingTypeUnwrapNullTypeReference() {
     SpecificTypeReference result = fullyresolveRecursionGuard.computePreventingRecursion(this.context, true, () -> {
       SpecificTypeReference reference = this;
-      while (reference != null) {
+      SpecificTypeReference oldRef = null;
+      while (reference != null && reference != oldRef) {
+        oldRef = reference; // not a proper solution but should prevent 1 level of same reference infinite loop
         if (reference instanceof SpecificHaxeClassReference cs) {
           if (cs.isNullType() || cs.isTypeDef()) {
             reference = fullyResolveTypeDefAndUnwrapNullTypeReference();

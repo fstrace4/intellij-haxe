@@ -1466,11 +1466,12 @@ public class HaxeExpressionEvaluatorHandlers {
       ResultHolder searchResult = evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> {
           return searchReferencesForType(element, context, resolver, null, hint);
       });
-      // if we got a type we should check that we find the correct match (avoid replacing a class with an interface match etc.)
       if (searchResult != null) {
-        if (result == null || searchResult.getType().isSameType(result.getType())) {
-          result = searchResult;
-        }
+          if (result == null) {
+            result = searchResult;
+          }else if (searchResult.getType().isSameType(result.getType())) {
+            result = HaxeTypeUnifier.unify(result, searchResult);
+          }
       }
     }
     result = tryGetEnumValuesDeclaringClass(result);

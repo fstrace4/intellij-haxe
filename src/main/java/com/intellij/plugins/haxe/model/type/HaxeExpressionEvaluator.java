@@ -581,6 +581,9 @@ public class HaxeExpressionEvaluator {
       }).toList();
   }
 
+  private static final RecursionGuard<PsiElement>
+    checkSearchResultRecursionGuard = RecursionManager.createGuard("EvaluatorCheckSearchResultRecursionGuard");
+
   @Nullable
   private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference,
                                                 HaxeComponentName originalComponent,
@@ -611,10 +614,27 @@ public class HaxeExpressionEvaluator {
       if (expression.getParent() instanceof  HaxeObjectLiteralElement literalElement) {
         HaxeObjectLiteral objectLiteral = PsiTreeUtil.getParentOfType(literalElement, HaxeObjectLiteral.class);
         if(objectLiteral != null) {
-          ResultHolder objectLiteralType = findObjectLiteralType(context, resolver, objectLiteral);
-          if (objectLiteralType != null && !objectLiteralType.isUnknown()) {
-            return objectLiteralType;
-          }
+          ResultHolder result = checkSearchResultRecursionGuard.computePreventingRecursion(objectLiteral, false, () -> {
+            ResultHolder objectLiteralType = findObjectLiteralType(context, resolver, objectLiteral);
+            if (objectLiteralType != null && !objectLiteralType.isUnknown()) {
+              SpecificHaxeClassReference classType = objectLiteralType.getClassType();
+              if (classType != null) {
+                HaxeClassModel classModel = classType.getHaxeClassModel();
+                if (classModel != null) {
+                  HaxeGenericResolver genericResolver = classType.getGenericResolver();
+                  HaxeBaseMemberModel member = classModel.getMember(literalElement.getName(), genericResolver);
+                  if (member != null) {
+                    ResultHolder type = member.getResultType(genericResolver);
+                    if (type != null && !type.isUnknown()) {
+                      return type;
+                    }
+                  }
+                }
+              }
+            }
+            return null;
+          });
+          if(result != null) return result;
         }
       }
     }
@@ -869,7 +889,7 @@ public class HaxeExpressionEvaluator {
     return  resultHolder;
   }
 
-  private static @Nullable ResultHolder findObjectLiteralType(HaxeExpressionEvaluatorContext context,
+  public static @Nullable ResultHolder findObjectLiteralType(HaxeExpressionEvaluatorContext context,
                                                   HaxeGenericResolver resolver,
                                                   HaxeObjectLiteral objectLiteral) {
     ResultHolder objectLiteralType = null;
@@ -877,7 +897,13 @@ public class HaxeExpressionEvaluator {
     // we need to find  where the literal is used to find correct type
     if (objectLiteral.getParent() instanceof HaxeAssignExpression assignExpression) {
       objectLiteralType = handleWithRecursionGuard(assignExpression.getLeftExpression(), context, resolver);
-
+    }
+    if (objectLiteral.getParent() instanceof HaxeVarInit varInit) {
+      HaxePsiField field = PsiTreeUtil.getParentOfType(varInit, HaxePsiField.class);
+      if(field != null) {
+        ResultHolder fieldType = HaxeTypeResolver.getTypeFromTypeTag(field.getTypeTag(), field);
+        if(!fieldType.isUnknown()) return fieldType;
+      }
     }
     if (objectLiteral.getParent().getParent() instanceof HaxeCallExpression callExpression) {
       if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {

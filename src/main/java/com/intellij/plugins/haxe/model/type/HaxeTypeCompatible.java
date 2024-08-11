@@ -489,8 +489,10 @@ public class HaxeTypeCompatible {
     if(to.getHaxeClassModel() != null && !to.isTypeParameter()) { // typeParameters can be Anonymous but is not part of the anonymous "interface" check here
       HaxeClassModel classModel = to.getHaxeClassModel();
       if (classModel.isAnonymous() || classModel.isStructInit() || classModel.isObjectLiteral()){
-        // compare members (Anonymous stucts can be "used" as interface)
-        return containsAllMembers(to, from, context);
+        if (!from.isTypeParameter()) { // cant get members from a typeParameter
+          // compare members (Anonymous stucts can be "used" as interface)
+          return containsAllMembers(to, from, context);
+        }
       }
     }
 
@@ -583,12 +585,6 @@ public class HaxeTypeCompatible {
               Boolean canAssign = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () -> {
                 ResultHolder toType = toMember.getResultType();
                 ResultHolder fromType = fromMember.getResultType();
-
-                //TODO, temp hack ignoring type of enum until better resolve logic is added
-                SpecificTypeReference type = fromType.getType();
-                boolean  fromIsEnum = type.isEnumValue() || type.isEnumType() || type.isEnumClass() || type.isEnumValueClass();
-                if (toType.isEnum() && fromIsEnum) return true;
-
                 return toType.canAssign(fromType);
               });
 

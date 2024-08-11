@@ -48,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findObjectLiteralType;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
 import static com.intellij.plugins.haxe.util.HaxeStringUtil.elide;
 
@@ -370,12 +371,32 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
           }
         }
       }
+      if(referenceParent instanceof  HaxeObjectLiteralElement literalElement) {
+        HaxeObjectLiteral objectLiteral = PsiTreeUtil.getParentOfType(literalElement, HaxeObjectLiteral.class);
+        if(objectLiteral != null) {
+          ResultHolder objectLiteralType = findObjectLiteralType(new HaxeExpressionEvaluatorContext(objectLiteral), null, objectLiteral);
+          if(objectLiteralType != null && !objectLiteralType.isUnknown()) {
+            SpecificHaxeClassReference typeFromUsage = objectLiteralType.getClassType();
+            if (typeFromUsage != null && typeFromUsage.getHaxeClassModel() != null) {
+              HaxeBaseMemberModel objectLiteralElementAsMember = typeFromUsage.getHaxeClassModel()
+                .getMember(literalElement.getName(), typeFromUsage.getGenericResolver());
+              if(objectLiteralElementAsMember != null) {
+                ResultHolder type = objectLiteralElementAsMember.getResultType(typeFromUsage.getGenericResolver());
+                if(type != null && type.isEnum()) {
+                  List<HaxeComponentName> components = findEnumMember(reference, type.getType());
+                  if (components != null) return components;
+                }
+
+              }
+            }
+          }
+        }
+      }
 
       if (referenceParent instanceof HaxeCallExpression) {
         List<HaxeComponentName> member = checkParameterListFromCallExpressions(reference, referenceParent);
         if (member != null) return member;
       }
-
 
       if (!(referenceParent instanceof HaxeType)) {
         HaxeParameter parameterFromReferenceExpression = null;
@@ -811,11 +832,12 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
     HaxeSwitchCaseExpr switchCaseExpr = PsiTreeUtil.getParentOfType(reference, HaxeSwitchCaseExpr.class);
 
-    List<? extends PsiElement> result = null;
+    // check "case" scope for local variables first before we go higher up and check the case expression
+    List<? extends PsiElement> result = checkByTreeWalk(reference, switchCaseExpr);
 
     // NOTE: this one has to come before  `checkIfSwitchCaseDefaultValue`
     // check if default name in match expression (ex  `case TString(_ => captureVar)`)
-    result = checkIfDefaultValueInMatchExpression(reference, switchCaseExpr);
+    if (result == null) result = checkIfDefaultValueInMatchExpression(reference, switchCaseExpr);
 
     // check if enum extracted value (ex `case MyEnumVal(reference)`)
     if (result == null) result = checkIsSwitchExtractedValue(reference);
@@ -1199,13 +1221,17 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
    * @param reference
    * @return
    */
-  private List<? extends PsiElement> checkByTreeWalk(HaxeReference reference) {
+  private List<? extends PsiElement> checkByTreeWalk(HaxeReference reference,  @Nullable PsiElement maxScope) {
     final List<PsiElement> result = new ArrayList<>();
-    PsiTreeUtil.treeWalkUp(new ResolveScopeProcessor(result, reference.getText(), reference), reference, null, new ResolveState());
+    PsiTreeUtil.treeWalkUp(new ResolveScopeProcessor(result, reference.getText(), reference), reference, maxScope, new ResolveState());
     if (result.isEmpty()) return null;
     LogResolution(reference, "via tree walk.");
     return result;
   }
+  private List<? extends PsiElement> checkByTreeWalk(HaxeReference reference) {
+    return checkByTreeWalk(reference, (PsiElement)null);
+  }
+
   private List<? extends PsiElement> checkByTreeWalk(HaxeReference scope, String name) {
     final List<PsiElement> result = new ArrayList<>();
     PsiTreeUtil.treeWalkUp(new ResolveScopeProcessor(result, name, null), scope, null, new ResolveState());
