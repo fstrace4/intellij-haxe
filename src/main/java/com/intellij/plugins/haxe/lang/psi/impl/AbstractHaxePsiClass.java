@@ -256,10 +256,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   @Nullable
   @Override
   public HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver) {
-//TODO: debug line remove
-    List<HaxeNamedComponent> all = this.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM, HaxeComponentType.ABSTRACT);
-
-    //List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
+    List<HaxeNamedComponent> all = CachedValuesManager.getCachedValue(this, () -> AbstractHaxePsiClass.getHaxeFieldAllCached(this));
     return ContainerUtil.find(all, component -> name.equals(component.getName()));
   }
 
