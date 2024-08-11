@@ -39,7 +39,7 @@ import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.getStdC
 public class HaxeTypeCompatible {
 
   // disabling for now, too many mismatches (seems to struggle with resolving correct enum types)
-  static boolean checkAnonymousMemberTypes = false;
+  static boolean checkAnonymousMemberTypes = true;
 
   static public boolean canAssignToFrom(@Nullable SpecificTypeReference to, @Nullable ResultHolder from) {
     if (null == to || null == from) return false;
@@ -581,9 +581,15 @@ public class HaxeTypeCompatible {
             HaxeBaseMemberModel fromMember = first.get();
             if (context != null && context.getFromOrigin() != null) {
               Boolean canAssign = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () -> {
-                ResultHolder fromType = fromMember.getResultType();
                 ResultHolder toType = toMember.getResultType();
-                return fromType.canAssign(toType);
+                ResultHolder fromType = fromMember.getResultType();
+
+                //TODO, temp hack ignoring type of enum until better resolve logic is added
+                SpecificTypeReference type = fromType.getType();
+                boolean  fromIsEnum = type.isEnumValue() || type.isEnumType() || type.isEnumClass() || type.isEnumValueClass();
+                if (toType.isEnum() && fromIsEnum) return true;
+
+                return toType.canAssign(fromType);
               });
 
               // in case recursion guard is triggered

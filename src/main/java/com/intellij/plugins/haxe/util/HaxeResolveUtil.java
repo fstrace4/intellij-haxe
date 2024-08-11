@@ -1238,7 +1238,12 @@ public class HaxeResolveUtil {
       result = findClassByQName(className, type.getContext());
     }
 
-    result = result != null ? result : findClassByQName(className, type.getContext());
+    if (result == null && className != null) {
+      //make sure we  wont try to files with invalid characters
+      if (className.matches("[^:<>{}()/]+")) {
+        result = findClassByQName(className, type.getContext());
+      }
+    }
 
     return result instanceof HaxeClass haxeClass ? haxeClass : null;
   }

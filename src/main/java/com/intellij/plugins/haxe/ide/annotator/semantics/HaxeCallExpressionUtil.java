@@ -1,6 +1,7 @@
 package com.intellij.plugins.haxe.ide.annotator.semantics;
 
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.util.text.Strings;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodDeclarationImpl;
@@ -10,11 +11,11 @@ import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.model.type.resolver.ResolverEntry;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.util.PsiTreeUtil;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.intellij.plugins.haxe.ide.annotator.semantics.TypeParameterUtil.*;
 import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.canAssignToFrom;
@@ -159,7 +160,7 @@ public class HaxeCallExpressionUtil {
         else {
           // out of parameters and last is not var arg, must mean that ve have skipped optionals and still had arguments left
           if (parameterType != null && argumentType != null) {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument));
+            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, null));
           }
           break;
         }
@@ -214,8 +215,9 @@ public class HaxeCallExpressionUtil {
 
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
+        HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getBasePsi(), argument);
         ResultHolder constraint = optionalTypeParameterConstraint.get();
-        if (canAssignToFrom(constraint, argumentType)) {
+        if (canAssignToFrom(constraint, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
@@ -231,7 +233,7 @@ public class HaxeCallExpressionUtil {
             }else if (argumentType.isClassType() && argumentType.isMissingClassModel()){
               validation.warnings.add(annotateUnableToCompare( argumentType, argument));
             }else {
-              validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument));
+              validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
             }
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
@@ -240,8 +242,8 @@ public class HaxeCallExpressionUtil {
       else {
         ResultHolder resolvedParameterType = HaxeTypeResolver.resolveParameterizedType(parameterType, resolver.withoutUnknowns());
 
-
-        if (canAssignToFrom(resolvedParameterType, argumentType)) {
+        HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getBasePsi(), argument);
+        if (canAssignToFrom(resolvedParameterType, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
@@ -256,7 +258,7 @@ public class HaxeCallExpressionUtil {
             }else if (argumentType.isClassType() && argumentType.isMissingClassModel()){
               validation.warnings.add(annotateUnableToCompare( argumentType, argument));
             }else {
-              validation.errors.add(annotateTypeMismatch(resolvedParameterType, argumentType, argument));
+              validation.errors.add(annotateTypeMismatch(resolvedParameterType, argumentType, argument, assignContext));
             }
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
@@ -390,7 +392,7 @@ public class HaxeCallExpressionUtil {
           else {
             // out of parameters and last is not var arg, must mean that ve have skipped optionals and still had arguments left
             if (parameterType != null && argumentType != null) {
-              validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument));
+              validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, null));
             }
             break;
           }
@@ -411,8 +413,8 @@ public class HaxeCallExpressionUtil {
         // check if  argument matches Type Parameter constraint
         ResultHolder resolvedParameterType = HaxeTypeResolver.resolveParameterizedType(parameterType, resolver);
 
-
-        if (canAssignToFrom(resolvedParameterType, argumentType)) {
+        HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getType().getElementContext(), argument);
+        if (canAssignToFrom(resolvedParameterType, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
@@ -421,7 +423,7 @@ public class HaxeCallExpressionUtil {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
           } else {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument));
+            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -576,7 +578,8 @@ public class HaxeCallExpressionUtil {
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
         ResultHolder constraint = optionalTypeParameterConstraint.get();
-        if (canAssignToFrom(constraint, argumentType)) {
+        HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getType().getElementContext(), argument);
+        if (canAssignToFrom(constraint, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
@@ -586,7 +589,7 @@ public class HaxeCallExpressionUtil {
             argumentCounter--; //retry argument with next parameter
           }
           else {
-            validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument));
+            validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -594,8 +597,8 @@ public class HaxeCallExpressionUtil {
       else {
         ResultHolder resolvedParameterType = HaxeTypeResolver.resolveParameterizedType(parameterType, resolver.withoutUnknowns());
 
-
-        if (canAssignToFrom(resolvedParameterType, argumentType)) {
+        HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getType().getElementContext(), argument);
+        if (canAssignToFrom(resolvedParameterType, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
@@ -605,7 +608,7 @@ public class HaxeCallExpressionUtil {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
           }else {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument));
+            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -821,12 +824,27 @@ public class HaxeCallExpressionUtil {
   }
 
 
-  private static ErrorRecord annotateTypeMismatch( ResultHolder expected, ResultHolder got, HaxeExpression expression) {
+  private static ErrorRecord annotateTypeMismatch(ResultHolder expected, ResultHolder got, HaxeExpression expression,
+                                                  HaxeAssignContext context) {
+    if (context != null) {
+      if (context.hasMissingMembers()) {
+        String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch.missing.members",
+                                            context.getMissingMembersString());
+        return new ErrorRecord(expression.getTextRange(), message);
+
+      } else if (context.hasWrongTypeMembers()) {
+        String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch.wrong.type.members",
+                                            context.geWrongTypeMembersString());
+        return new ErrorRecord(expression.getTextRange(), message);
+      }
+    }
+
     String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch",
                                         expected.toPresentationString(),
                                         got.toPresentationString());
     return new ErrorRecord(expression.getTextRange(), message);
   }
+
   private static WarningRecord annotateUnableToCompare( ResultHolder problemType, HaxeExpression expression) {
     String message = HaxeBundle.message("haxe.semantic.method.parameter.unable.to.compare", problemType.toPresentationString());
     return new WarningRecord(expression.getTextRange(), message);

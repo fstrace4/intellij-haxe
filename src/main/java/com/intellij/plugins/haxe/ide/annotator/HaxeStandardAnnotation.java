@@ -18,14 +18,10 @@ package com.intellij.plugins.haxe.ide.annotator;
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.openapi.util.text.Strings;
 import com.intellij.plugins.haxe.HaxeBundle;
+import com.intellij.plugins.haxe.model.type.HaxeAssignContext;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A library of annotations that can be re-used.  Place annotations that are used more than
@@ -47,21 +43,17 @@ public class HaxeStandardAnnotation {
 
   public static @NotNull AnnotationBuilder typeMismatchMissingMembers(@NotNull AnnotationHolder holder,
                                                                       @NotNull PsiElement incompatibleElement,
-                                                                      List<String> missingFields) {
+                                                                      HaxeAssignContext context) {
 
     String message = HaxeBundle.message("haxe.semantic.incompatible.type.missing.members.0",
-                                        Strings.join(missingFields, ","));
+                                        context.getMissingMembersString());
     return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
   }
   public static @NotNull AnnotationBuilder typeMismatchWrongTypeMembers(@NotNull AnnotationHolder holder,
-                                                                      @NotNull PsiElement incompatibleElement,
-                                                                      Map<String, String> wrongTypes) {
+                                                                        @NotNull PsiElement incompatibleElement,
+                                                                        HaxeAssignContext context) {
 
-    String wrongTypeText = wrongTypes.entrySet().stream()
-      .map(entry -> "have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
-      .collect(Collectors.joining(", "));
-
-    String message = HaxeBundle.message("haxe.semantic.incompatible.type.wrong.member.types.0",  wrongTypeText);
+    String message = HaxeBundle.message("haxe.semantic.incompatible.type.wrong.member.types.0",  context.geWrongTypeMembersString());
                                         
     return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
   }

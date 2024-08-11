@@ -73,6 +73,8 @@ public interface HaxeClass extends HaxeComponent, PsiClass, HaxeModelTarget {
 
   boolean isAbstractType();
 
+  boolean isObjectLiteralType();
+
   boolean isExtern();
 
   boolean isInterface();

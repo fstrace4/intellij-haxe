@@ -56,7 +56,7 @@ public class HaxeExpressionEvaluatorHandlers {
                                                HaxeGenericResolver resolver) {
     RecursionManager.markStack();
     if (element == null ) return null;
-    return evaluatorHandlersRecursionGuard.doPreventingRecursion(element, true, () -> handle(element, context, resolver));
+    return evaluatorHandlersRecursionGuard.doPreventingRecursion(element, false, () -> handle(element, context, resolver));
   }
 
 

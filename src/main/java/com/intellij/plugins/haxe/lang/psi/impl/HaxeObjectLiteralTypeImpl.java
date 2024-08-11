@@ -7,9 +7,6 @@ import com.intellij.plugins.haxe.lang.psi.HaxeObjectLiteral;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @author: Fedor.Korotkov
- */
 public abstract class HaxeObjectLiteralTypeImpl extends AbstractHaxePsiClass {
 
   public HaxeObjectLiteralTypeImpl(@NotNull HaxeObjectLiteral objectLiteral) {

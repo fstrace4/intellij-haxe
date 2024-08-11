@@ -160,6 +160,10 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   public boolean isAbstractType() {
     return (this instanceof HaxeAbstractTypeDeclaration);
   }
+  public boolean isObjectLiteralType() {
+    return (this instanceof HaxeObjectLiteral);
+  }
+
 
   @Override
   public boolean isInterface() {
@@ -173,6 +177,9 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   public boolean isAnonymousType() {
     return  false;
   }
+
+
+
 
   @NotNull
   @Override

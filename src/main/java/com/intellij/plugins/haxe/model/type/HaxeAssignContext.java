@@ -1,5 +1,6 @@
 package com.intellij.plugins.haxe.model.type;
 
+import com.intellij.openapi.util.text.Strings;
 import com.intellij.psi.PsiElement;
 import lombok.Data;
 import org.jetbrains.annotations.Nullable;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 public class HaxeAssignContext {
@@ -35,5 +37,14 @@ public class HaxeAssignContext {
   }
   public boolean hasWrongTypeMembers() {
     return !wrongTypeMembers.isEmpty();
+  }
+
+  public String getMissingMembersString() {
+    return Strings.join(getMissingMembers(), ", ");
+  }
+  public String geWrongTypeMembersString() {
+    return  getWrongTypeMembers().entrySet().stream()
+      .map(entry -> "have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
+      .collect(Collectors.joining(", "));
   }
 }

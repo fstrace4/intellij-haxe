@@ -75,11 +75,11 @@ public class HaxeAssignExpressionAnnotator implements Annotator {
 
       if(context.hasMissingMembers() || context.hasWrongTypeMembers()) {
         if(context.hasMissingMembers()) {
-          HaxeStandardAnnotation.typeMismatchMissingMembers(holder, rhs, context.getMissingMembers())
+          HaxeStandardAnnotation.typeMismatchMissingMembers(holder, rhs, context)
             .create();
         }
         if(context.hasWrongTypeMembers()) {
-          HaxeStandardAnnotation.typeMismatchWrongTypeMembers(holder, rhs, context.getWrongTypeMembers())
+          HaxeStandardAnnotation.typeMismatchWrongTypeMembers(holder, rhs, context)
             .create();
         }
       }else {

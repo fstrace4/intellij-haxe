@@ -1022,6 +1022,7 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
     return !(parent instanceof HaxeType)
            && !(parent instanceof  HaxeReference)
            && resolve instanceof HaxeClass haxeClass
+           && getLastChild().textMatches(haxeClass.getName())
            && className.equalsIgnoreCase(haxeClass.getName());// identical classname and elementText
   }
 

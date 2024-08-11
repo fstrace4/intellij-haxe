@@ -355,15 +355,6 @@ public abstract class SpecificTypeReference {
     return false;
   }
 
-  final public boolean isPureClassReference() {
-    if (context instanceof HaxeReferenceImpl reference && this instanceof  SpecificHaxeClassReference classReference) {
-      @NotNull ResultHolder[] specifics = classReference.getSpecifics();
-      if (specifics.length != 1) return false;
-      return reference.isPureClassReferenceOf(specifics[0].getClassType().getClassName());
-    }
-    return false;
-  }
-
   final public boolean isEnumValue() {
     return (this instanceof SpecificEnumValueReference)
         || (this.getConstant() instanceof HaxeEnumValueDeclaration)

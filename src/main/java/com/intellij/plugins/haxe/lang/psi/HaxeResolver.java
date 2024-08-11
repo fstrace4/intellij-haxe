@@ -1492,8 +1492,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     List<HaxeModel> result = HaxeProjectModel.fromElement(reference).resolve(qualifiedInfo, reference.getResolveScope());
     if (result != null && !result.isEmpty()) {
       HaxeModel item = result.get(0);
-      if (item instanceof HaxeFileModel) {
-        HaxeClassModel mainClass = ((HaxeFileModel)item).getMainClassModel();
+      if (item instanceof HaxeFileModel fileModel) {
+        HaxeClassModel mainClass = fileModel.getMainClassModel();
         if (mainClass != null) {
           return mainClass.haxeClass.getComponentName();
         }
