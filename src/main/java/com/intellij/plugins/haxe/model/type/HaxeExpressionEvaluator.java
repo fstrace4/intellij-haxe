@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 
 import  static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.*;
+import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.handleWithRecursionGuard;
 
 @CustomLog
 public class HaxeExpressionEvaluator {
@@ -607,6 +608,15 @@ public class HaxeExpressionEvaluator {
           }
         }
       }
+      if (expression.getParent() instanceof  HaxeObjectLiteralElement literalElement) {
+        HaxeObjectLiteral objectLiteral = PsiTreeUtil.getParentOfType(literalElement, HaxeObjectLiteral.class);
+        if(objectLiteral != null) {
+          ResultHolder objectLiteralType = findObjectLiteralType(context, resolver, objectLiteral);
+          if (objectLiteralType != null && !objectLiteralType.isUnknown()) {
+            return objectLiteralType;
+          }
+        }
+      }
     }
     if (reference instanceof HaxeReferenceExpression referenceExpression) {
       // reference is callExpression
@@ -663,17 +673,31 @@ public class HaxeExpressionEvaluator {
     return null;
   }
 
-  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeReferenceExpression referenceExpression,
+  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeExpression referenceExpression,
+                                                  HaxeCallExpression callExpression,
+                                                  HaxeCallExpressionList list,
+                                                                           SpecificFunctionReference functionReference) {
+    int index = -1;
+    if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
+    if (index == -1) return null;
+    HaxeCallExpressionUtil.CallExpressionValidation validation =
+      HaxeCallExpressionUtil.checkFunctionCall(callExpression, functionReference);
+
+    if (validation.isStaticExtension()) index++;
+    return validation.getParameterIndexToType().getOrDefault(index, null);
+  }
+  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeExpression referenceExpression,
                                                   HaxeCallExpression callExpression,
                                                   HaxeCallExpressionList list,
                                                   PsiElement resolved) {
     int index = -1;
     if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
-    if (index > -1 && resolved instanceof HaxeMethod method) {
+    if (index == -1) return null;
+
+    if (resolved instanceof HaxeMethod method) {
       HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
       if (validation.isStaticExtension()) index++;
-      ResultHolder paramType = validation.getParameterIndexToType().getOrDefault(index, null);
-      if (paramType != null) return paramType;
+      return validation.getParameterIndexToType().getOrDefault(index, null);
     }
     return null;
   }
@@ -809,8 +833,63 @@ public class HaxeExpressionEvaluator {
             }
           }
         }
+        if(expression.getParent() instanceof  HaxeObjectLiteralElement literalElement) {
+          HaxeObjectLiteral objectLiteral = PsiTreeUtil.getParentOfType(literalElement, HaxeObjectLiteral.class);
+          if(objectLiteral == null) continue;
+
+          ResultHolder objectLiteralType = findObjectLiteralType(context, resolver, objectLiteral);
+
+          if (objectLiteralType != null && !objectLiteralType.isUnknown()) {
+            SpecificHaxeClassReference typeFromUsage = objectLiteralType.getClassType();
+            if (typeFromUsage != null && typeFromUsage.getHaxeClassModel() != null) {
+              HaxeBaseMemberModel objectLiteralElementAsMember = typeFromUsage.getHaxeClassModel()
+                .getMember(literalElement.getName(), typeFromUsage.getGenericResolver());
+
+              if (objectLiteralElementAsMember != null) {
+                ResultHolder objectLiteralElementType = objectLiteralElementAsMember.getResultType(resolver);
+                if (objectLiteralElementType.getClassType() != null) {
+                  @NotNull ResultHolder[] specifics = objectLiteralElementType.getClassType().getSpecifics();
+
+                  for (int i = 0; i < type.getSpecifics().length; i++) {
+                    if (type.getSpecifics()[i].isUnknown()) {
+                      type.getSpecifics()[i] = specifics[i];
+                    }
+                    else {
+                      ResultHolder unified = HaxeTypeUnifier.unify(specifics[i], type.getSpecifics()[i]);
+                      type.getSpecifics()[i] = unified;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
     return  resultHolder;
+  }
+
+  private static @Nullable ResultHolder findObjectLiteralType(HaxeExpressionEvaluatorContext context,
+                                                  HaxeGenericResolver resolver,
+                                                  HaxeObjectLiteral objectLiteral) {
+    ResultHolder objectLiteralType = null;
+
+    // we need to find  where the literal is used to find correct type
+    if (objectLiteral.getParent() instanceof HaxeAssignExpression assignExpression) {
+      objectLiteralType = handleWithRecursionGuard(assignExpression.getLeftExpression(), context, resolver);
+
+    }
+    if (objectLiteral.getParent().getParent() instanceof HaxeCallExpression callExpression) {
+      if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {
+        PsiElement resolve = callExpressionReference.resolve();
+        ResultHolder holder = handleWithRecursionGuard(resolve, context, resolver);
+        if (holder != null && holder.getFunctionType() != null) {
+          SpecificFunctionReference functionCall = holder.getFunctionType();
+          HaxeCallExpressionList list = callExpression.getExpressionList();
+          objectLiteralType = findUsageAsParameterInFunctionCall(objectLiteral, callExpression, list, functionCall);
+        }
+      }
+    }
+    return objectLiteralType;
   }
 }
