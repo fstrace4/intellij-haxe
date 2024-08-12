@@ -564,8 +564,6 @@ public class HaxeTypeResolver {
   }
 
   static public ResultHolder getTypeFromType(@NotNull HaxeType type, @Nullable HaxeGenericResolver resolver, boolean useAssignHint) {
-    //System.out.println("Type:" + type);
-    //System.out.println("Type:" + type.getText());
     if (resolver != null && !resolver.isEmpty()) {
       ResultHolder resolve = resolver.resolve(type, useAssignHint);
       if (resolve != null && !resolve.isUnknown()) {

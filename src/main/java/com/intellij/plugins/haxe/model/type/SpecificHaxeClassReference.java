@@ -24,6 +24,7 @@ import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeTypeDefImpl;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeClassWrapperForTypeParameter;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeTypeParameterMultiType;
 import com.intellij.plugins.haxe.metadata.HaxeMetadataList;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
@@ -105,7 +106,13 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
   @Nullable
   public HaxeClass getHaxeClass() {
     if(clazz == null || !clazz.isValid()) {
-      clazz = this.getHaxeClassReference().getHaxeClass();
+      HaxeClassReference reference = this.getHaxeClassReference();
+      clazz = reference.getHaxeClass();
+      if(clazz == null && reference.isTypeParameter()) {
+        PsiElement element = reference.elementContext;
+        if(element instanceof HaxeType haxeType)
+          clazz =  new HaxeClassWrapperForTypeParameter(element.getNode(), List.of(haxeType));
+      }
     }
     return clazz;
   }

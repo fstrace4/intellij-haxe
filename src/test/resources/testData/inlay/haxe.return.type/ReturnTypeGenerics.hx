@@ -20,8 +20,8 @@ class ReturnTypeGenerics<T> {
     public static function staticGenericFn<T>(x:T)/*<# :T #>*/ {
         return x;
     }
-    //TODO need fix: incorrect typeParameter
-    public static function staticGenericFn2<T:ReturnTypeGenerics<String>>(x:T)/*<# :ReturnTypeGenerics<T> #>*/ {
+
+    public static function staticGenericFn2<T:ReturnTypeGenerics<String>>(x:T)/*<# :ReturnTypeGenerics<String> #>*/ {
         return x;
     }
 }

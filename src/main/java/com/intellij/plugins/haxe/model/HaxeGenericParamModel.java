@@ -96,23 +96,22 @@ public class HaxeGenericParamModel {
       if (constraint != null) {
         HaxeTypeOrAnonymous toa = constraint.getTypeOrAnonymous();
         if (toa != null) {
-          if (null != toa.getType()) {
-            HaxeReferenceExpression reference = toa.getType().getReferenceExpression();
-            ResultHolder result = HaxeExpressionEvaluator.evaluate(reference, new HaxeExpressionEvaluatorContext(part), resolver).result;
+          HaxeType type = toa.getType();
+          if (null != type) {
+
+            ResultHolder result = HaxeTypeResolver.getTypeFromType(type);
             if (!result.isUnknown()) {
               return result;
-            }
-            else {
+            } else {
+              HaxeReferenceExpression reference = type.getReferenceExpression();
               if (HaxeTypeResolver.isTypeParameter(reference)) {
                 // we dont want to resolve typeParameter constraints as the definition of this type parameter might need to inherit the type
                 return new ResultHolder(
-                  SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(toa.getType().getText(), toa.getType(), true)));
+                  SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(type.getText(), type, true)));
                 //return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa);
               }
             }
-          }
-
-          else {
+          } else {
             // Anonymous struct for a constraint.
             // TODO: Turn the anonymous structure into a ResolveResult.
             return HaxeTypeResolver.getTypeFromTypeOrAnonymous(toa, resolver); //temp solution

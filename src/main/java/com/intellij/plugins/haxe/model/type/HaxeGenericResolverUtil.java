@@ -262,7 +262,7 @@ public class HaxeGenericResolverUtil {
                                                                   HaxeGenericResolver localResolver) {
 
     List<SpecificHaxeClassReference> path = new ArrayList<>();
-    findClasHierarchy(ownerClass, inheritedClass, path);
+    findClassHierarchy(ownerClass, inheritedClass, path);
 
     Collections.reverse(path);
     HaxeGenericResolver resolver = ownerClass.getMemberResolver(localResolver);
@@ -273,7 +273,7 @@ public class HaxeGenericResolverUtil {
     return resolver;
   }
 
-  private static boolean findClasHierarchy(HaxeClass from, HaxeClass to, List<SpecificHaxeClassReference> path) {
+  private static boolean findClassHierarchy(HaxeClass from, HaxeClass to, List<SpecificHaxeClassReference> path) {
     HaxeClassModel fromModel = from.getModel();
     if (fromModel.isTypedef()) {
       SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(new HaxeGenericResolver());
@@ -283,7 +283,7 @@ public class HaxeGenericResolverUtil {
         if (resolvedTypeDef != null) {
           HaxeClass childClass = resolvedTypeDef.getHaxeClass();
           if (childClass == to) return true;
-          if (childClass != null) return findClasHierarchy(childClass, to, path);
+          if (childClass != null) return findClassHierarchy(childClass, to, path);
         }
       }
     }
@@ -295,7 +295,7 @@ public class HaxeGenericResolverUtil {
         if (childClass == to) {
           return path.add(model.getSpecificHaxeClassReference());
         } else {
-          if (findClasHierarchy(childClass, to, path)) {
+          if (findClassHierarchy(childClass, to, path)) {
             path.add(model.getSpecificHaxeClassReference());
             return true;
           }
