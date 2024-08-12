@@ -216,6 +216,8 @@ public class HaxeCallExpressionUtil {
       // check if  argument matches Type Parameter constraint
       if (optionalTypeParameterConstraint.isPresent()) {
         HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getBasePsi(), argument);
+        // Note that we use parameter type without resolved typeParameters here to check against method and class constraints.
+        assignContext.setConstraintCheck(containsTypeParameter(parameter.getType(), typeParamTable));
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         if (canAssignToFrom(constraint, argumentType, assignContext)) {
           addToIndexMap(validation, argumentCounter, parameterCounter);

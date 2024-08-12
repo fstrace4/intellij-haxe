@@ -496,7 +496,8 @@ public class HaxeTypeCompatible {
       }
     }
 
-    if (canAssignToFromSpecificType(to, from)) return true;
+    boolean constraintCheck = context != null && context.isConstraintCheck();
+    if (canAssignToFromSpecificType(to, from, constraintCheck)) return true;
 
     Set<SpecificHaxeClassReference> compatibleTypes = to.getCompatibleTypes(SpecificHaxeClassReference.Compatibility.ASSIGNABLE_FROM);
     if (to.isAbstractType() && includeImplicitCast) compatibleTypes.addAll(to.getHaxeClassModel().getImplicitCastFromTypesListClassOnly(to));
@@ -756,11 +757,19 @@ public class HaxeTypeCompatible {
     @NotNull SpecificHaxeClassReference to,
     @NotNull SpecificHaxeClassReference from
   ) {
-    return canAssignToFromSpecificType(to, from, null);
+    return canAssignToFromSpecificType(to, from, false, null);
+  }
+  static public boolean canAssignToFromSpecificType(
+    @NotNull SpecificHaxeClassReference to,
+    @NotNull SpecificHaxeClassReference from,
+    boolean allowEnumToEnumValueTypeParameter
+  ) {
+    return canAssignToFromSpecificType(to, from, allowEnumToEnumValueTypeParameter, null);
   }
   static private boolean canAssignToFromSpecificType(
     @NotNull SpecificHaxeClassReference to,
     @NotNull SpecificHaxeClassReference from,
+    boolean allowEnumToEnumValueTypeParameter,
     @Nullable List<HaxeModel> recursionGuard
   ) {
     if (to.isDynamic() || from.isDynamic()) {
@@ -787,6 +796,10 @@ public class HaxeTypeCompatible {
           ResultHolder toHolder = to.getSpecifics()[n];
           ResultHolder fromHolder = from.getSpecifics()[n];
           if(toHolder.equals(fromHolder)) continue;
+          // when checking typeParameter constraints we must allow Enum types to be assigned to EnumValue. (only applies to constraints)
+          if(allowEnumToEnumValueTypeParameter) {
+            if(toHolder.getType().isEnumValueClass() && fromHolder.isEnum()) continue;
+          }
 
           //allow assign if we got unspecified (type parameter) and real type as we cant tell if its right or wrong?
           // added this due to failing test, but in real world code it works just fine without, maybe look at test
@@ -838,7 +851,7 @@ public class HaxeTypeCompatible {
           if (recursionGuard == null) recursionGuard = new ArrayList<>();
           if (!recursionGuard.contains(classModel)) {
             recursionGuard.add(classModel);
-            if (canAssignToFromSpecificType(to, fromInterface, recursionGuard)) return true;
+            if (canAssignToFromSpecificType(to, fromInterface, allowEnumToEnumValueTypeParameter, recursionGuard)) return true;
           }
         }
       }
@@ -856,7 +869,7 @@ public class HaxeTypeCompatible {
                   recursionGuard.add(fromModel);
                   SpecificHaxeClassReference fromReference =
                     SpecificHaxeClassReference.withoutGenerics(new HaxeClassReference(fromModel, fromClass));
-                  if (canAssignToFromSpecificType(to, fromReference, recursionGuard)) return true;
+                  if (canAssignToFromSpecificType(to, fromReference, allowEnumToEnumValueTypeParameter, recursionGuard)) return true;
                 }
               }
             }

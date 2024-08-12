@@ -17,6 +17,10 @@ public class HaxeAssignContext {
   @Nullable PsiElement toOrigin;
   @Nullable PsiElement fromOrigin;
 
+  //NOTE: bit of a hack maybe.
+  // helper flag to tell  canAssign check that target is a constraint. this to allow enumTypeParameters to be assigned to EnumValue
+  private boolean constraintCheck = false;
+
   public HaxeAssignContext(@Nullable PsiElement toOrigin, @Nullable PsiElement fromOrigin) {
     this.toOrigin = toOrigin;
     this.fromOrigin = fromOrigin;
@@ -46,5 +50,12 @@ public class HaxeAssignContext {
     return  getWrongTypeMembers().entrySet().stream()
       .map(entry -> "have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
       .collect(Collectors.joining(", "));
+  }
+
+  public void setConstraintCheck(boolean constraintCheck) {
+    this.constraintCheck = constraintCheck;
+  }
+  public boolean isConstraintCheck() {
+    return constraintCheck;
   }
 }

@@ -26,6 +26,10 @@ class InitializeEnumMapWithMapLiteral {
         t.map = t.mape;
         t.mape = t.map;
 
+        enumValueParameter(t.mapv);
+        enumValueConstraint(t.mapv);
+        enumValueConstraint(t.mape);
+
         // Errors below here...
         t.mapv = <error descr="Incompatible type: Map<MyEnum, String> should be Map<EnumValue, String>">m</error>;
         t.map = <error descr="Incompatible type: EnumValueMap<MyEnum, String> should be haxe.ds.Map<MyEnum, String>">t.enummap</error>;
@@ -33,7 +37,15 @@ class InitializeEnumMapWithMapLiteral {
         t.enummap = <error descr="Incompatible type: Map<EnumValue, String> should be EnumValueMap<MyEnum, String>">t.mapv</error>;
         t.map = <error descr="Incompatible type: Map<EnumValue, String> should be haxe.ds.Map<MyEnum, String>">t.mapv</error>;
         t.mapv = <error descr="Incompatible type: haxe.ds.Map<MyEnum, String> should be Map<EnumValue, String>">t.map</error>;
+
+        enumValueParameter(<error descr="Type mismatch (Expected: 'Map<EnumValue, String>' got: 'Map<MyEnum, String>')">t.mape</error>);
+
+
     }
+    // method parmeter of with typeparameter of EnumValue can not accept map/Array of spesifict Enum,
+    // however if EnumValue  is used as a constraint for typeParameter/generics it should pass.
+    static function enumValueConstraint<T:EnumValue>(x:Map<T, String>) {}
+    static function enumValueParameter(x:Map<EnumValue, String>) {}
 
     public function new() {
         $type(map);     // haxe.ds.Map<MyEnum, String>
