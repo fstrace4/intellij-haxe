@@ -6,6 +6,7 @@
 * Bugfix: Fixed default SDK issue (reported by jetbrains)
 * Bugfix: Fixed issue where resolver would resolve incorrect extension method. 
 * Bugfix: inheritance search was checking object literals (#1182)
+* Bugfix: fixed issue where TypeParameters where not properly propagated to subclass members.
 * improvement: Better type resolve for members in object literals 
 * improvement: Better error messages when object literals does not match assigned type.
 
