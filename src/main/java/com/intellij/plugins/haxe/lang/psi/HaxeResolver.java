@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findObjectLiteralType;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
+import static com.intellij.plugins.haxe.util.HaxeResolveUtil.searchInSameFileForEnumValues;
 import static com.intellij.plugins.haxe.util.HaxeStringUtil.elide;
 
 /**
@@ -243,13 +244,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
               // test  call expression if possible
               for (PsiElement importElement : matchesInImport) {
                 if (importElement instanceof HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
-                  if (reference.getParent() instanceof HaxeCallExpression haxeCallExpression) {
-                    HaxeCallExpressionUtil.CallExpressionValidation validation =
-                      HaxeCallExpressionUtil.checkMethodCall(haxeCallExpression, enumValueDeclaration.getModel().getMethod());
-                    if (validation.isCompleted() && validation.getErrors().isEmpty()) {
-                      return List.of(importElement);
-                    }
-                  }
+                  boolean isValidConstructor = testAsEnumValueConstructor(enumValueDeclaration, reference);
+                  if (isValidConstructor) return List.of(importElement);
                 }
               }
               // fallback, check method parameters (needs work , optional are not handled)
@@ -297,6 +293,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     }
     return result;
 
+  }
+
+  private static boolean testAsEnumValueConstructor(@NotNull HaxeEnumValueDeclarationConstructor enumValueDeclaration, @NotNull HaxeReference reference) {
+      if (reference.getParent() instanceof HaxeCallExpression haxeCallExpression) {
+        HaxeMethod method = enumValueDeclaration.getModel().getMethod();
+        HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(haxeCallExpression, method);
+        return validation.isCompleted() && validation.getErrors().isEmpty();
+      }
+    return false;
   }
 
   private List<? extends PsiElement> checkIsSwitchExtractedValue(HaxeReference reference) {
@@ -589,6 +594,21 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   private static List<PsiElement> searchInSameFile(@NotNull HaxeReference reference, HaxeFileModel fileModel, boolean isType) {
     if(fileModel != null) {
       String className = reference.getText();
+      if (reference.getParent() instanceof HaxeCallExpression) {
+        // there can be multiple enum types with enumValues with the same name,
+        // we use enum constructors in an attempt to find the correct one first, its not a perfect solution but should cover some cases.
+        // if we dont find it  there's always a fallback in the `searchInSameFile` code below
+        //Note: the more correct way in some cases is to search for expected type from its use
+        List<PsiElement> elements = searchInSameFileForEnumValues(fileModel, className);
+        for (PsiElement element : elements) {
+          if (element instanceof HaxeNamedComponent namedComponent) {
+            if (element instanceof HaxeEnumValueDeclarationConstructor enumValueDeclaration) {
+              boolean isValidConstructor = testAsEnumValueConstructor(enumValueDeclaration, reference);
+              if (isValidConstructor) return List.of(namedComponent.getComponentName());
+            }
+          }
+        }
+      }
       PsiElement target = HaxeResolveUtil.searchInSameFile(fileModel, className, isType);
       if (target instanceof HaxeNamedComponent namedComponent) {
         LogResolution(reference, "via search In Same File");

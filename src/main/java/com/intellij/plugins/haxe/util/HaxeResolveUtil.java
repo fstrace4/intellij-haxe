@@ -1265,6 +1265,16 @@ public class HaxeResolveUtil {
 
     return result != null ? result.getBasePsi() : null;
   }
+  @NotNull
+  public static List<PsiElement> searchInSameFileForEnumValues(@NotNull HaxeFileModel file, @NotNull String name) {
+    List<HaxeClassModel> models = file.getClassModels();
+      return  models.stream().filter(model -> model instanceof HaxeEnumModel)
+        .map(model -> ((HaxeEnumModel)model).getValue(name))
+        .filter(Objects::nonNull)
+        .map(HaxeModel::getBasePsi)
+        .toList();
+
+  }
 
   @NotNull
   public static List<PsiElement> searchInImports(HaxeFileModel file, String name) {
