@@ -70,6 +70,7 @@ public abstract class HaxeLineMarkerProviderNS implements LineMarkerProvider {
   protected void collectSlowLineMarkersWorker(@NotNull List<PsiElement> elements, @NotNull Collection<LineMarkerInfo> result) {
     for (PsiElement element : elements) {
       if (element instanceof HaxeClass haxeClass) {
+        if (haxeClass.isObjectLiteralType()) continue;// ignore object literals as they do not inherit)
         HaxeLineMarkerProviderNS.collectClassMarkers(result, haxeClass);
       }
     }
