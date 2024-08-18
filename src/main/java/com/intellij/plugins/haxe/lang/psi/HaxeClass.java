@@ -27,6 +27,7 @@ import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
 import com.intellij.plugins.haxe.metadata.psi.impl.HaxeMetadataTypeName;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.HaxeClassModel;
+import com.intellij.plugins.haxe.model.HaxeFieldModel;
 import com.intellij.plugins.haxe.model.HaxeModelTarget;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.SpecificTypeReference;
@@ -135,6 +136,8 @@ public interface HaxeClass extends HaxeComponent, PsiClass, HaxeModelTarget {
    */
   @NotNull
   List<HaxeNamedComponent> getHaxeFieldAll(HaxeComponentType... fromTypesFilter);
+
+  List<HaxePsiField> getHaxeFieldsAncestor(boolean unique);
 
   @Nullable
   HaxeNamedComponent findHaxeFieldByName(@NotNull final String name, @Nullable HaxeGenericResolver resolver);

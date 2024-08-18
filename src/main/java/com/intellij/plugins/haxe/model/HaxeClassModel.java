@@ -563,8 +563,15 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   public List<HaxeBaseMemberModel> getAllMembers(@Nullable HaxeGenericResolver resolver) {
     final List<HaxeBaseMemberModel> members = new ArrayList<>();
     members.addAll(getAllMethods(resolver));
-    members.addAll(getFields());// TODO add get all ?
+    members.addAll(getAllFields(resolver));
     return members;
+  }
+
+  private List<HaxeFieldModel> getAllFields(@Nullable HaxeGenericResolver resolver) {
+    List<HaxeFieldModel> models =  getAncestorFields(resolver);
+    models.addAll( getFields());
+
+    return models;
   }
 
   @NotNull
@@ -633,8 +640,14 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
     }
     return models;
   }
+  public List<HaxeFieldModel> getAncestorFields(@Nullable HaxeGenericResolver resolver) {
+    List<HaxeFieldModel> models = new ArrayList<>();
+    for (HaxePsiField field : haxeClass.getHaxeFieldsAncestor(true)) {
+        models.add((HaxeFieldModel)field.getModel());
+    }
+    return models;
+  }
   public HaxeMethodModel getAncestorMethod(String name, @Nullable HaxeGenericResolver resolver) {
-    List<HaxeMethodModel> models = new ArrayList<HaxeMethodModel>();
     for (HaxeMethod method : haxeClass.getHaxeMethodsAncestor(true)) {
           HaxeMethodModel methodModel = method.getModel();
           if (name.equals(methodModel.getName())) return  methodModel;

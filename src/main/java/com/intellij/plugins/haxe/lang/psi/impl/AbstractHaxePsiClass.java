@@ -569,6 +569,15 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
     }
     return result;
   }
+  @NotNull
+  public List<HaxePsiField> getHaxeFieldsAncestor(boolean unique) {
+    List<HaxeNamedComponent> fields = getAncestorHaxeNamedComponents(HaxeComponentType.FIELD, unique);
+    final List<HaxePsiField> result = new ArrayList<>();
+    for (HaxeNamedComponent field : fields) {
+      result.add((HaxePsiField)field);
+    }
+    return result;
+  }
 
   @NotNull
   public List<HaxeNamedComponent> getHaxeFieldAll(HaxeComponentType... fromTypesFilter) {

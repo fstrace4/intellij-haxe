@@ -577,7 +577,7 @@ public class HaxeTypeCompatible {
         optional = fieldModel.isOptional() || fieldModel.hasInitializer();
         ignored = fieldModel.isStatic();
 
-          Optional<HaxeBaseMemberModel> first = fromMembers.stream().filter(model -> model.getNamePsi().textMatches(name)).findFirst();
+          Optional<HaxeBaseMemberModel> first = fromMembers.stream().filter(model -> model.getNamePsi().getIdentifier().textMatches(name)).findFirst();
           if (first.isPresent()) {
             memberExists = true;
             if (checkAnonymousMemberTypes) {
@@ -601,7 +601,7 @@ public class HaxeTypeCompatible {
           }
         }
       }else  {
-        memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().textMatches(name));
+        memberExists = fromMembers.stream().anyMatch(model -> model.getNamePsi().getIdentifier().textMatches(name));
       }
 
       if (!ignored && !memberExists && !optional){
@@ -614,7 +614,7 @@ public class HaxeTypeCompatible {
     // check object literals for too many fields
     if (isStruct && fromClassModel.isObjectLiteral()) {
       for (HaxeBaseMemberModel member : fromMembers) {
-        if(toMembers.stream().noneMatch(model -> model.getNamePsi().textMatches(member.getName()))) {
+        if(toMembers.stream().noneMatch(model -> model.getNamePsi().getIdentifier().textMatches(member.getName()))) {
           //  too many fields
           return false;
         }
