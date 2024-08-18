@@ -120,6 +120,9 @@ public class HaxeIndentProcessor {
         elementType != IF_STATEMENT) {
       return Indent.getNormalIndent();
     }
+    if (parentType == ANONYMOUS_TYPE_BODY) {
+      return Indent.getNormalIndent();
+    }
     return Indent.getNoneIndent();
   }
 
