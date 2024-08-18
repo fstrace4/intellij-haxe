@@ -1,4 +1,10 @@
 # Changelog
+## 1.5.9
+* Bugfix: Fixed issue where assign check from class to anonymous type would fail because inherited members where not included. 
+* Improvement: Macro expressions with topLevelDeclarations and map initializers should no longer be marked as errors(#1185)
+* Improvement: `@:structInit` assign checks now also check class constructor
+* Improvement: Improved resolve based on context when multiple enums in the same file has members with identical names.
+
 ## 1.5.8
 * Bugfix: Fixed issue where result of `ExprOf` with functionType was annotated as not callable 
 * Bugfix: `var` keyword in enum extractors where marked as error by the parser.
