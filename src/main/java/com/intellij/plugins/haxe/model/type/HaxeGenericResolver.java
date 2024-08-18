@@ -613,10 +613,11 @@ public class HaxeGenericResolver {
 
     LinkedList<SpecificFunctionReference.Argument> args = new LinkedList<>();
 
-    int minArgs = Math.min(originalArguments.size(), hintArguments.size());
-    for (int i = 0; i < minArgs; i++) {
+    int hintArgumentCount = hintArguments.size();
+    int orignalArgumentCount = originalArguments.size();
+    for (int i = 0; i < orignalArgumentCount; i++) {
       SpecificFunctionReference.Argument argument = originalArguments.get(i);
-      if (argument.isTypeParameter()) {
+      if (argument.isTypeParameter() && i < hintArgumentCount) {
         SpecificFunctionReference.Argument hint = hintArguments.get(i);
         args.add(new SpecificFunctionReference.Argument(i, argument.isOptional(), argument.isRest(), hint.getType(), argument.getName()));
       }else {

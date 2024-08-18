@@ -62,35 +62,14 @@ Haxe File
                   HaxePsiToken:=('=')
                   MAP_LITERAL
                     HaxePsiToken:[('[')
-                    MAP_INITIALIZER_FOR_STATEMENT
-                      HaxePsiToken:for('for')
-                      HaxePsiToken:(('(')
-                      VALUE_ITERATOR
-                        COMPONENT_NAME
-                          IDENTIFIER
-                            HaxePsiToken:ID('n')
-                      HaxePsiToken:in('in')
-                      ITERABLE
-                        ITERATOR_EXPRESSION
-                          LITERAL_EXPRESSION
-                            HaxePsiToken:LITINT('0')
-                          ITERATOR_OPERATOR
-                            HaxePsiToken:...('...')
-                          REFERENCE_EXPRESSION
-                            REFERENCE_EXPRESSION
-                              IDENTIFIER
-                                HaxePsiToken:ID('words')
-                            HaxePsiToken:.('.')
-                            IDENTIFIER
-                              HaxePsiToken:ID('length')
-                      HaxePsiToken:)(')')
-                      MAP_INITIALIZER_FOR_STATEMENT
+                    MAP_LOOP_INITIALIZER_EXPRESSION
+                      FOR_STATEMENT
                         HaxePsiToken:for('for')
                         HaxePsiToken:(('(')
                         VALUE_ITERATOR
                           COMPONENT_NAME
                             IDENTIFIER
-                              HaxePsiToken:ID('m')
+                              HaxePsiToken:ID('n')
                         HaxePsiToken:in('in')
                         ITERABLE
                           ITERATOR_EXPRESSION
@@ -106,38 +85,61 @@ Haxe File
                               IDENTIFIER
                                 HaxePsiToken:ID('length')
                         HaxePsiToken:)(')')
-                        MAP_INITIALIZER_EXPRESSION
-                          ADDITIVE_EXPRESSION
-                            REFERENCE_EXPRESSION
-                              IDENTIFIER
-                                HaxePsiToken:ID('n')
-                            ADDITIVE_OPERATOR
-                              HaxePsiToken:+('+')
-                            REFERENCE_EXPRESSION
+                        FOR_STATEMENT
+                          HaxePsiToken:for('for')
+                          HaxePsiToken:(('(')
+                          VALUE_ITERATOR
+                            COMPONENT_NAME
                               IDENTIFIER
                                 HaxePsiToken:ID('m')
-                          HaxePsiToken:=>('=>')
-                          ADDITIVE_EXPRESSION
-                            ARRAY_ACCESS_EXPRESSION
+                          HaxePsiToken:in('in')
+                          ITERABLE
+                            ITERATOR_EXPRESSION
+                              LITERAL_EXPRESSION
+                                HaxePsiToken:LITINT('0')
+                              ITERATOR_OPERATOR
+                                HaxePsiToken:...('...')
                               REFERENCE_EXPRESSION
+                                REFERENCE_EXPRESSION
+                                  IDENTIFIER
+                                    HaxePsiToken:ID('words')
+                                HaxePsiToken:.('.')
                                 IDENTIFIER
-                                  HaxePsiToken:ID('words')
-                              HaxePsiToken:[('[')
-                              REFERENCE_EXPRESSION
-                                IDENTIFIER
-                                  HaxePsiToken:ID('n')
-                              HaxePsiToken:](']')
-                            ADDITIVE_OPERATOR
-                              HaxePsiToken:+('+')
-                            ARRAY_ACCESS_EXPRESSION
-                              REFERENCE_EXPRESSION
-                                IDENTIFIER
-                                  HaxePsiToken:ID('words')
-                              HaxePsiToken:[('[')
-                              REFERENCE_EXPRESSION
-                                IDENTIFIER
-                                  HaxePsiToken:ID('m')
-                              HaxePsiToken:](']')
+                                  HaxePsiToken:ID('length')
+                          HaxePsiToken:)(')')
+                          MAP_INITIALIZER_EXPRESSION_LIST
+                            MAP_INITIALIZER_EXPRESSION
+                              ADDITIVE_EXPRESSION
+                                REFERENCE_EXPRESSION
+                                  IDENTIFIER
+                                    HaxePsiToken:ID('n')
+                                ADDITIVE_OPERATOR
+                                  HaxePsiToken:+('+')
+                                REFERENCE_EXPRESSION
+                                  IDENTIFIER
+                                    HaxePsiToken:ID('m')
+                              HaxePsiToken:=>('=>')
+                              ADDITIVE_EXPRESSION
+                                ARRAY_ACCESS_EXPRESSION
+                                  REFERENCE_EXPRESSION
+                                    IDENTIFIER
+                                      HaxePsiToken:ID('words')
+                                  HaxePsiToken:[('[')
+                                  REFERENCE_EXPRESSION
+                                    IDENTIFIER
+                                      HaxePsiToken:ID('n')
+                                  HaxePsiToken:](']')
+                                ADDITIVE_OPERATOR
+                                  HaxePsiToken:+('+')
+                                ARRAY_ACCESS_EXPRESSION
+                                  REFERENCE_EXPRESSION
+                                    IDENTIFIER
+                                      HaxePsiToken:ID('words')
+                                  HaxePsiToken:[('[')
+                                  REFERENCE_EXPRESSION
+                                    IDENTIFIER
+                                      HaxePsiToken:ID('m')
+                                  HaxePsiToken:](']')
                     HaxePsiToken:](']')
               HaxePsiToken:;(';')
             HaxePsiToken:}('}')

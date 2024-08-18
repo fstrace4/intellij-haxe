@@ -33,6 +33,8 @@ public class HaxeScope<T> {
   public  boolean deepSearchForReturnValues = false;
   private Map<String, T> items = new HashMap<String, T>();
 
+  public UnificationRules unificationRules = UnificationRules.DEFAULT;
+
   public HaxeScope() {
     this(null);
   }
@@ -70,6 +72,7 @@ public class HaxeScope<T> {
     this.parent = parent;
     if (parent != null) {
       deepSearchForReturnValues = parent.deepSearchForReturnValues;
+      unificationRules = parent.unificationRules;
     }
   }
 }

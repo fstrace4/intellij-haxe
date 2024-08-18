@@ -168,6 +168,9 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
 
   private static final com.intellij.openapi.util.Key<Stack<Boolean>> SEMICOLON_RULE_STATE = new Key<>("SEMICOLON_RULE_STATE");
   private static final com.intellij.openapi.util.Key<Stack<Boolean>> COLLECTION_INITIALIZER_STATE = new Key<>("COLLECTION_INITIALIZER_STATE");
+  private static final com.intellij.openapi.util.Key<Stack<Boolean>> MAP_INIT_STATE = new Key<>("MAP_INIT_STATE");
+  private static final com.intellij.openapi.util.Key<Integer> MAP_INIT_EXPRESSION_COUNTER = new Key<>("HAS_INIT_EXPRESSION_COUNTER");
+  private static final com.intellij.openapi.util.Key<Boolean> MAP_INIT_EXPRESSION_STATE = new Key<>("MAP_INIT_EXPRESSION_STATE");
 
   private static @NotNull Stack<Boolean> getFlagStack(PsiBuilder builder_, Key<Stack<Boolean>> flag) {
     Stack<Boolean> stack = builder_.getUserData(flag);
@@ -187,6 +190,9 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     getFlagStack(builder, SEMICOLON_RULE_STATE).push(Boolean.TRUE);
    return true;
   }
+  public static boolean debugStop(PsiBuilder builder, int level) {
+   return true;
+  }
 
   public static boolean isSemicolonRuleEnabled(PsiBuilder builder, int level) {
     Stack<Boolean> stack = getFlagStack(builder, SEMICOLON_RULE_STATE);
@@ -198,13 +204,40 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     return true;
   }
 
-
+  /*
+   * this is a toggle to allow or deny  the parser  from parsing expressions as collections (array/map)
+   *  this is to  prevent the parser from consuming array pattern matchers in Switch-case expression as array/map literals
+   */
   public static boolean pushCollectionInitializersDeny(PsiBuilder builder, int level) {
     getFlagStack(builder, COLLECTION_INITIALIZER_STATE).push(Boolean.FALSE);
    return true;
   }
+
+  /*
+   * Enum extractors can contain collection initializers  so we must be able to toggle this on while inside a switch case
+   */
   public static boolean pushCollectionInitializersAllow(PsiBuilder builder, int level) {
     getFlagStack(builder, COLLECTION_INITIALIZER_STATE).push(Boolean.TRUE);
+   return true;
+  }
+
+  public static boolean isInitializersAllowed(PsiBuilder builder, int level) {
+    Stack<Boolean> stack = getFlagStack(builder, COLLECTION_INITIALIZER_STATE);
+    if (stack.isEmpty())  return true;
+    Boolean peeked = stack.peek();
+    if (peeked != null) {
+      return peeked;
+    }
+    return true;
+  }
+
+  /*
+   * Array and map initializers can look very similar  but are differentiated by the  use of mapInitializer Expressions
+   * Since initializers can be complex with lots of haxe code  we have this state that we toggle and when active we count
+   * mapInitializer expressions, if non is found then the element being parsed is not a map and probably an array.
+   */
+  public static boolean pushStateMapInitializerOrMacro(PsiBuilder builder, int level) {
+    getFlagStack(builder, MAP_INIT_STATE).push(Boolean.TRUE);
    return true;
   }
 
@@ -227,13 +260,58 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     }
 
 
-  public static boolean isInitializersAllowed(PsiBuilder builder, int level) {
-    Stack<Boolean> stack = getFlagStack(builder, COLLECTION_INITIALIZER_STATE);
-    if (stack.isEmpty())  return true;
+
+
+  /**
+   *   map init expressions (a => b) are only allowed used inside Map init expression and in Macros
+   *   this checks if we have pushed map init state to our stack
+   */
+  public static boolean isInMapInitOrMacroState(PsiBuilder builder, int level) {
+    Stack<Boolean> stack = getFlagStack(builder, MAP_INIT_STATE);
+    if (stack.isEmpty())  return false;
     Boolean peeked = stack.peek();
     if (peeked != null) {
       return peeked;
     }
+   return true;
+  }
+
+  /*
+   *  since a map init expression is "expression => expression", and "expression" contains mapInitExpression
+   *  we add this state to prevent recursion and stop the resolver from parsing mapInitExpression if already inside a mapInitExpression
+   */
+  public static boolean isInMapInitExpressionState(PsiBuilder builder, int level) {
+    Boolean data = builder.getUserData(MAP_INIT_EXPRESSION_STATE);
+    if (data == Boolean.TRUE)  return true;
+   return false;
+  }
+  public static boolean pushInMapInitExpressionState(PsiBuilder builder, int level) {
+    builder.putUserData(MAP_INIT_EXPRESSION_STATE, Boolean.TRUE);
+   return true;
+  }
+
+  /*
+   *  checks if we have consumed any MapInitExpressions (used to differentiate between arrays and maps)
+   */
+  public static boolean hasMapInitExpressions(PsiBuilder builder, int level) {
+    Integer data = builder.getUserData(MAP_INIT_EXPRESSION_COUNTER);
+    if (data != null && data > 0) return true;
+   return false;
+  }
+  /*
+   *  adds to the MapInitExpression counter (used to differentiate between arrays and maps)
+   */
+  public static boolean addInitExpression(PsiBuilder builder, int level) {
+    Integer data = builder.getUserData(MAP_INIT_EXPRESSION_COUNTER);
+    if (data == null ) data = 0;
+    builder.putUserData(MAP_INIT_EXPRESSION_COUNTER, ++data);
+   return true;
+  }
+  /*
+   *  resets the counter
+   */
+  public static boolean resetMapInitExpressionCounter(PsiBuilder builder, int level) {
+    builder.putUserData(MAP_INIT_EXPRESSION_COUNTER, 0);
    return true;
   }
 
@@ -250,6 +328,23 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     (builder, marker, param) -> {
       Stack<Boolean> stack = getFlagStack(builder, SEMICOLON_RULE_STATE);
       if(!stack.isEmpty()) stack.pop();
+      return marker;
+    };
+
+  /**
+   * hook to remove Map init flag when we leave a map init expression
+   */
+  public static final Hook<Boolean> POP_MAP_INIT_OR_MACRO_STATE =
+    (builder, marker, param) -> {
+      Stack<Boolean> stack = getFlagStack(builder, MAP_INIT_STATE);
+      if(!stack.isEmpty()) stack.pop();
+      return marker;
+    };
+
+
+  public static final Hook<Boolean> CLEAR_IN_MAP_INIT_EXPRESSION =
+    (builder, marker, param) -> {
+      builder.putUserData(MAP_INIT_EXPRESSION_STATE, Boolean.FALSE);
       return marker;
     };
 

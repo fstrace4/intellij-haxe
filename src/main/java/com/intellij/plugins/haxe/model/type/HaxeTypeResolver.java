@@ -22,6 +22,7 @@ package com.intellij.plugins.haxe.model.type;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
+import com.intellij.plugins.haxe.ide.hierarchy.HaxeHierarchyUtils;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl;
@@ -372,7 +373,7 @@ public class HaxeTypeResolver {
         return SpecificHaxeClassReference.getDynamic(psi).createHolder();
       }
 
-      ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi);
+      ResultHolder holder = HaxeTypeUnifier.unifyHolders(returnTypes, psi, UnificationRules.PREFER_VOID);
 
       // method typeParameters should have been used when resolving returnTypes, we want to avoid double resolve
       return resolveParameterizedType(holder, resolver == null ? null : resolver.withoutMethodTypeParameters());
@@ -387,24 +388,6 @@ public class HaxeTypeResolver {
     }
   }
 
-  @Nullable
-  private static HaxeReturnStatement findReturnStatementForMethod(PsiElement psi) {
-    if (psi instanceof HaxeReturnStatement statement) {
-      return statement;
-    }
-    else {
-      // search for ReturnStatements but filter out any that are part of local functions
-      Collection<HaxeReturnStatement> returnStatements = PsiTreeUtil.findChildrenOfType(psi, HaxeReturnStatement.class);
-      for (HaxeReturnStatement statement : returnStatements) {
-        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class);
-        // we want to avoid returning return statements that are in a deeper scope / inside a local function, however we might also be
-        // searching for the returnType of a local function, so we check if any parent of local function is null or the same as the function
-        // we are searching
-        if (type == null || type == psi.getParent()) return statement;
-      }
-    }
-    return null;
-  }
   @NotNull
   public static CachedValueProvider.Result<List<HaxeReturnStatement>> findReturnStatementsForMethod(PsiElement psi) {
 
@@ -416,7 +399,7 @@ public class HaxeTypeResolver {
       // search for ReturnStatements but filter out any that are part of local functions
       Collection<HaxeReturnStatement> returnStatements = PsiTreeUtil.findChildrenOfType(psi, HaxeReturnStatement.class);
       for (HaxeReturnStatement statement : returnStatements) {
-        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class, HaxeMacroClassReification.class);
+        HaxePsiCompositeElement type = PsiTreeUtil.getParentOfType(statement, HaxeLocalFunctionDeclaration.class, HaxeFunctionLiteral.class, HaxeMacroTopLevelDeclaration.class);
         // we want to avoid returning return statements that are in a deeper scope / inside a local function, however we might also be
         // searching for the returnType of a local function, so we check if any parent of local function is null or the same as the function
         // we are searching

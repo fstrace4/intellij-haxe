@@ -1,6 +1,6 @@
 class Main {
     macro static function generateClass(funcName:String) {
-        var c = macro class MyClass {
+        var c/*<# :TypeDefinition #>*/ = macro class MyClass {
             public function new() {}
 
             public function $funcName() {

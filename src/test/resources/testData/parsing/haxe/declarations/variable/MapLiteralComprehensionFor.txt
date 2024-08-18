@@ -47,42 +47,44 @@ Haxe File
             HaxePsiToken:=('=')
             MAP_LITERAL
               HaxePsiToken:[('[')
-              MAP_INITIALIZER_FOR_STATEMENT
-                HaxePsiToken:for('for')
-                HaxePsiToken:(('(')
-                VALUE_ITERATOR
-                  COMPONENT_NAME
-                    IDENTIFIER
-                      HaxePsiToken:ID('n')
-                HaxePsiToken:in('in')
-                ITERABLE
-                  ITERATOR_EXPRESSION
-                    LITERAL_EXPRESSION
-                      HaxePsiToken:LITINT('0')
-                    ITERATOR_OPERATOR
-                      HaxePsiToken:...('...')
-                    REFERENCE_EXPRESSION
-                      REFERENCE_EXPRESSION
-                        IDENTIFIER
-                          HaxePsiToken:ID('words')
-                      HaxePsiToken:.('.')
-                      IDENTIFIER
-                        HaxePsiToken:ID('length')
-                HaxePsiToken:)(')')
-                MAP_INITIALIZER_EXPRESSION
-                  REFERENCE_EXPRESSION
-                    IDENTIFIER
-                      HaxePsiToken:ID('n')
-                  HaxePsiToken:=>('=>')
-                  ARRAY_ACCESS_EXPRESSION
-                    REFERENCE_EXPRESSION
-                      IDENTIFIER
-                        HaxePsiToken:ID('words')
-                    HaxePsiToken:[('[')
-                    REFERENCE_EXPRESSION
+              MAP_LOOP_INITIALIZER_EXPRESSION
+                FOR_STATEMENT
+                  HaxePsiToken:for('for')
+                  HaxePsiToken:(('(')
+                  VALUE_ITERATOR
+                    COMPONENT_NAME
                       IDENTIFIER
                         HaxePsiToken:ID('n')
-                    HaxePsiToken:](']')
+                  HaxePsiToken:in('in')
+                  ITERABLE
+                    ITERATOR_EXPRESSION
+                      LITERAL_EXPRESSION
+                        HaxePsiToken:LITINT('0')
+                      ITERATOR_OPERATOR
+                        HaxePsiToken:...('...')
+                      REFERENCE_EXPRESSION
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('words')
+                        HaxePsiToken:.('.')
+                        IDENTIFIER
+                          HaxePsiToken:ID('length')
+                  HaxePsiToken:)(')')
+                  MAP_INITIALIZER_EXPRESSION_LIST
+                    MAP_INITIALIZER_EXPRESSION
+                      REFERENCE_EXPRESSION
+                        IDENTIFIER
+                          HaxePsiToken:ID('n')
+                      HaxePsiToken:=>('=>')
+                      ARRAY_ACCESS_EXPRESSION
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('words')
+                        HaxePsiToken:[('[')
+                        REFERENCE_EXPRESSION
+                          IDENTIFIER
+                            HaxePsiToken:ID('n')
+                        HaxePsiToken:](']')
               HaxePsiToken:](']')
           HaxePsiToken:;(';')
         HaxePsiToken:}('}')

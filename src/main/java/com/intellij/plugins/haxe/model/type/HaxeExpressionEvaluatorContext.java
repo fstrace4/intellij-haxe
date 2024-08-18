@@ -45,10 +45,12 @@ public class HaxeExpressionEvaluatorContext {
   public HaxeExpressionEvaluatorContext(@NotNull PsiElement body) {
     this.root = body;
     this.holder = null;
+    beginScope();
   }
   public HaxeExpressionEvaluatorContext(@NotNull PsiElement body, @Nullable AnnotationHolder holder) {
     this.root = body;
     this.holder = holder;
+    beginScope();
   }
 
   public HaxeExpressionEvaluatorContext createChild(PsiElement body) {
@@ -66,7 +68,7 @@ public class HaxeExpressionEvaluatorContext {
 
   public ResultHolder getReturnType() {
     if (returns.isEmpty()) return SpecificHaxeClassReference.getVoid(root).createHolder();
-    return HaxeTypeUnifier.unify(ResultHolder.types(returns), root).createHolder();
+    return HaxeTypeUnifier.unify(ResultHolder.types(returns), root, UnificationRules.DEFAULT).createHolder();
   }
 
   public List<ResultHolder> getReturnValues() {
@@ -85,8 +87,9 @@ public class HaxeExpressionEvaluatorContext {
     return HaxeDocumentModel.fromElement(root);
   }
 
-  public void beginScope() {
+  public HaxeScope beginScope() {
     scope = new HaxeScope<ResultHolder>(scope);
+    return scope;
   }
 
   public void endScope() {

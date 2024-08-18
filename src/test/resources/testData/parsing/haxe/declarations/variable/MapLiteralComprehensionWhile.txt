@@ -74,40 +74,43 @@ Haxe File
                   HaxePsiToken:=('=')
                   MAP_LITERAL
                     HaxePsiToken:[('[')
-                    MAP_INITIALIZER_WHILE_STATEMENT
-                      HaxePsiToken:while('while')
-                      HaxePsiToken:(('(')
-                      COMPARE_EXPRESSION
-                        REFERENCE_EXPRESSION
-                          IDENTIFIER
-                            HaxePsiToken:ID('i')
-                        COMPARE_OPERATION
-                          HaxePsiToken:<('<')
-                        REFERENCE_EXPRESSION
+                    MAP_LOOP_INITIALIZER_EXPRESSION
+                      WHILE_STATEMENT
+                        HaxePsiToken:while('while')
+                        HaxePsiToken:(('(')
+                        COMPARE_EXPRESSION
                           REFERENCE_EXPRESSION
                             IDENTIFIER
-                              HaxePsiToken:ID('words')
-                          HaxePsiToken:.('.')
-                          IDENTIFIER
-                            HaxePsiToken:ID('length')
-                      HaxePsiToken:)(')')
-                      MAP_INITIALIZER_EXPRESSION
-                        REFERENCE_EXPRESSION
-                          IDENTIFIER
-                            HaxePsiToken:ID('i')
-                        HaxePsiToken:=>('=>')
-                        ARRAY_ACCESS_EXPRESSION
+                              HaxePsiToken:ID('i')
+                          COMPARE_OPERATION
+                            HaxePsiToken:<('<')
                           REFERENCE_EXPRESSION
-                            IDENTIFIER
-                              HaxePsiToken:ID('words')
-                          HaxePsiToken:[('[')
-                          POSTFIX_EXPRESSION
                             REFERENCE_EXPRESSION
                               IDENTIFIER
-                                HaxePsiToken:ID('i')
-                            ASSIGNABLE_OPERATOR
-                              HaxePsiToken:++('++')
-                          HaxePsiToken:](']')
+                                HaxePsiToken:ID('words')
+                            HaxePsiToken:.('.')
+                            IDENTIFIER
+                              HaxePsiToken:ID('length')
+                        HaxePsiToken:)(')')
+                        DO_WHILE_BODY
+                          MAP_INITIALIZER_EXPRESSION_LIST
+                            MAP_INITIALIZER_EXPRESSION
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('i')
+                              HaxePsiToken:=>('=>')
+                              ARRAY_ACCESS_EXPRESSION
+                                REFERENCE_EXPRESSION
+                                  IDENTIFIER
+                                    HaxePsiToken:ID('words')
+                                HaxePsiToken:[('[')
+                                POSTFIX_EXPRESSION
+                                  REFERENCE_EXPRESSION
+                                    IDENTIFIER
+                                      HaxePsiToken:ID('i')
+                                  ASSIGNABLE_OPERATOR
+                                    HaxePsiToken:++('++')
+                                HaxePsiToken:](']')
                     HaxePsiToken:](']')
               HaxePsiToken:;(';')
             HaxePsiToken:}('}')

@@ -302,6 +302,16 @@ private topLevelDeclaration ::= classDeclaration
                               | enumDeclaration
                               | typedefDeclaration
 {name="Top Level Declaration (class, interface, abstract, enum, or typedef)"}
+// macro toplevel declarations does not require component name to be present, and  componentName should be
+// required for normal TopLevel declarations so we do some duplication here to avoid a lot of extra logic elsewhere
+macroTopLevelDeclaration ::= macroClassDeclaration
+                           | macroInterfaceDeclaration
+                           | macroExternClassDeclaration
+                           | macroExternInterfaceDeclaration
+                           | macroAbstractTypeDeclaration
+                           | macroEnumDeclaration
+                           | macroTypedefDeclaration
+{name="Macro top Level Declaration (class, interface, abstract, enum, or typedef)"}
 
 abstractKeyword ::= 'abstract'
 privateKeyWord ::= 'private'
@@ -325,15 +335,18 @@ private externClassModifier ::= classModifier | externKeyWord
 // The semantic annotator takes care of warning about duplicate extern keywords.
 externClassModifierList ::= classModifier* externKeyWord externClassModifier* {extends=classModifierList}
 
+macroTypedefDeclaration ::= externOrPrivate? 'typedef' componentName? genericParam? '='  typeWrapper ';'?
 typedefDeclaration ::= externOrPrivate? 'typedef' componentName genericParam? '='  typeWrapper ';'?
 {pin=5 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeTypeDefImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 
+macroExternClassDeclaration ::= externClassModifierList 'class' componentName? genericParam? inheritList? externClassDeclarationBody
 externClassDeclaration ::= externClassModifierList 'class' componentName genericParam? inheritList? externClassDeclarationBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 externClassDeclarationBody ::= '{' externClassDeclarationBodyPart* '}'
 private externClassDeclarationBodyPart ::= fieldDeclaration | methodDeclaration | constructorDeclaration {recoverWhile="extern_class_body_part_recover"}
 private extern_class_body_part_recover ::= !(pptoken | metaKeyWord | 'dynamic' | 'extern' | 'function' | 'inline' | 'override' | 'private' | 'public' | 'static' | 'var' | 'final' | '}')
 
+macroExternInterfaceDeclaration ::= externAndMaybePrivate? 'interface' componentName? genericParam? inheritList? interfaceBody
 externInterfaceDeclaration ::= externAndMaybePrivate? 'interface' componentName genericParam? inheritList? interfaceBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 
@@ -348,10 +361,12 @@ private moduleBodyPart ::=  topLevelDeclaration |  moduleFieldDeclaration |  mod
 moduleFieldDeclaration ::= moduleMemberModifier* mutabilityModifier componentName propertyDeclaration? typeTag? varInit? <<semicolonUnlessPrecededByStatement>>
 {pin=3 extends=fieldDeclaration}
 
+macroClassDeclaration ::= classModifierList? 'class' componentName? genericParam? inheritList? classBody
 classDeclaration ::= classModifierList? 'class' componentName genericParam? inheritList? classBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 
 
+macroAbstractTypeDeclaration ::= (externKeyWord|privateKeyWord)? abstractClassType componentName? genericParam? underlyingType? (abstractToType | abstractFromType)* abstractBody
 abstractTypeDeclaration ::= (externKeyWord|privateKeyWord)? abstractClassType componentName genericParam? underlyingType? (abstractToType | abstractFromType)* abstractBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 abstractClassType ::= 'enum'? 'abstract'
@@ -367,6 +382,7 @@ classBody ::= '{' classBodyPart* '}' {pin=1}
 private classBodyPart ::= fieldDeclaration | methodDeclaration | constructorDeclaration {recoverWhile="class_body_part_recover"}
 private class_body_part_recover ::= !(ppToken | metaKeyWord | 'dynamic' | 'function' | 'inline' | 'override' | 'private' | 'public' | 'static' | 'var' | 'final' | '}' | 'macro' | 'class' | 'enum' | 'abstract' | 'typedef' | 'extern' | 'interface')
 
+macroInterfaceDeclaration ::= privateKeyWord? 'interface' componentName? genericParam? inheritList? interfaceBody
 interfaceDeclaration ::= privateKeyWord? 'interface' componentName genericParam? inheritList? interfaceBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 interfaceBody ::= '{' interfaceBodyList? '}'
@@ -374,6 +390,7 @@ private interfaceBodyList ::= interfaceBodyPart+
 private interfaceBodyPart ::= fieldDeclaration | methodDeclaration {recoverWhile="interface_body_part_recover"}
 private interface_body_part_recover ::= !(ppToken | metaKeyWord | 'dynamic' | 'function' | 'inline' | 'override' | 'private' | 'public' | 'static' | 'var' | 'final' | '}' | 'class' | 'enum' | 'abstract' | 'typedef' | 'extern' | 'interface')
 
+macroEnumDeclaration ::= externOrPrivate? 'enum' componentName? genericParam? enumBody
 enumDeclaration ::= externOrPrivate? 'enum' componentName genericParam? enumBody
 {pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxePsiClass" implements="com.intellij.plugins.haxe.lang.psi.HaxeClass"}
 enumBody ::= '{' enumValueDeclaration* '}'
@@ -497,8 +514,9 @@ functionLiteral ::= keywordFunctionLiteral | arrowFunctionLiteral // TODO consid
 
 arrayLiteral ::= <<isInitializersAllowed>> '[' (expressionList ','?)? ']'
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
-mapLiteral ::= <<isInitializersAllowed>> '[' (mapInitializerStatement | mapInitializerExpressionList) ']'
-{pin=3 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference"}
+//mapLiteral ::= <<isInitializersAllowed>> <<pushInMapInitState>> '[' mapInitExpr ']'
+mapLiteral ::=  <<isInitializersAllowed>> <<pushStateMapInitializerOrMacro>> '[' <<resetMapInitExpressionCounter>> (mapInitializerExpressionList | mapLoopInitializerExpression)  <<hasMapInitExpressions>> ']'
+{pin=6 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeReference" hooks=[popMapInitOrMacroState]}
 
 optionalMark ::= '?'
 // this order is important, if new is first then  the return value for `(Int->Void)->(String->Void)->Float` becomes `(String->Void)->Float` and not `Float` as its suppose to be
@@ -583,7 +601,7 @@ macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (macroShorth
 
 
 //Class Reification
-macroClassReification ::= 'macro' topLevelDeclaration
+macroClassReification ::= 'macro' macroTopLevelDeclaration
 
 // type Reification
 private TPath ::=  simpleQualifiedReferenceExpression
@@ -598,8 +616,8 @@ complexType ::= (TFunction | TAnonymous | TOptional | TParent | TExtend  | TPath
 macroTypeReification ::= 'macro' ':' complexType {pin=2}
 
 // macro statements can be used as "values" (ex. in method calls) and should not require ";" at the end
-macroValueExpression ::= 'macro' <<pushSemicolonRuleDisable>> macroValue  {hooks=[popSemicolonRule]}
-private macroValue ::=   statement | topLevelDeclaration
+macroValueExpression ::= 'macro' <<pushStateMapInitializerOrMacro>> <<pushSemicolonRuleDisable>> macroValue  {hooks=[popSemicolonRule popMapInitOrMacroState]}
+private macroValue ::=   statement | macroTopLevelDeclaration
 
 private statement ::= blockStatement | notBlockStatement
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
@@ -607,14 +625,14 @@ private statement ::= blockStatement | notBlockStatement
 untypedStatement ::=  'untyped'  statement ';'?
 {pin=2 mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
 
-macroStatement ::=  'macro' <<pushSemicolonRuleDisable>> statement ';'?
+macroStatement ::=  'macro' <<pushStateMapInitializerOrMacro>> <<pushSemicolonRuleDisable>> statement ';'?
 //need to pin 3, as it would otherwise pin 1 for some reason, and we dont want that (there are other expressions with macro keyword, like for instance macroTypeReification)
-{pin=3 hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin"}
+{pin=4 hooks=[popSemicolonRule] mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeStatementPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeStatementPsiMixin" hooks=[popMapInitOrMacroState]}
 
 private notBlockStatement ::=
                              untypedStatement
-                            | macroStatement
                             | macroClassReification
+                            | macroStatement
                             | localVarDeclarationList
                             | localFunctionDeclaration
                             | ifStatement
@@ -627,7 +645,8 @@ private notBlockStatement ::=
                             | switchStatement
                             | throwStatement
                             | tryStatement
-                            | expression
+                            | (<<isInMapInitOrMacroState>> !<<isInMapInitExpressionState>> mapInitializerExpressionList )
+                            | (expression !fatArrowOperator)
 
 
 forStatement ::= 'for' '(' iterableDeclaration ')' statement ';'?
@@ -743,19 +762,20 @@ ifStatement ::= guard guardedStatement (';'? elseStatement)? ';'? {pin=2}
 tryStatement ::= 'try' statement ';'? catchStatement*
 catchStatement ::= 'catch' '(' parameter ')' statement ';'?
 
-mapInitializerForStatement ::= 'for' '(' forDeclaration 'in' iterable ')' (mapInitializerExpression | mapInitializerStatement)
-{pin=7 methods=[mapInitializer="expression"] extends=forStatement mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeForStatementImpl"}
-mapInitializerWhileStatement ::= 'while' '(' expression ')' (mapInitializerExpression | mapInitializerStatement)
-{pin=5 methods=[condition="expression[0]" mapInitializer="expression[1]"] extends=whileStatement mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeWhileStatementImpl"}
-private mapInitializerStatement ::= mapInitializerForStatement
-                                  | mapInitializerWhileStatement
 /*
  * expressions
  */
+ // just a wrapper so we can easily do indentations
+mapLoopInitializerExpression ::= forStatement | whileStatement  {recoverWhile="expression_list_recover"}
 
 // Map initializer expressions are not part of the generalized expression type.
-mapInitializerExpressionList ::= mapInitializerExpression (',' mapInitializerExpression)* ','? {recoverWhile=expression_list_recover}
-mapInitializerExpression ::= expression fatArrowOperator expression {pin=2}
+mapInitializerExpressionList ::= mapInitializerExpression (',' mapInitializerExpression)* ','? //{recoverWhile=expression_list_recover}
+mapInitializerExpression ::=   <<pushInMapInitExpressionState>> expression fatArrowOperator expression <<addInitExpression>>
+{
+  pin=5
+ methods=[ leftHand="expression[0]" fatArrow="fatArrowOperator" rightHand="expression[1]"]
+  hooks=[clearInMapInitExpression]
+}
 private fatArrowOperator ::= '=>'
 
 // spread operator/expression should only be allowed for call expressions (and constructors) and only as last argument
@@ -861,7 +881,7 @@ literalExpression ::= LITINT | LITHEX | LITOCT | LITFLOAT
                     | functionLiteral
 //                    | <<isInitializersAllowed>> mapLiteral
 //                    | <<isInitializersAllowed>> arrayLiteral
-                    | mapLiteral
+                    | ( mapLiteral)
                     | arrayLiteral
                     | objectLiteral
                     | stringLiteralExpression

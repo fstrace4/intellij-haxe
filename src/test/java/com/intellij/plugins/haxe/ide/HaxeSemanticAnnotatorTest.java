@@ -915,4 +915,9 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
     myFixture.enableInspections(HaxeUnresolvedSymbolInspection.class);
     doTestNoFixWithWarnings();
   }
+
+  @Test
+  public void testUnificationRules() throws Exception {
+    doTestNoFixWithWarnings();
+  }
 }

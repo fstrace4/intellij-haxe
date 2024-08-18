@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 
 import  static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.*;
 import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.handleWithRecursionGuard;
+import static com.intellij.plugins.haxe.model.type.HaxeMacroTypeUtil.getTypeDefinition;
 
 @CustomLog
 public class HaxeExpressionEvaluator {
@@ -396,10 +397,12 @@ public class HaxeExpressionEvaluator {
         }else {
           return HaxeMacroTypeUtil.getExpr(element).createHolder();
         }
+      } else if (macroValueExpression.getMacroTopLevelDeclaration() != null) {
+        return getTypeDefinition(element).createHolder();
       }
     }
     if (element instanceof HaxeMacroClassReification classReification) {
-      return HaxeMacroTypeUtil.getTypeDefinition(classReification).createHolder();
+      return getTypeDefinition(classReification).createHolder();
     }
     if (element instanceof HaxeMacroTypeReification typeReification) {
       return HaxeMacroTypeUtil.getComplexType(typeReification).createHolder();

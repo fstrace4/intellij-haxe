@@ -134,8 +134,7 @@ public class HaxeIndentProcessor {
     result = result || type == ANONYMOUS_TYPE_FIELD_LIST || type == TYPE_EXTENDS_LIST;
     result = result || type == OBJECT_LITERAL;
     result = result || type == MAP_INITIALIZER_EXPRESSION;
-    result = result || type == MAP_INITIALIZER_FOR_STATEMENT;
-    result = result || type == MAP_INITIALIZER_WHILE_STATEMENT;
+    result = result || type == MAP_LOOP_INITIALIZER_EXPRESSION;
     result = result || type == EXTERN_CLASS_DECLARATION_BODY;
     result = result || type == ENUM_BODY;
     result = result || type == INTERFACE_BODY;

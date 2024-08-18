@@ -67,7 +67,7 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeExpression[] list = ternaryExpression.getExpressionList().toArray(new HaxeExpression[0]);
     SpecificTypeReference type1 = handle(list[1], context, resolver).getType();
     SpecificTypeReference type2 = handle(list[2], context, resolver).getType();
-    return HaxeTypeUnifier.unify(type1, type2, ternaryExpression)
+    return HaxeTypeUnifier.unify(type1, type2, ternaryExpression, context.getScope().unificationRules)
       .createHolder();
   }
 
@@ -744,7 +744,7 @@ public class HaxeExpressionEvaluatorHandlers {
     // No 'else' clause means the if results in a Void type.
     if (null == tFalse) tFalse = SpecificHaxeClassReference.getVoid(ifStatement);
 
-    return HaxeTypeUnifier.unify(tTrue, tFalse, ifStatement).createHolder();
+    return HaxeTypeUnifier.unify(tTrue, tFalse, ifStatement, context.getScope().unificationRules).createHolder();
   }
 
   static ResultHolder handleFunctionLiteral(
@@ -757,7 +757,8 @@ public class HaxeExpressionEvaluatorHandlers {
     //}
     LinkedList<SpecificFunctionReference.Argument> arguments = new LinkedList<>();
     ResultHolder returnType = null;
-    context.beginScope();
+    HaxeScope scope = context.beginScope();
+    scope.unificationRules = UnificationRules.PREFER_VOID;
     try {
       HaxeOpenParameterList openParamList = function.getOpenParameterList();
       HaxeParameterList parameterList = function.getParameterList();
@@ -831,7 +832,7 @@ public class HaxeExpressionEvaluatorHandlers {
             CachedValuesManager.getCachedValue(block,  () -> HaxeTypeResolver.findReturnStatementsForMethod(block));
           List<ResultHolder> returnTypes = returnStatementList.stream().map(statement -> HaxeTypeResolver.getPsiElementType(statement, resolver)).toList();
           if (!returnTypes.isEmpty())  {
-            returnType = HaxeTypeUnifier.unifyHolders(returnTypes, block);
+            returnType = HaxeTypeUnifier.unifyHolders(returnTypes, block, UnificationRules.PREFER_VOID);
           } else {
             // TODO cache last element
             boolean filtered = false;
@@ -1086,7 +1087,11 @@ public class HaxeExpressionEvaluatorHandlers {
       if (expressionList.isEmpty()) {
         final PsiElement child = list.getFirstChild();
         if ((child instanceof HaxeForStatement) || (child instanceof HaxeWhileStatement)) {
-          return SpecificTypeReference.createArray(handle(child, context, resolver), arrayLiteral).createHolder();
+          HaxeScope scope = context.beginScope();
+          scope.unificationRules = UnificationRules.IGNORE_VOID;
+          ResultHolder handle = handle(child, context, resolver);
+          context.endScope();
+          return SpecificTypeReference.createArray(handle, arrayLiteral).createHolder();
         }
       }
     }
@@ -1128,7 +1133,7 @@ public class HaxeExpressionEvaluatorHandlers {
     } else {
       ResultHolder elementTypeHolder = references.isEmpty()
                                        ? SpecificTypeReference.getUnknown(arrayLiteral).createHolder()
-                                       : HaxeTypeUnifier.unify(references, arrayLiteral, suggestedType).withoutConstantValue().createHolder();
+                                       : HaxeTypeUnifier.unify(references, arrayLiteral, suggestedType, UnificationRules.IGNORE_VOID).withoutConstantValue().createHolder();
 
       SpecificTypeReference result = SpecificHaxeClassReference.createArray(elementTypeHolder, arrayLiteral);
       if (allConstants) result = result.withConstantValue(constants);
@@ -1155,58 +1160,32 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
     HaxeMapLiteral mapLiteral) {
-    HaxeMapInitializerExpressionList listElement = mapLiteral.getMapInitializerExpressionList();
-    List<HaxeExpression> initializers = new ArrayList<>();
+    Collection<HaxeMapInitializerExpression> initializers = PsiTreeUtil.findChildrenOfType(mapLiteral, HaxeMapInitializerExpression.class);
 
-    // In maps, comprehensions don't have expression lists, but they do have one single initializer.
-    if (null == listElement) {
-      HaxeMapInitializerForStatement forStatement = mapLiteral.getMapInitializerForStatement();
-      HaxeMapInitializerWhileStatement whileStatement = mapLiteral.getMapInitializerWhileStatement();
-      HaxeExpression fatArrow = null;
-      while (null != forStatement || null != whileStatement) {
-        if (null != forStatement) {
-          fatArrow = forStatement.getMapInitializerExpression();
-          whileStatement = forStatement.getMapInitializerWhileStatement();
-          forStatement = forStatement.getMapInitializerForStatement();
-        } else {
-          fatArrow = whileStatement.getMapInitializer();
-          forStatement = whileStatement.getMapInitializerForStatement();
-          whileStatement = whileStatement.getMapInitializerWhileStatement();
-        }
-      }
-      if (null != fatArrow) {
-        initializers.add(fatArrow);
-      } else {
-        log.error("Didn't find an initializer in a map comprehension: " + mapLiteral.toString(),
-                  new HaxeDebugUtil.InvalidValueException(mapLiteral.toString() + '\n' + HaxeDebugUtil.elementLocation(mapLiteral)));
-      }
-    } else {
-      initializers.addAll(listElement.getMapInitializerExpressionList());
-    }
 
     ArrayList<SpecificTypeReference> keyReferences = new ArrayList<>(initializers.size());
     ArrayList<SpecificTypeReference> valueReferences = new ArrayList<>(initializers.size());
     HaxeGenericResolver resolverWithoutHint = resolver.withoutAssignHint();
-    for (HaxeExpression ex : initializers) {
-      HaxeMapInitializerExpression fatArrow = (HaxeMapInitializerExpression)ex;
+    for (HaxeMapInitializerExpression initializerExpression : initializers) {
 
-      SpecificTypeReference keyType = handle(fatArrow.getFirstChild(), context, resolverWithoutHint).getType();
+      SpecificTypeReference keyType = handle(initializerExpression.getLeftHand(), context, resolverWithoutHint).getType();
       if (keyType instanceof SpecificEnumValueReference enumValueReference) {
         keyType = enumValueReference.getEnumClass();
       }
       keyReferences.add(keyType);
-      SpecificTypeReference valueType = handle(fatArrow.getLastChild(), context, resolverWithoutHint).getType();
+      SpecificTypeReference valueType = handle(initializerExpression.getRightHand(), context, resolverWithoutHint).getType();
       if (valueType instanceof SpecificEnumValueReference enumValueReference) {
         valueType = enumValueReference.getEnumClass();
       }
+
       valueReferences.add(valueType);
     }
 
     // XXX: Maybe track and add constants to the type references, like arrays do??
     //      That has implications on how they're displayed (e.g. not as key=>value,
     //      but as separate arrays).
-    ResultHolder keyTypeHolder = HaxeTypeUnifier.unify(keyReferences, mapLiteral).withoutConstantValue().createHolder();
-    ResultHolder valueTypeHolder = HaxeTypeUnifier.unify(valueReferences, mapLiteral).withoutConstantValue().createHolder();
+    ResultHolder keyTypeHolder = HaxeTypeUnifier.unify(keyReferences, mapLiteral, UnificationRules.IGNORE_VOID).withoutConstantValue().createHolder();
+    ResultHolder valueTypeHolder = HaxeTypeUnifier.unify(valueReferences, mapLiteral, UnificationRules.IGNORE_VOID).withoutConstantValue().createHolder();
 
     SpecificTypeReference result = SpecificHaxeClassReference.createMap(keyTypeHolder, valueTypeHolder, mapLiteral);
     ResultHolder holder = result.createHolder();
@@ -1222,7 +1201,7 @@ public class HaxeExpressionEvaluatorHandlers {
     for (HaxeExpression expression : expressionList.getExpressionList()) {
       references.add(handle(expression, context, resolver));
     }
-    return HaxeTypeUnifier.unifyHolders(references, expressionList);
+    return HaxeTypeUnifier.unifyHolders(references, expressionList, UnificationRules.DEFAULT);
   }
 
   static ResultHolder handleCallExpression(
@@ -1345,7 +1324,7 @@ public class HaxeExpressionEvaluatorHandlers {
         HaxeGenericParamModel g = params.get(i);
         String name = g.getName();
         List<ResultHolder> holders = genericsMap.get(name);
-        ResultHolder unified = HaxeTypeUnifier.unifyHolders(holders, callExpression);
+        ResultHolder unified = HaxeTypeUnifier.unifyHolders(holders, callExpression, UnificationRules.DEFAULT);
         enumResolver.add(name, unified, ResolveSource.CLASS_TYPE_PARAMETER);
         specifics[i] = unified;
       }
@@ -1751,7 +1730,8 @@ public class HaxeExpressionEvaluatorHandlers {
     for (PsiElement child : children) {
       blockResults.add(handle(child, context, resolver));
     }
-    return HaxeTypeUnifier.unifyHolders(blockResults, tryStatement);
+    UnificationRules rules = context.getScope().unificationRules;
+    return HaxeTypeUnifier.unifyHolders(blockResults, tryStatement, rules);
   }
   @NotNull
   static ResultHolder handleCatchStatement(HaxeExpressionEvaluatorContext context,
@@ -1766,7 +1746,8 @@ public class HaxeExpressionEvaluatorHandlers {
       if (child == parameter) continue;
       blockResults.add(handle(child, context, resolver));
     }
-    return HaxeTypeUnifier.unifyHolders(blockResults, catchStatement);
+    UnificationRules rules = context.getScope().unificationRules;
+    return HaxeTypeUnifier.unifyHolders(blockResults, catchStatement, rules);
   }
 
 

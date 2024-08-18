@@ -79,6 +79,10 @@ public class VarOrConstDeclarationTest extends DeclarationTestBase {
   public void testFatArrowMapLiteral() throws Throwable {
     doTest(true);
   }
+  @Test
+  public void testMacroFatArrowExpression() throws Throwable {
+    doTest(true);
+  }
 
   @Test
   public void testFatArrowMapLiteralWithExtraComma() throws Throwable {

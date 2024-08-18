@@ -34,15 +34,21 @@ import java.util.Set;
 public class HaxeTypeUnifier {
   @NotNull
   static public ResultHolder unify(ResultHolder a, ResultHolder b) {
-    return unify(a.getType(), b.getType(), a.getType().context).createHolder();
+    return unify(a, b, UnificationRules.DEFAULT);
+  }
+  static public ResultHolder unify(ResultHolder a, ResultHolder b,  @NotNull  UnificationRules rules) {
+    return unify(a.getType(), b.getType(), a.getType().context, rules).createHolder();
   }
 
   @NotNull
   static public SpecificTypeReference unify(SpecificTypeReference a, SpecificTypeReference b, @NotNull PsiElement context) {
-    return unify(a,b, context, null);
+    return unify(a,b, context, null,  UnificationRules.DEFAULT);
+  }
+  static public SpecificTypeReference unify(SpecificTypeReference a, SpecificTypeReference b, @NotNull PsiElement context, @NotNull  UnificationRules rules) {
+    return unify(a,b, context, null, rules);
   }
   @NotNull
-  static public SpecificTypeReference unify(SpecificTypeReference a, SpecificTypeReference b, @NotNull PsiElement context, @Nullable  SpecificTypeReference suggestedType) {
+  static public SpecificTypeReference unify(SpecificTypeReference a, SpecificTypeReference b, @NotNull PsiElement context, @Nullable  SpecificTypeReference suggestedType, @NotNull  UnificationRules rules) {
     if (a == null && b == null) return SpecificTypeReference.getUnknown(context);
     if (a == null) return b;
     if (b == null) return a;
@@ -64,13 +70,13 @@ public class HaxeTypeUnifier {
     if (a instanceof SpecificHaxeClassReference && b instanceof SpecificHaxeClassReference) {
 
       if (suggestedType  instanceof SpecificHaxeClassReference suggestedClassReference) {
-        SpecificTypeReference reference = unifyTypes(suggestedClassReference, (SpecificHaxeClassReference)a, context);
-        reference = unifyTypes((SpecificHaxeClassReference)reference, (SpecificHaxeClassReference)b, context);
+        SpecificTypeReference reference = unifyTypes(suggestedClassReference, (SpecificHaxeClassReference)a, context, rules);
+        reference = unifyTypes((SpecificHaxeClassReference)reference, (SpecificHaxeClassReference)b, context, rules);
         if (!reference.isUnknown()) {
           return reference;
         }
       }
-      return unifyTypes((SpecificHaxeClassReference)a, (SpecificHaxeClassReference)b, context);
+      return unifyTypes((SpecificHaxeClassReference)a, (SpecificHaxeClassReference)b, context, rules);
     }
     if (a instanceof SpecificFunctionReference && b instanceof SpecificFunctionReference) {
       // TODO suggested type support for functions
@@ -105,7 +111,7 @@ public class HaxeTypeUnifier {
       possibleBChange = valueReference.getEnumClass();
     }
     if (possibleAChange != a || possibleBChange != b) {
-      return unify(possibleAChange, possibleBChange, context);
+      return unify(possibleAChange, possibleBChange, context, UnificationRules.DEFAULT);
     }
     return null;
   }
@@ -121,26 +127,28 @@ public class HaxeTypeUnifier {
 
     int size = pa.size();
     for (int n = 0; n < size; n++) {
-      final Argument unifiedArgument = unify(pa.get(n), pb.get(n));
+      //final Argument unifiedArgument = unify(pa.get(n), pb.get(n), UnificationRules.IGNORE_VOID);
+      final Argument unifiedArgument = unify(pa.get(n), pb.get(n),  UnificationRules.DEFAULT);
       if (unifiedArgument.isInvalid()) return SpecificTypeReference.getInvalid(a.getElementContext());
       arguments.add(unifiedArgument);
     }
-    final ResultHolder returnValue = unify(a.getReturnType(), b.getReturnType());
+    final ResultHolder returnValue = unify(a.getReturnType(), b.getReturnType(), UnificationRules.PREFER_VOID);
+    //final ResultHolder returnValue = unify(a.getReturnType(), b.getReturnType());
     return new SpecificFunctionReference(arguments, returnValue, (HaxeMethodModel)null, context);
   }
 
   @NotNull
-  private static Argument unify(Argument a, Argument b) {
+  private static Argument unify(Argument a, Argument b, @NotNull UnificationRules rules) {
     if (a.isOptional() != b.isOptional()) {
       ResultHolder invalidType = SpecificTypeReference.getInvalid(a.getType().getElementContext()).createHolder();
       return new Argument(a.getIndex(), a.isOptional(),false, invalidType, a.getName());
     }
 
-    return new Argument(a.getIndex(), a.isOptional(),false, unify(a.getType(), b.getType()), a.getName());
+    return new Argument(a.getIndex(), a.isOptional(),false, unify(a.getType(), b.getType(), rules), a.getName());
   }
 
   @NotNull
-  static public SpecificTypeReference unifyTypes(SpecificHaxeClassReference a, SpecificHaxeClassReference b, @NotNull PsiElement context) {
+  static public SpecificTypeReference unifyTypes(SpecificHaxeClassReference a, SpecificHaxeClassReference b, @NotNull PsiElement context, @NotNull UnificationRules rules) {
     if (a.isDynamic()) return a.withoutConstantValue();
     if (b.isDynamic()) return b.withoutConstantValue();
     if (a.getHaxeClassModel() == null) return SpecificTypeReference.getDynamic(context);
@@ -154,7 +162,7 @@ public class HaxeTypeUnifier {
       }
     }
 
-    SpecificHaxeClassReference unifiedAnonymousType = unifyIfContainsAnnonymousType(a, b);
+    SpecificHaxeClassReference unifiedAnonymousType = unifyIfContainsAnonymousType(a, b);
     if (unifiedAnonymousType != null) {
       return unifiedAnonymousType;
     }
@@ -173,21 +181,28 @@ public class HaxeTypeUnifier {
         }
       }
     }
-    // hack to get around recursive methods
-    // (they will end up as return type void when recursion prevents the current resolving code form reaching a return statment with a real type)
-    if(a.isVoid() && !b.isVoid()) {
-      return b;
-    }else if (!a.isVoid() && b.isVoid()) {
-      return a;
-    }else {
-      // @TODO: Do a proper unification
-      //return SpecificTypeReference.getDynamic(a.getElementContext());
-      return SpecificTypeReference.getUnknown(a.getElementContext());
+    if (rules == UnificationRules.IGNORE_VOID) {
+      if (a.isVoid()) return b;
+      if (b.isVoid()) return a;
     }
+    else if (rules == UnificationRules.PREFER_VOID) {
+      if (a.isVoid()) return a;
+      if (b.isVoid()) return b;
+    }
+    else if (rules == UnificationRules.DEFAULT) {
+      if (a.isVoid() && !b.isVoid()) {
+        return b;
+      }
+      else if (!a.isVoid() && b.isVoid()) {
+        return a;
+      }
+    }
+    // @TODO: Do a proper unification
+    return SpecificTypeReference.getUnknown(a.getElementContext());
   }
 
   @Nullable
-  private static SpecificHaxeClassReference unifyIfContainsAnnonymousType(SpecificHaxeClassReference a, SpecificHaxeClassReference b) {
+  private static SpecificHaxeClassReference unifyIfContainsAnonymousType(SpecificHaxeClassReference a, SpecificHaxeClassReference b) {
     if (a.isAnonymousType()) {
       if (a.canAssign(b)) {
         return a;
@@ -216,7 +231,7 @@ public class HaxeTypeUnifier {
         } else if (!holderA.getClassType().isUnknown() && holderB.getClassType().isUnknown()) {
           unified[i] = holderA;
         } else {
-          SpecificTypeReference type = unifyTypes(holderA.getClassType(), holderB.getClassType(), context);
+          SpecificTypeReference type = unifyTypes(holderA.getClassType(), holderB.getClassType(), context, UnificationRules.DEFAULT);
           // if we cant unify specifics then Dynamic should be used
           if (type.isUnknown()) type = SpecificTypeReference.getDynamic(context);
           unified[i] = new ResultHolder(type);
@@ -258,7 +273,7 @@ public class HaxeTypeUnifier {
         SpecificHaxeClassReference aclass = atype.getClassType();
         SpecificHaxeClassReference bclass = btype.getClassType();
         if (null != aclass && null != bclass) {
-          return unifyTypes(aclass, bclass, a.getElementContext());
+          return unifyTypes(aclass, bclass, a.getElementContext(), UnificationRules.DEFAULT);
         }
       }
     }
@@ -267,28 +282,32 @@ public class HaxeTypeUnifier {
 
   @NotNull
   static public SpecificTypeReference unify(SpecificTypeReference[] types, @NotNull PsiElement context) {
-    return unify(Arrays.asList(types), context);
+    return unify(Arrays.asList(types), context,  UnificationRules.DEFAULT);
+  }
+  @NotNull
+  static public SpecificTypeReference unify(SpecificTypeReference[] types, @NotNull PsiElement context, @NotNull  UnificationRules rules) {
+    return unify(Arrays.asList(types), context, rules);
   }
 
   @NotNull
-  static public SpecificTypeReference unify(List<SpecificTypeReference> types, @NotNull PsiElement context) {
-    return unify(types, context, null);
+  static public SpecificTypeReference unify(List<SpecificTypeReference> types, @NotNull PsiElement context, @NotNull  UnificationRules rules) {
+    return unify(types, context, null, UnificationRules.DEFAULT);
   }
   @NotNull
-  static public SpecificTypeReference unify(List<SpecificTypeReference> types, @NotNull PsiElement context, @Nullable  SpecificTypeReference suggestedType) {
+  static public SpecificTypeReference unify(List<SpecificTypeReference> types, @NotNull PsiElement context, @Nullable  SpecificTypeReference suggestedType, @NotNull  UnificationRules rules) {
     if (types.isEmpty()) {
       return SpecificTypeReference.getUnknown(context);
     }
     SpecificTypeReference type = types.get(0);
     for (int n = 1; n < types.size(); n++) {
-      type = unify(type, types.get(n), context, suggestedType);
+      type = unify(type, types.get(n), context, suggestedType, rules);
     }
     return type;
   }
 
   @NotNull
-  static public ResultHolder unifyHolders(List<ResultHolder> typeHolders, @NotNull PsiElement context) {
+  static public ResultHolder unifyHolders(List<ResultHolder> typeHolders, @NotNull PsiElement context, @NotNull  UnificationRules rules) {
     // @TODO: This should mutate unknown holders?
-    return unify(ResultHolder.types(typeHolders), context).createHolder();
+    return unify(ResultHolder.types(typeHolders), context, rules).createHolder();
   }
 }
