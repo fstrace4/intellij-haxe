@@ -58,4 +58,9 @@ public class HaxeAssignContext {
   public boolean isConstraintCheck() {
     return constraintCheck;
   }
+
+  public void clearErrors() {
+    missingMembers.clear();
+    wrongTypeMembers.clear();
+  }
 }

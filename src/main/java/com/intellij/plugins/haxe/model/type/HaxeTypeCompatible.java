@@ -491,7 +491,10 @@ public class HaxeTypeCompatible {
       if (classModel.isAnonymous() || classModel.isStructInit() || classModel.isObjectLiteral()){
         if (!from.isTypeParameter()) { // cant get members from a typeParameter
           // compare members (Anonymous stucts can be "used" as interface)
-          return containsAllMembers(to, from, context);
+          if(containsAllMembers(to, from, context)) return true;
+            if (classModel.isStructInit()) {
+              return checkStructInitConstructor(to, from, context);
+            }
         }
       }
     }
@@ -533,6 +536,74 @@ public class HaxeTypeCompatible {
     return to.toStringWithoutConstant().equals(from.toStringWithoutConstant());
   }
 
+  private static boolean checkStructInitConstructor(SpecificHaxeClassReference to, SpecificHaxeClassReference from,
+                                                    @Nullable HaxeAssignContext context) {
+    HaxeClassModel toModel = to.getHaxeClassModel();
+    HaxeClassModel fromModel = from.getHaxeClassModel();
+    if (toModel != null && fromModel != null && toModel.isStructInit() && fromModel.isObjectLiteral()) {
+
+      // looks like haxe is mapping constructor parameter names to anonymous fields names.
+      // if names mismatch we get "Object requires field" / "has extra field value"
+      // note that parameters can be optional
+      List<HaxeObjectLiteralMemberModel> fromMembers = fromModel.getAllMembers(from.getGenericResolver()).stream()
+        .filter(model ->  model instanceof  HaxeObjectLiteralMemberModel)
+        .map(HaxeObjectLiteralMemberModel.class::cast)
+        .toList();
+      HaxeGenericResolver toResolver = to.getGenericResolver();
+      HaxeMethodModel constructor = toModel.getConstructor(toResolver);
+      if (constructor == null) return false;
+      boolean allMacteches = true;
+
+      if (context != null ) {
+        // remove errors from field check, we are going to add constructor errors if there are any
+        context.clearErrors();
+      }
+
+
+      List<HaxeParameterModel> parameters = constructor.getParameters();
+      for (HaxeParameterModel parameter : parameters) {
+        String parameterName = parameter.getName();
+
+        Optional<HaxeObjectLiteralMemberModel> fieldWithSameName = fromMembers.stream()
+          .filter(m -> m.getNamePsi().getIdentifier().textMatches(parameterName))
+          .findFirst();
+
+        if (fieldWithSameName.isPresent()) {
+          HaxeObjectLiteralMemberModel fromMemberModel = fieldWithSameName.get();
+          ResultHolder fromType = ifEnumValueGetType(fromMemberModel.getResultType(toResolver));
+          ResultHolder toType = ifEnumValueGetType(parameter.getType());
+          ResultHolder resolved = toResolver.resolve(toType);
+          if (resolved != null && !resolved.isUnknown())toType = resolved;
+          if(!toType.canAssign(fromType)) {
+            allMacteches = false;
+            if (context != null) {
+              context.addWrongTypeMember(fromMemberModel.getPresentableText(null), parameter.getPresentableText(toResolver));
+            }
+          }
+        } else {
+          if (parameter.isOptional()) continue;
+          allMacteches = false;
+          if (context != null) {
+            context.addMissingMember(parameterName);
+          }
+        }
+      }
+      return allMacteches;
+    }
+    return false;
+  }
+
+  private static ResultHolder ifEnumValueGetType(ResultHolder type) {
+    if(type.isEnumValueType()) {
+      SpecificEnumValueReference enumValueType = type.getEnumValueType();
+      if(enumValueType != null) {
+        return enumValueType.getEnumClass().createHolder();
+      }
+    }
+    return type;
+
+  }
+
   private static RecursionGuard<PsiElement> containsMembersRecursionGuard = RecursionManager.createGuard("containsMembersRecursionGuard");
 
   private static boolean containsAllMembers(SpecificHaxeClassReference to, SpecificHaxeClassReference from,
@@ -553,8 +624,12 @@ public class HaxeTypeCompatible {
        return false;
 
     boolean isStruct = toClassModel.isStructInit();
-    List<HaxeBaseMemberModel> toMembers = toClassModel.getAllMembers(to.getGenericResolver());
-    List<HaxeBaseMemberModel> fromMembers = fromClassModel.getAllMembers(from.getGenericResolver());
+    boolean isObjectLiteral = fromClassModel.isObjectLiteral();
+
+    HaxeGenericResolver toResolver = to.getGenericResolver();
+    HaxeGenericResolver fromResolver = from.getGenericResolver();
+    List<HaxeBaseMemberModel> toMembers = toClassModel.getAllMembers(toResolver);
+    List<HaxeBaseMemberModel> fromMembers = fromClassModel.getAllMembers(fromResolver);
 
     boolean allMembersMatches = true;
     for (HaxeBaseMemberModel toMember : toMembers) {
@@ -583,18 +658,24 @@ public class HaxeTypeCompatible {
             if (checkAnonymousMemberTypes) {
             HaxeBaseMemberModel fromMember = first.get();
             if (context != null && context.getFromOrigin() != null) {
-              Boolean canAssign = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () -> {
-                ResultHolder toType = toMember.getResultType();
-                ResultHolder fromType = fromMember.getResultType();
-                return toType.canAssign(fromType);
-              });
 
-              // in case recursion guard is triggered
-              if (canAssign == null) {
+
+              ResultHolder toType = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () ->
+                toMember.getResultType(toResolver)
+              );
+              ResultHolder fromType = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () ->
+                 fromMember.getResultType(isObjectLiteral ? toResolver : fromResolver)
+              );
+
+              if(toType == null ||  fromType == null) {
                 log.warn("Unable to evaluate fieldType compatibility");
+                return true;
               }
-              else if (!canAssign) {
-                context.addWrongTypeMember(fromMember.getPresentableText(null), toMember.getPresentableText(null));
+
+              if (!toType.canAssign(fromType)) {
+                String fromText = fromMember.getPresentableText(null, isObjectLiteral ? toResolver : fromResolver);
+                String toText = toMember.getPresentableText(null, toResolver);
+                context.addWrongTypeMember(fromText, toText);
                 allMembersMatches = false;
               }
             }
@@ -609,8 +690,8 @@ public class HaxeTypeCompatible {
         if(context != null)context.addMissingMember(missingFieldName);
         allMembersMatches = false;
       }
-
     }
+
     // check object literals for too many fields
     if (isStruct && fromClassModel.isObjectLiteral()) {
       for (HaxeBaseMemberModel member : fromMembers) {
