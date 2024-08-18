@@ -4,6 +4,9 @@
 * Improvement: Macro expressions with topLevelDeclarations and map initializers should no longer be marked as errors(#1185)
 * Improvement: `@:structInit` assign checks now also check class constructor
 * Improvement: Improved resolve based on context when multiple enums in the same file has members with identical names.
+* Changed: Use normal indentation rule for anonymous body elements (#1183)
+* Misc: Fixed incorrect icon scaling (haxe logo icon)
+* Misc: Tweaks to support future intellij releases (2024.3+)
 
 ## 1.5.8
 * Bugfix: Fixed issue where result of `ExprOf` with functionType was annotated as not callable 
