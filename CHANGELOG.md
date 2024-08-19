@@ -1,5 +1,6 @@
 # Changelog
 ## 1.5.9
+* Bugfix: Completion did not work properly with haxe 3.1 extensions annotation in typedefs.(#1184)
 * Bugfix: Fixed issue where assign check from class to anonymous type would fail because inherited members where not included. 
 * Improvement: Macro expressions with topLevelDeclarations and map initializers should no longer be marked as errors(#1185)
 * Improvement: `@:structInit` assign checks now also check class constructor
