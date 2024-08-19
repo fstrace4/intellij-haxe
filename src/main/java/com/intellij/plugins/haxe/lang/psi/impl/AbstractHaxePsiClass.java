@@ -97,7 +97,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
     }
 
     PsiFile file = getContainingFile();
-    if (file == null) return name;
+    if (file == null) return name == null ? "" : name;
 
     final String fileName = FileUtil.getNameWithoutExtension(file.getName());
     String packageName = HaxeResolveUtil.getPackageName(file);

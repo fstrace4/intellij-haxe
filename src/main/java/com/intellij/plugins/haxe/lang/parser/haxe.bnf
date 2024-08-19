@@ -982,10 +982,11 @@ anonymousTypeBody ::= anonymousTypeWithEmptyBody | regularAnonymousTypeBody
 private anonymousTypeWithEmptyBody ::= '{' '}' {pin=2}
 private regularAnonymousTypeBody ::= '{' anonymousTypeBodyContents '}' {pin=2}
 private anonymousTypeBodyContents ::= extendedAnonymousTypeBody | simpleAnonymousTypeBody | anonymousInterfaceBodyList
-private extendedAnonymousTypeBody ::= typeExtendsList ',' (anonymousTypeFieldList)? (anonymousInterfaceBodyList)?
+private extendedAnonymousTypeBody ::= typeExtendsList ',' (anonymousTypeFieldList)? (anonymousInterfaceBodyList)? {pin=1}
 private anonymousInterfaceBodyList ::= (optionalFieldDeclaration | interfaceBodyPart )+  {recoverWhile="interface_body_part_recover"}
 private simpleAnonymousTypeBody ::= anonymousTypeFieldList (sep anonymousInterfaceBodyList)?
-typeExtendsList ::= '>' type (',' '>' type)* {pin=1}
+typeExtendsList ::= '>' type (',' '>' type)* {pin=1 recoverWhile=type_extends_list_recover}
+private type_extends_list_recover ::= !(',' | '}' | '>')
 
 anonymousTypeFieldList ::= anonymousTypeField (',' anonymousTypeField)* ','? {recoverWhile="object_literal_part_recover" pin=1}
 private sep ::= ',' | ';'

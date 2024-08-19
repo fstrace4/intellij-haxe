@@ -189,6 +189,10 @@ public class HaxeFormatterTest extends HaxeCodeInsightFixtureTestCase {
     myTestStyleSettings.SPACE_AFTER_SEMICOLON = false;
     doTest();
   }
+  @Test
+  public void testIndentTypedef() throws Exception {
+    doTest();
+  }
 
   @Test
   public void testWrappingMeth() throws Exception {
