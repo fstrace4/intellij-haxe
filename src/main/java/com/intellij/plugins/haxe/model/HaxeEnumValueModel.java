@@ -5,7 +5,7 @@ import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import org.jetbrains.annotations.Nullable;
 
-public interface HaxeEnumValueModel extends HaxeModel {
+public interface HaxeEnumValueModel extends HaxeNamedComponentModel {
 
   ResultHolder getResultType(@Nullable HaxeGenericResolver resolver);
 

@@ -29,7 +29,7 @@ import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class HaxeBaseMemberModel implements HaxeModel {
+public abstract class HaxeBaseMemberModel implements HaxeNamedComponentModel {
   protected PsiElement basePsi;
   protected HaxeDocumentModel document = null;
 

@@ -468,6 +468,36 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
             }
           }
         }
+        // check function argumentList and look for enum hints in argument types
+        int index;
+        PsiElement PossibleCallExpression = element;
+        if (PossibleCallExpression instanceof  HaxeCallExpressionList callExpressionList) {
+          PossibleCallExpression = callExpressionList.getParent();
+          index = callExpressionList.getExpressionList().indexOf(reference);
+        }else {
+          index = 0;
+        }
+        if(PossibleCallExpression instanceof  HaxeCallExpression callExpression) {
+          ResultHolder result = HaxeExpressionEvaluator.evaluate(callExpression.getExpression(), new HaxeGenericResolver()).result;
+          SpecificFunctionReference functionType = result.getFunctionType();
+          if(functionType != null) {
+            List<SpecificFunctionReference.Argument> arguments = functionType.getArguments();
+            if (index > -1) {
+              while (index < arguments.size()) {
+                SpecificFunctionReference.Argument argument = arguments.get(index++);
+                ResultHolder type = argument.getType();
+                if (type != null && type.isEnum()) {
+                  SpecificHaxeClassReference classType = type.getClassType();
+                  if (classType != null) {
+                    SpecificTypeReference typeReference = classType.fullyResolveTypeDefAndUnwrapNullTypeReference();
+                    return findEnumMember(reference, typeReference);
+                  }
+                  if (!argument.isOptional()) break;
+                }
+              }
+            }
+          }
+        }
       }
     }
     return null;

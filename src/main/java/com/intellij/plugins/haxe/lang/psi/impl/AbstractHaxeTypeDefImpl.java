@@ -45,6 +45,7 @@ public abstract class AbstractHaxeTypeDefImpl extends AbstractHaxePsiClass imple
     return targetClass;
   }
 
+  @Nullable
   public SpecificHaxeClassReference getTargetClass(HaxeGenericResolver genericResolver) {
 
     final HaxeTypeOrAnonymous haxeTypeOrAnonymous = getTypeOrAnonymous();

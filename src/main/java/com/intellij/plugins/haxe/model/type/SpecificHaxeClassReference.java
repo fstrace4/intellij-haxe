@@ -695,24 +695,27 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
             }
           }
 
-          reference = typeDef.getTargetClass(resolver);
-          if (reference.isTypeDefOfClass()) {
-            haxeClass = reference.getHaxeClass();
-            resolver = reference.getGenericResolver();
-          }
-          else if (reference.isNullType()) {
-            SpecificTypeReference unwrapped = reference.unwrapNullType();
-            if (unwrapped instanceof SpecificHaxeClassReference haxeClassReference) {
-              haxeClass = haxeClassReference.getHaxeClass();
-              resolver = haxeClassReference.getGenericResolver();
-              reference = haxeClassReference;
+          SpecificHaxeClassReference targetClass = typeDef.getTargetClass(resolver);
+          if (targetClass != null) {
+            reference = targetClass;
+            if (reference.isTypeDefOfClass()) {
+              haxeClass = reference.getHaxeClass();
+              resolver = reference.getGenericResolver();
             }
-            else if (unwrapped instanceof SpecificFunctionReference functionReference) {
-              return resolver.resolve(functionReference);
+            else if (reference.isNullType()) {
+              SpecificTypeReference unwrapped = reference.unwrapNullType();
+              if (unwrapped instanceof SpecificHaxeClassReference haxeClassReference) {
+                haxeClass = haxeClassReference.getHaxeClass();
+                resolver = haxeClassReference.getGenericResolver();
+                reference = haxeClassReference;
+              }
+              else if (unwrapped instanceof SpecificFunctionReference functionReference) {
+                return resolver.resolve(functionReference);
+              }
             }
-          }
-          else {
-            break;
+            else {
+              break;
+            }
           }
         }
         return reference;

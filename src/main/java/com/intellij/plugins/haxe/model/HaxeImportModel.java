@@ -138,7 +138,11 @@ public class HaxeImportModel extends HaxeImportableModel {
         if (getReferenceExpression() != null) {
           for (HaxeModel member : members) {
             if (member.getName().equals(getReferenceExpression().getIdentifier().getText())) {
-              return List.of(member.getBasePsi());
+              if (member instanceof HaxeNamedComponentModel componentModel) {
+                return List.of(componentModel.getNamePsi());
+              } else {
+                return List.of(member.getBasePsi());
+              }
             }
           }
         }
@@ -148,11 +152,13 @@ public class HaxeImportModel extends HaxeImportableModel {
     }else {
       for (HaxeModel exposedMember : getExposedMembers()) {
         if (Objects.equals(exposedMember.getName(), name)) {
-          if (!(exposedMember instanceof HaxeEnumValueModel)) {
-            return List.of(exposedMember.getBasePsi());
-          }
-          else {
-            results.add(exposedMember.getBasePsi());
+          if (exposedMember instanceof HaxeEnumValueModel enumValueModel) {
+            results.add(enumValueModel.getNamePsi());
+          } else {
+            PsiElement element = exposedMember instanceof HaxeNamedComponentModel componentModel
+                                 ? componentModel.getNamePsi()
+                                 : exposedMember.getBasePsi();
+            return List.of(element);
           }
         }
       }
