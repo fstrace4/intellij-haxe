@@ -19,6 +19,8 @@ class PatternMachingTest {
         // correct
         switch(enumVal) {
             case TString(x = "s"): x.toLowerCase();
+            case TString(_ => _.length => 1):  trace(" 2x '=>' - OK");
+            case TString(_ => _.toLowerCase() => "s"):  trace(" 2x '=>' - OK");
             case TNone | TString(_) : trace(" none OR string");
             case TTest(TNone | TString(_)): trace(" sub  OR");
             case TObject( x = {i:1}): x.s.toLowerCase();

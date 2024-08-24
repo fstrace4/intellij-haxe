@@ -115,6 +115,9 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
    *
    */
   public static boolean semicolonUnlessPrecededByStatement(PsiBuilder builder_, int level) {
+    return semicolonUnlessPrecededByStatement(builder_, level, true);
+  }
+  private static boolean semicolonUnlessPrecededByStatement(PsiBuilder builder_, int level, boolean showError) {
     if (consumeTokenFast(builder_, OSEMI)) {
       return true;
     }
@@ -140,14 +143,17 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
       }
     }
 
-    builder_.error(HaxeBundle.message("parsing.error.missing.semi.colon"));
+    if(showError)builder_.error(HaxeBundle.message("parsing.error.missing.semi.colon"));
     return false;
   }
 
   /**
-  * guarded statements followed by else statement does not need semi
+  * guarded statements followed by else or catch statement does not need semi, usually some kind of valueExpression
+  * ex. `var x= if (true) 1 else 2;`
+  * ex. `var x= try  someMethod()  catch someValue;`
+
   */
-  public static boolean semicolonUnlessFollowedByElseStatement(PsiBuilder builder_, int level) {
+  public static boolean semicolonUnlessFollowedByElseOrCatchKeyword(PsiBuilder builder_, int level) {
     if (consumeTokenFast(builder_, OSEMI)) {
       return true;
     }
@@ -157,9 +163,27 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
       nextType = builder_.rawLookup(i++);
     }
 
-    //guarded statement does not need semicolon if followed by "else"
-    return nextType == ELSE_STATEMENT;
+    //guarded statement does not need semicolon if followed by "else" or "catch"
+    return nextType == KELSE || nextType == KCATCH;
   }
+  public static boolean semicolonUnlessFollowedByElseOrCatchOrStatement(PsiBuilder builder_, int level) {
+    if (semicolonUnlessPrecededByStatement(builder_, level, false)) return true;
+
+    int i = 0;
+    IElementType nextType = builder_.rawLookup(i);
+    while (null != nextType && isWhitespaceOrComment(builder_, nextType)) {
+      nextType = builder_.rawLookup(i++);
+    }
+
+    //guarded statement does not need semicolon if followed by "else" or "catch"
+    if(nextType == KELSE || nextType == KCATCH) return true;
+    builder_.error(HaxeBundle.message("parsing.error.missing.semi.colon"));
+    return false;
+  }
+
+
+
+
   // hopefully faster way to stop unnecessary parsing attempts when not reification
   public static boolean canBeReification(PsiBuilder builder_, int level) {
     IElementType type = builder_.rawLookup(0) ;

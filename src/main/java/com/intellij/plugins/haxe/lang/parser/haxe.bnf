@@ -681,10 +681,10 @@ private returnValue ::= objectLiteral
                       | expression
                       | localVarDeclarationList   // Void value, so allowable, but not useful
 lamdaReturnStatement ::= 'return' (returnValue)? {implements="returnStatement"}
-returnStatement ::= 'return' (returnValue)? <<semicolonUnlessPrecededByStatement>>
+returnStatement ::= 'return' (returnValue)? <<semicolonUnlessFollowedByElseOrCatchOrStatement>>
 
-breakStatement ::= 'break' <<semicolonUnlessFollowedByElseStatement>> // semi optional in guarded statement
-continueStatement ::= 'continue' <<semicolonUnlessFollowedByElseStatement>> // semi optional in guarded statement
+breakStatement ::= 'break' <<semicolonUnlessFollowedByElseOrCatchKeyword>> // semi optional in guarded statement
+continueStatement ::= 'continue' <<semicolonUnlessFollowedByElseOrCatchKeyword>> // semi optional in guarded statement
 
 throwStatement ::= 'throw' expression ';'?
 
@@ -700,7 +700,7 @@ switchCaseExprArray ::= "["  (switchCaseExprElement ","?)* "]"
 switchCaseExpr ::= <<pushCollectionInitializersDeny>> (switchCaseExprArray  |  switchCaseExprElement) {hooks=[popCollectionInitializersRule]}
 ExtractorMatchAssignExpression ::= referenceExpression "=";
 
-ExtractorMatchExpression ::=  expression '=>' switchCaseExpr {extends="expression"}
+ExtractorMatchExpression ::= expression '=>' switchCaseExpr {extends="expression"}
 
 private switchEnumBitOperationElement ::= enumArgumentExtractor | enumValueReference;
 switchEnumBitOperationExpression ::=   switchEnumBitOperationElement (bitOperation switchEnumBitOperationElement)+ {extends="expression"}
@@ -783,7 +783,7 @@ callExpressionList ::= forStatement | whileStatement | spreadExpression | (expre
 {recoverWhile="expression_list_recover" extends=expressionList  methods= [spreadExpression="spreadExpression[0]"]}
 
 expressionList ::= forStatement | whileStatement | (expression (',' expression)*)  ','? {recoverWhile="expression_list_recover"}
-private expression_list_recover ::= !(')' | ']')
+private expression_list_recover ::= !(')' | ']' | fatArrowOperator) // fatArrowOperator("=>") is here to avoid problems where enum extractors are mis-parsed as callExpressions
 
 private expression_recover ::= !('!' | '!=' | '%' | '%=' | '&&' | '&' | '&=' | '(' | ')' | '*' | '*=' | '+' | '++' | '+=' | ',' | '-' | '--' | '-=' | '.' | '...' | '/' | '/=' | ':' | ';' | '<' | '<<' | '<<=' | '<=' | '=' | '==' | '>' | <<shiftRight>> | <<unsignedShiftRight>> | <<gtEq>> | <<shiftRightAssign>> | <<unsignedShiftRightAssign>> | '?' | '[' | ']' | '^' | '^=' | 'break' | 'case' | 'cast' | 'catch' | 'continue' | 'default' | 'do' | 'dynamic' | 'else' | 'extern' | 'false' | 'final' | 'for' | 'function' | 'if' | 'inline' | 'new' | 'null' | 'override' | 'private' | 'public' | 'return' | 'static' | 'super' | 'switch' | 'this' | 'throw' | 'true' | 'try' | 'untyped' | 'var' | 'while' | '{' | '|' | '|=' | '||' | '}' | '~' | ID | LITFLOAT | LITHEX | LITINT | LITOCT | OPEN_QUOTE | CLOSING_QUOTE | META_ID | REG_EXP | LONG_TEMPLATE_ENTRY_END | '=>') !metaKeyWord
 
@@ -881,7 +881,7 @@ literalExpression ::= LITINT | LITHEX | LITOCT | LITFLOAT
                     | functionLiteral
 //                    | <<isInitializersAllowed>> mapLiteral
 //                    | <<isInitializersAllowed>> arrayLiteral
-                    | ( mapLiteral)
+                    |  mapLiteral
                     | arrayLiteral
                     | objectLiteral
                     | stringLiteralExpression

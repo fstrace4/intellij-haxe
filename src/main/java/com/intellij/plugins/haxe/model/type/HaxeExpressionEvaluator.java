@@ -558,12 +558,26 @@ public class HaxeExpressionEvaluator {
                                                      @Nullable final PsiElement searchScopePsi,
                                                      @Nullable final ResultHolder hint
   ) {
-      List<PsiReference> references = referenceSearch(componentName, searchScopePsi);
-
-      for (PsiReference reference : references) {
-        ResultHolder possibleType = checkSearchResult(context, resolver, reference,componentName,  hint);
-        if (possibleType != null) return possibleType;
+    List<PsiReference> references = referenceSearch(componentName, searchScopePsi);
+    ResultHolder lastValue = null;
+    for (PsiReference reference : references) {
+      ResultHolder possibleType = checkSearchResult(context, resolver, reference, componentName, hint);
+      if(possibleType != null) {
+        if (!possibleType.isUnknown()) {
+          if (lastValue == null) {
+            lastValue = possibleType;
+          } else if (!possibleType.isUnknown()) {
+            //NOTE: don't use unify here (will break function type from  usage)
+            // we want to search only for more specific types (ex. EnumValue  & SomeEnum)
+            boolean canAssign = lastValue.canAssign(possibleType);
+            if (canAssign) lastValue = possibleType;
+          }
+        }
       }
+    }
+    if (lastValue != null && !lastValue.isUnknown()) {
+      return lastValue;
+    }
 
     return createUnknown(componentName);
   }

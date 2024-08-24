@@ -1159,17 +1159,19 @@ public class HaxeResolveUtil {
     String packageName = getPackageName(packageStatement);
     String[] packages = packageName.split("\\.");
     String typeName = (type instanceof HaxeType ? ((HaxeType)type).getReferenceExpression() : type).getText();
-    for (int i = packages.length - 1; i >= 0; --i) {
-      StringBuilder qNameBuilder = new StringBuilder();
-      for (int j = 0; j <= i; ++j) {
-        if (!packages[j].isEmpty()) {
-          qNameBuilder.append(packages[j]).append('.');
+    if (typeName.matches("[^:<>{}()/]+")) {
+      for (int i = packages.length - 1; i >= 0; --i) {
+        StringBuilder qNameBuilder = new StringBuilder();
+        for (int j = 0; j <= i; ++j) {
+          if (!packages[j].isEmpty()) {
+            qNameBuilder.append(packages[j]).append('.');
+          }
         }
-      }
-      qNameBuilder.append(typeName);
-      HaxeClass haxeClass = findClassByQName(qNameBuilder.toString(), type);
-      if (haxeClass != null) {
-        return haxeClass;
+        qNameBuilder.append(typeName);
+        HaxeClass haxeClass = findClassByQName(qNameBuilder.toString(), type);
+        if (haxeClass != null) {
+          return haxeClass;
+        }
       }
     }
     return null;

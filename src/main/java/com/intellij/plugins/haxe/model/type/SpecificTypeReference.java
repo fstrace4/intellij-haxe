@@ -366,8 +366,7 @@ public abstract class SpecificTypeReference {
   }
 
   private boolean isNamedType(String typeName) {
-    if (this instanceof SpecificHaxeClassReference) {
-      final SpecificHaxeClassReference reference = (SpecificHaxeClassReference)this;
+    if (this instanceof SpecificHaxeClassReference reference) {
       final String name = reference.getHaxeClassReference().getName();
       return null != name && name.equals(typeName);
     }
