@@ -39,6 +39,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.intellij.plugins.haxe.metadata.psi.HaxeMeta.OPTIONAL;
+
 /**
  * Created by srikanthg on 10/9/14.
  */
@@ -111,7 +113,14 @@ public abstract class HaxePsiFieldImpl extends AbstractHaxeNamedComponent implem
   }
 
   public boolean isOptional() {
-    return this instanceof  HaxeOptionalFieldDeclaration;
+    if(this instanceof  HaxeOptionalFieldDeclaration) return true;
+    if(this instanceof  HaxeAnonymousTypeField field) {
+      return field.getOptionalMark() != null;
+    }
+    if(this instanceof  HaxeFieldDeclaration fieldDeclaration) {
+      return fieldDeclaration.hasCompileTimeMetadata(OPTIONAL);
+    }
+    return false;
   }
 
   @Nullable

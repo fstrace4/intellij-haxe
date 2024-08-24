@@ -499,7 +499,11 @@ public class HaxeExpressionEvaluatorHandlers {
     if (typeTag != null) {
       ResultHolder typeFromTypeTag = HaxeTypeResolver.getTypeFromTypeTag(typeTag, parameter);
       ResultHolder resolve = resolver.resolve(typeFromTypeTag);
-      if (!resolve.isUnknown()) return resolve;
+      if (resolve != null && !resolve.isUnknown()) typeFromTypeTag = resolve;
+      // if parameter is optional then its nullable and should be Null<T>
+      if (parameter.getOptionalMark() != null && !typeFromTypeTag.isNullWrappedType()) {
+        return typeFromTypeTag.wrapInNullType();
+      }
       return typeFromTypeTag;
     }
 
@@ -507,6 +511,10 @@ public class HaxeExpressionEvaluatorHandlers {
     if (init != null) {
       ResultHolder holder = handle(init, context, resolver);
       if (!holder.isUnknown()) {
+        if (parameter.getOptionalMark() != null && !holder.isNullWrappedType()) {
+          // if parameter is optional then its nullable and should be Null<T>
+          return holder.wrapInNullType();
+        }
         return holder;
       }
     }else {

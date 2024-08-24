@@ -40,4 +40,6 @@ public interface HaxePsiField extends HaxeComponent, PsiField, HaxeModelTarget {
 
   @Nullable
   HaxeVarInit getVarInit();
+
+  boolean isOptional();
 }

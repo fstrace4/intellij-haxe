@@ -155,6 +155,9 @@ public class HaxeTypeResolver {
         if (resolver != null) {
           ResultHolder resolved = resolver.resolve(typeFromTag);
           if (resolved != null) typeFromTag = resolved;
+          if (psiField.isOptional() && !typeFromTag.isNullWrappedType()) {
+            typeFromTag = typeFromTag.wrapInNullType();
+          }
         }
         final Object initConstant = result != null ? result.getType().getConstant() : null;
         if (typeFromTag != null) {

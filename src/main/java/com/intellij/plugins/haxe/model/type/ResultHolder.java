@@ -227,4 +227,14 @@ public class ResultHolder {
     }
     return this;
   }
+
+  public boolean isNullWrappedType() {
+    SpecificHaxeClassReference classType = getClassType();
+    return classType != null && classType.isNullType();
+  }
+
+  public ResultHolder wrapInNullType() {
+    SpecificTypeReference typeToWrap = getType();
+    return SpecificHaxeClassReference.getNull(typeToWrap.getElementContext(), typeToWrap.createHolder()).createHolder();
+  }
 }
