@@ -28,8 +28,8 @@ import com.intellij.plugins.haxe.HaxeLanguage;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
 import com.intellij.plugins.haxe.lang.psi.HaxePsiCompositeElement;
+import com.intellij.plugins.haxe.lang.psi.HaxeStringLiteralExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeType;
-import com.intellij.plugins.haxe.util.HaxeDebugPsiUtil;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -73,8 +73,14 @@ public class HaxeTypedHandler extends TypedHandlerDelegate {
 
   private static boolean checkAfterDollarInString(PsiFile file, int offset) {
     PsiElement at = file.findElementAt(offset - 1);
-    final String text = at != null ? at.getText() : "";
-    return text.endsWith("$") && PsiTreeUtil.getParentOfType(at, HaxePsiCompositeElement.class) != null;
+    if (at != null) {
+      HaxeStringLiteralExpression type = PsiTreeUtil.getParentOfType(at, HaxeStringLiteralExpression.class);
+      if (type != null) {
+        final String text = at.getText();
+        return text.endsWith("$") && PsiTreeUtil.getParentOfType(at, HaxePsiCompositeElement.class) != null;
+      }
+    }
+    return false;
   }
 
   @NotNull
