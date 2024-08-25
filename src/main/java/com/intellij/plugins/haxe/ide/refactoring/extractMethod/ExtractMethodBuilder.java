@@ -36,6 +36,8 @@ public class ExtractMethodBuilder {
   private Map<PsiReference, HaxeLocalVarDeclaration> localUsedOutside;
 
   private Map<String, String> parametersMap;
+  private boolean needsStaticKeyword = false;
+
   public ExtractMethodBuilder expressions(List<HaxePsiCompositeElement> expressions) {
     this.expressions = expressions;
     return this;
@@ -247,12 +249,17 @@ public class ExtractMethodBuilder {
     String parameterList = createParameterListText(parameters);
     return new StringBuilder()
       .append("\n")
+      .append(modifiers())
       .append("function " + suggestedName + " (")
       .append(parameterList)
       .append(")")
       .append(block)
       .append("\n\n")
       .toString();
+  }
+
+  private String modifiers() {
+    return needsStaticKeyword ? "static " : "";
   }
 
   private static String createParameterListText(Map<String, String> parameters) {
@@ -355,4 +362,7 @@ public class ExtractMethodBuilder {
   }
 
 
+  public void isStatic(boolean needsStaticKeyword) {
+    this.needsStaticKeyword = needsStaticKeyword;
+  }
 }

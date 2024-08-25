@@ -13,6 +13,8 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceHandler;
 import com.intellij.plugins.haxe.ide.refactoring.introduceVariable.HaxeIntroduceOperation;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.model.HaxeFieldModel;
+import com.intellij.plugins.haxe.model.HaxeModel;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -96,6 +98,8 @@ public class HaxeExtractMethodHandler extends HaxeIntroduceHandler {
       .expressions(expressions);
 
     try {
+
+      methodBuilder.isStatic(needsStaticKeyword(startElement));
       methodBuilder.validateAndProcessExpressions();
 
       boolean partOfExpression = stopElement.getParent().getParent() instanceof  HaxeExpression;
@@ -150,6 +154,20 @@ public class HaxeExtractMethodHandler extends HaxeIntroduceHandler {
       showCannotPerformError(project, editor);
     }
 
+  }
+
+  private static boolean needsStaticKeyword(PsiElement startElement) {
+    HaxeMethod parentMethod = PsiTreeUtil.getParentOfType(startElement, HaxeMethodDeclaration.class);
+    if (parentMethod != null) {
+      return parentMethod.getModel().isStatic();
+    }
+    HaxeVarInit init = PsiTreeUtil.getParentOfType(startElement, HaxeVarInit.class);
+    HaxeFieldDeclaration fieldDeclaration = PsiTreeUtil.getParentOfType(startElement, HaxeFieldDeclaration.class);
+    if (init != null && fieldDeclaration != null) {
+      HaxeModel model = fieldDeclaration.getModel();
+      if( model instanceof HaxeFieldModel fieldModel) return fieldModel.isStatic();
+    }
+    return false;
   }
 
   private static void startRenameMethod(HaxeIntroduceOperation operation, Editor editor, PsiFile file) {
