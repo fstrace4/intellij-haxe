@@ -53,13 +53,21 @@ public class HaxeRefactoringUtil {
     if (possibleMethod != null && possibleMethod.getBody() != null) {
       PsiTreeUtil.treeWalkUp(new ComponentNameScopeProcessor(usedComponentNames), possibleMethod.getBody(), null, new ResolveState());
     }
-    return new HashSet<>(ContainerUtil.map(usedComponentNames, new Function<>() {
+    List<String> converted = convertNamesToString(usedComponentNames);
+    Set<String> usedNames = new HashSet<>(converted);
+    // adding global values
+    usedNames.add("trace");
+    return usedNames;
+  }
+
+  private static @NotNull List<String> convertNamesToString(Set<HaxeComponentName> usedComponentNames) {
+    return ContainerUtil.map(usedComponentNames, new Function<>() {
       @Nullable
       @Override
       public String fun(HaxeComponentName componentName) {
         return componentName.getName();
       }
-    }));
+    });
   }
 
   public static Set<String> collectKeywords() {
