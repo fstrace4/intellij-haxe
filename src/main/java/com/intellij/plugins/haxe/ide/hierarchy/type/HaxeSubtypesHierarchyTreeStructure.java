@@ -22,7 +22,7 @@ import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
 import com.intellij.ide.hierarchy.HierarchyTreeStructure;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.openapi.project.Project;
-import com.intellij.plugins.haxe.ide.index.HaxeInheritanceDefinitionsSearcher;
+import com.intellij.plugins.haxe.ide.index.HaxeInheritanceDefinitionsUtil;
 import com.intellij.plugins.haxe.lang.psi.HaxeAnonymousType;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxePsiModifier;
@@ -81,7 +81,7 @@ public class HaxeSubtypesHierarchyTreeStructure extends HierarchyTreeStructure {
 
     // Get the list of subtypes from the file-based indices.  Stub-based would
     // be faster, but we'll have to re-parent all of the PsiClass sub-classes.
-    Collection<HaxeClass> children = HaxeInheritanceDefinitionsSearcher.getItemsByQNameFirstLevelChildrenOnly(theHaxeClass);
+    Collection<HaxeClass> children = HaxeInheritanceDefinitionsUtil.getItemsByQNameFirstLevelChildrenOnly(theHaxeClass);
     subTypeList.addAll(children);
 
     return typeListToObjArray(((HaxeTypeHierarchyNodeDescriptor) descriptor), subTypeList);

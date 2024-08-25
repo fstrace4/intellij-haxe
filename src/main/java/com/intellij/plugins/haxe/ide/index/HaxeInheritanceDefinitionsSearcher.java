@@ -19,6 +19,8 @@
 package com.intellij.plugins.haxe.ide.index;
 
 import com.intellij.openapi.application.QueryExecutorBase;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.HaxeComponentType;
 import com.intellij.plugins.haxe.ide.lookup.lookupItemImportUtil;
@@ -44,28 +46,7 @@ public class HaxeInheritanceDefinitionsSearcher extends QueryExecutorBase<PsiEle
   }
 
 
-  public static Collection<HaxeClass> getItemsByQNameFirstLevelChildrenOnly(final HaxeClass haxeClass) {
-    GlobalSearchScope scope = GlobalSearchScope.projectScope(haxeClass.getProject());
 
-    return DefinitionsScopedSearch.search(haxeClass, scope, false)
-        .allowParallelProcessing()
-        .filtering(element -> element instanceof HaxeClass)
-        .mapping( element -> (HaxeClass) element)
-        .filtering(aClass -> !aClass.isObjectLiteralType())// ignore object literals as they do not inherit
-        .filtering(element ->
-            Arrays.stream(element.getSuperTypes()).map(PsiClassType::resolve).anyMatch(psiClass -> psiClass == haxeClass)
-      ).findAll();
-  }
-  public static List<HaxeClass> getItemsByQNameIncludingSubChildren(final HaxeClass haxeClass) {
-    final List<HaxeClass> result = new ArrayList<HaxeClass>();
-    DefinitionsScopedSearch.search(haxeClass).allowParallelProcessing().forEach(element -> {
-      if (element instanceof HaxeClass) {
-        result.add((HaxeClass)element);
-      }
-      return true;
-    });
-    return result;
-  }
 
   /** Package access.  This should only be called from HaxeInheritanceDefinitionsSearchExecutor. */
   @Override

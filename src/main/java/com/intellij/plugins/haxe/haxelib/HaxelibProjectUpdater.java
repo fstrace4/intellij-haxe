@@ -452,6 +452,7 @@ public class HaxelibProjectUpdater {
     timeLog.stamp("Queueing write action...");
 
     doWriteAction(() -> {
+      if(module.isDisposed() || tracker.getProject().isDisposed()) return;
       timeLog.stamp("<-- Time elapsed waiting for write access on the AWT thread.");
       timeLog.stamp("Begin: Updating module libraries for " + module.getName());
 
@@ -511,14 +512,12 @@ public class HaxelibProjectUpdater {
    */
   private void syncOneModule(@NotNull final ProjectTracker tracker, @NotNull Module module, @NotNull HaxeDebugTimeLog timeLog,
                              boolean forceUpdate) {
+    if (!module.isDisposed() && !tracker.getProject().isDisposed()) {
+      Project project = tracker.getProject();
+      HaxeLibraryList haxelibExternalItems = new HaxeLibraryList(module);
+      ModuleLibraryCache libManager = tracker.getLibraryManager().getLibraryManager(module);
+      HaxeModuleSettings settings = HaxeModuleSettings.getInstance(module);
 
-    Project project = tracker.getProject();
-    HaxeLibraryList haxelibExternalItems = new HaxeLibraryList(module);
-    ModuleLibraryCache libManager = tracker.getLibraryManager().getLibraryManager(module);
-    HaxeModuleSettings settings = HaxeModuleSettings.getInstance(module);
-
-    //ApplicationManager.getApplication().runReadAction(() -> {
-      // If the module says not to keep libs synched, then don't.
       if (!settings.isKeepSynchronizedWithProjectFile()) {
         timeLog.stamp("Module " + module.getName() + " is set to not synchronize dependencies.");
         return;
@@ -534,7 +533,7 @@ public class HaxelibProjectUpdater {
           break;
 
         case HXML:
-          syncHxml(module, timeLog, project, haxelibExternalItems,libManager, settings);
+          syncHxml(module, timeLog, project, haxelibExternalItems, libManager, settings);
 
           break;
 
@@ -554,10 +553,11 @@ public class HaxelibProjectUpdater {
       // library list here because we need to remove any managed classpaths that
       // are no longer valid in the modules.  We can't do that if we don't have
       // the list of valid ones.  :/
-    //});
-    timeLog.stamp("Adding libraries to module.");
-    resolveModuleLibraries(tracker, module, haxelibExternalItems, forceUpdate);
-    timeLog.stamp("Finished adding libraries to module.");
+
+      timeLog.stamp("Adding libraries to module.");
+      resolveModuleLibraries(tracker, module, haxelibExternalItems, forceUpdate);
+      timeLog.stamp("Finished adding libraries to module.");
+    }
   }
 
   private static void syncHxml(@NotNull Module module,
@@ -1614,6 +1614,10 @@ public class HaxelibProjectUpdater {
       ProjectTracker tracker = getUpdatingProject();
       if (null == tracker) {
         log.warn("Attempt to load libraries, but no project queued for updating.");
+        return;
+      }
+      if(tracker.getProject().isDisposed()) {
+        log.warn("Attempt to load libraries, after project has been disposed.");
         return;
       }
       synchronizeClasspaths(tracker);

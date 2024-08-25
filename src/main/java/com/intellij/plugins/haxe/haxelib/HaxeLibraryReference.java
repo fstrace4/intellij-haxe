@@ -77,6 +77,7 @@ public class HaxeLibraryReference {
 
   public static HaxeLibraryReference create(@NotNull Module module, @NotNull String name) {
     ModuleLibraryCache owner = HaxelibProjectUpdater.getLibraryCache(module);
+    if (owner == null) return null;
     return create(owner, name);
   }
 

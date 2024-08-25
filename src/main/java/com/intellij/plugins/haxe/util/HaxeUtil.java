@@ -31,6 +31,7 @@ import com.intellij.plugins.haxe.HaxeFileType;
 import com.intellij.plugins.haxe.ide.projectStructure.autoimport.HaxelibAutoImport;
 import com.intellij.util.FileContentUtil;
 import com.intellij.util.indexing.FileBasedIndex;
+import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -39,11 +40,16 @@ import java.util.Collection;
 /**
  * @author: Fedor.Korotkov
  */
+@CustomLog
 public class HaxeUtil {
   public static void reparseProjectFiles(@NotNull final Project project) {
     reparseProjectFiles(project, true);
   }
   public static void reparseProjectFiles(@NotNull final Project project, boolean invalidateBuildConfig) {
+    if(project.isDisposed()) {
+      log.warn("not going to reparse files - project Disposed");
+      return;
+    }
 
     if (invalidateBuildConfig) {
       ExternalSystemProjectTracker.getInstance(project).markDirty(HaxelibAutoImport.mySystemProjectId);
@@ -64,6 +70,10 @@ public class HaxeUtil {
         }
         ApplicationManager.getApplication().invokeAndWait(new Runnable() {
           public void run() {
+            if(project.isDisposed()) {
+              log.warn("not going to reparse files - project Disposed");
+              return;
+            }
             FileContentUtil.reparseFiles(project, haxeFiles, !project.isDefault());
           }
         }, ModalityState.nonModal());

@@ -23,7 +23,7 @@ import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
 import com.intellij.ide.hierarchy.HierarchyTreeStructure;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.ide.hierarchy.HaxeHierarchyUtils;
-import com.intellij.plugins.haxe.ide.index.HaxeInheritanceDefinitionsSearcher;
+import com.intellij.plugins.haxe.ide.index.HaxeInheritanceDefinitionsUtil;
 import com.intellij.plugins.haxe.lang.psi.HaxeAnonymousType;
 import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxePsiModifier;
@@ -53,7 +53,7 @@ public class HaxeMethodHierarchyTreeStructure extends HierarchyTreeStructure {
 
   // This is really the only thing we were overriding from MethodHierarchyTreeStructure.
   public static List<HaxeClass> getSubclasses(HaxeClass theClass) {
-    final List<HaxeClass> subClasses = HaxeInheritanceDefinitionsSearcher.getItemsByQNameIncludingSubChildren(theClass);
+    final List<HaxeClass> subClasses = HaxeInheritanceDefinitionsUtil.getItemsByQNameIncludingSubChildren(theClass);
     return subClasses;
   }
 
