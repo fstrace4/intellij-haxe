@@ -1,6 +1,5 @@
 package com.intellij.plugins.haxe.ide.completion;
 
-import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.completion.PrioritizedLookupElement;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
@@ -8,21 +7,19 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Set;
 
+import static com.intellij.plugins.haxe.ide.completion.HaxeCompletionUtil.flushChanges;
+import static com.intellij.plugins.haxe.ide.completion.HaxeCompletionUtil.reformatAndAdjustIndent;
 import static com.intellij.plugins.haxe.ide.completion.KeywordCompletionData.*;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.IN_KEYWORD;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.IS_KEYWORD;
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.*;
 
 public class HaxeKeywordCompletionUtil {
-
 
 
   public static final Set<KeywordCompletionData> PACKAGE_KEYWORD = Set.of(keywordWithSpace(KPACKAGE));
@@ -81,7 +78,7 @@ public class HaxeKeywordCompletionUtil {
     Set.of(keywordOnly(KNULL),
            keywordOnly(KTRUE),
            keywordOnly(KFALSE)
-           );
+    );
 
   public static final Set<KeywordCompletionData> SWITCH_BODY_KEYWORDS = Set.of(keywordWithSpace(KCASE),
                                                                                keywordWithSpace(KDEFAULT));
@@ -95,13 +92,13 @@ public class HaxeKeywordCompletionUtil {
                                                                             keywordOnly(KDYNAMIC));
 
   public static final Set<KeywordCompletionData> MISC_KEYWORDS = Set.of(keywordWithSpace(KMACRO2),
-                                                                      keywordWithSpace(KUNTYPED));
+                                                                        keywordWithSpace(KUNTYPED));
 
   public static final Set<KeywordCompletionData> PP_KEYWORDS = Set.of(keywordWithSpace(PPIF, false, true),
-                                                                      keywordWithSpace(PPELSE,false, true),
-                                                                      keywordWithSpace(PPELSEIF,false, true),
-                                                                      keywordWithSpace(PPEND,false, true),
-                                                                      keywordWithSpace(PPERROR,false, true));
+                                                                      keywordWithSpace(PPELSE, false, true),
+                                                                      keywordWithSpace(PPELSEIF, false, true),
+                                                                      keywordWithSpace(PPEND, false, true),
+                                                                      keywordWithSpace(PPERROR, false, true));
 
 
   public static void addKeywords(List<LookupElement> result, Set<KeywordCompletionData> keywords) {
@@ -158,21 +155,4 @@ public class HaxeKeywordCompletionUtil {
 
     return builder;
   }
-
-  private static void flushChanges(Project project, Document document) {
-    PsiDocumentManager instance = PsiDocumentManager.getInstance(project);
-    instance.doPostponedOperationsAndUnblockDocument(document);
-    instance.commitDocument(document);
-  }
-
-  private static void reformatAndAdjustIndent(InsertionContext context, TextRange range) {
-    Editor editor = context.getEditor();
-    Project project = editor.getProject();
-    PsiFile file = context.getFile();
-
-    CodeStyleManager styleManager = CodeStyleManager.getInstance(project);
-    styleManager.reformatRange(file, range.getStartOffset(), range.getEndOffset());
-    styleManager.adjustLineIndent(file, editor.getCaretModel().getOffset());
-  }
-
 }

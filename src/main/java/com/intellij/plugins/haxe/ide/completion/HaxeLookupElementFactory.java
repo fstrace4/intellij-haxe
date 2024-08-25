@@ -32,11 +32,14 @@ import javax.swing.*;
 
 public class HaxeLookupElementFactory {
   public static LookupElementBuilder create(@NotNull HaxeModel model) {
-    return create(model, null);
+    return create(model, null, true);
   }
 
   @Nullable
   public static LookupElementBuilder create(@NotNull HaxeModel model, @Nullable String alias) {
+    return create(model, alias, true);
+  }
+  public static LookupElementBuilder create(@NotNull HaxeModel model, @Nullable String alias, boolean showAliasText) {
     PsiElement basePsi = model.getBasePsi();
     HaxeNamedComponent namedComponent = getNamedComponent(basePsi);
 
@@ -65,12 +68,38 @@ public class HaxeLookupElementFactory {
     if (icon != null) lookupElement = lookupElement.withIcon(icon);
 
     if (tailText != null) {
-      if (alias != null) {
+      if (alias != null && showAliasText) {
         tailText = HaxeBundle.message("haxe.lookup.alias", tailText + "." + model.getName());
       }
       tailText = " " + tailText;
       lookupElement = lookupElement.withTailText(tailText, true);
     }
+
+    return lookupElement;
+  }
+
+  public static LookupElementBuilder create(@NotNull HaxeNamedComponent namedComponent, @Nullable String alias) {
+
+    String name = StringUtil.defaultIfEmpty(alias, namedComponent.getName());
+    String presentableText = null;
+    Icon icon = null;
+
+    ItemPresentation presentation = namedComponent.getPresentation();
+    if (presentation != null) {
+      icon = presentation.getIcon(false);
+      presentableText = presentation.getPresentableText();
+    }
+
+    LookupElementBuilder lookupElement = LookupElementBuilder.create(namedComponent, name);
+
+    if (presentableText != null) {
+      if (alias != null) {
+        presentableText = alias;
+      }
+      lookupElement = lookupElement.withPresentableText(presentableText);
+    }
+
+    if (icon != null) lookupElement = lookupElement.withIcon(icon);
 
     return lookupElement;
   }

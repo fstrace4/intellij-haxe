@@ -238,7 +238,8 @@ suffixOperator ::= '!'                { extends=operator }
 // KFROM ('from') and KTO ('to') are only keywords for abstracts and can be used as identifiers elsewhere in the code (KNEVER ('never') is only used for getters/setters)
 private identifierWithKeywordName::= 'from' | 'to' | 'never'
 
-macroIdentifier ::=   (<<canBeReification>> macroIdentifierReification | MACRO_ID)
+//NOTE: <<incompleteMacroIdentifier>> consumes "$" and marks element with error, this to avoid lots of dummy blocks when recovering
+macroIdentifier ::=   (<<canBeReification>> macroIdentifierReification | MACRO_ID) | <<incompleteMacroIdentifier>>
 {mixin="com.intellij.plugins.haxe.lang.psi.impl.HaxeIdentifierPsiMixinImpl" implements="com.intellij.plugins.haxe.lang.psi.HaxeIdentifierPsiMixin" extends="identifier"}
 private normalIdentifier ::= ID | identifierWithKeywordName
 
@@ -593,11 +594,16 @@ macroFieldReification::= "$p" macroStatementWrapper {mixin="com.intellij.plugins
 macroValueReification::= "$v" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
 
 macroExpReification::= "$e" macroStatementWrapper {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"}
-macroShorthandExpReification::= '$' "{" expression "}" {mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"} // shorthand for $e / expression ?
+macroShorthandExpReification::= '$' macroStatementWrapper // shorthand for $e / expression ?
+{
+  pin=1 recoverWhile=expression_recover
+  mixin="com.intellij.plugins.haxe.lang.psi.HaxeReificationExpression"
+}
 
 private macroStatementWrapper ::= "{" expression "}"
+{ pin=1 recoverWhile=expression_recover }
 
-macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (macroShorthandExpReification | macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroValueReification | macroExpReification )
+macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (| macroArrayReification | macroBlockReification | macroIdentifierReification | macroFieldReification  | macroValueReification | macroExpReification | macroShorthandExpReification)
 
 
 //Class Reification
@@ -785,7 +791,7 @@ callExpressionList ::= forStatement | whileStatement | spreadExpression | (expre
 expressionList ::= forStatement | whileStatement | (expression (',' expression)*)  ','? {recoverWhile="expression_list_recover"}
 private expression_list_recover ::= !(')' | ']' | fatArrowOperator) // fatArrowOperator("=>") is here to avoid problems where enum extractors are mis-parsed as callExpressions
 
-private expression_recover ::= !('!' | '!=' | '%' | '%=' | '&&' | '&' | '&=' | '(' | ')' | '*' | '*=' | '+' | '++' | '+=' | ',' | '-' | '--' | '-=' | '.' | '...' | '/' | '/=' | ':' | ';' | '<' | '<<' | '<<=' | '<=' | '=' | '==' | '>' | <<shiftRight>> | <<unsignedShiftRight>> | <<gtEq>> | <<shiftRightAssign>> | <<unsignedShiftRightAssign>> | '?' | '[' | ']' | '^' | '^=' | 'break' | 'case' | 'cast' | 'catch' | 'continue' | 'default' | 'do' | 'dynamic' | 'else' | 'extern' | 'false' | 'final' | 'for' | 'function' | 'if' | 'inline' | 'new' | 'null' | 'override' | 'private' | 'public' | 'return' | 'static' | 'super' | 'switch' | 'this' | 'throw' | 'true' | 'try' | 'untyped' | 'var' | 'while' | '{' | '|' | '|=' | '||' | '}' | '~' | ID | LITFLOAT | LITHEX | LITINT | LITOCT | OPEN_QUOTE | CLOSING_QUOTE | META_ID | REG_EXP | LONG_TEMPLATE_ENTRY_END | '=>') !metaKeyWord
+private expression_recover ::= !('!' | '!=' | '%' | '%=' | '&&' | '&' | '&=' | '(' | ')' | '*' | '*=' | '+' | '++' | '+=' | ',' | '-' | '--' | '-=' | '.' | '...' | '/' | '/=' | ':' | ';' | '<' | '<<' | '<<=' | '<=' | '=' | '==' | '>' | <<shiftRight>> | <<unsignedShiftRight>> | <<gtEq>> | <<shiftRightAssign>> | <<unsignedShiftRightAssign>> | '?' | '[' | ']' | '^' | '^=' | 'break' | 'case' | 'cast' | 'catch' | 'continue' | 'default' | 'do' | 'dynamic' | 'else' | 'extern' | 'false' | 'final' | 'for' | 'function' | 'if' | 'inline' | 'new' | 'null' | 'override' | 'private' | 'public' | 'return' | 'static' | 'super' | 'switch' | 'this' | 'throw' | 'true' | 'try' | 'untyped' | 'var' | 'while' | '{' | '|' | '|=' | '||' | '}' | '~' | ID | LITFLOAT | LITHEX | LITINT | LITOCT | OPEN_QUOTE | CLOSING_QUOTE | META_ID | REG_EXP | LONG_TEMPLATE_ENTRY_END | '=>'| '$') !metaKeyWord
 
 // This list is in reversed operator precedence order -- lowest on top.
 // The things on top are still matched first.

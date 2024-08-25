@@ -30,9 +30,11 @@ import com.intellij.plugins.haxe.lang.psi.impl.AnonymousHaxeTypeImpl;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.resolve.reference.impl.PsiMultiReference;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
+import com.intellij.psi.scope.PsiScopeProcessor;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.MethodSignatureUtil;
+import com.intellij.psi.util.PsiTreeUtil;
 import lombok.CustomLog;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
@@ -415,5 +417,74 @@ public class HaxeHierarchyUtils {
     return parentClass == null
            || method.isConstructor()
            || method.hasModifierProperty(PsiModifier.STATIC);
+  }
+
+  public  static List<HaxeComponentName> findMembersByWalkingTree (@NotNull PsiElement element) {
+    List<HaxeComponentName> members = new ArrayList<>();
+    CollectMembersScopeProcessor processor = new CollectMembersScopeProcessor(members);
+    PsiTreeUtil.treeWalkUp(processor, element, element.getContainingFile(), new ResolveState());
+      return members;
+  }
+
+  private static class CollectMembersScopeProcessor implements PsiScopeProcessor {
+    private final List<HaxeComponentName> result;
+
+    private CollectMembersScopeProcessor(List<HaxeComponentName> result) {
+      this.result = result;
+    }
+
+    @Override
+    public boolean execute(@NotNull PsiElement element, ResolveState state) {
+      addNormalEmbers(element);
+      addEnumObjectLiterals(element);
+      addMembersFromSwitchCase(element);
+      return true;
+    }
+
+    private void addEnumObjectLiterals(@NotNull PsiElement element) {
+      if (element.getParent() instanceof HaxeEnumObjectLiteralElement) {
+        //TODO
+        //result.add(element);
+      }
+    }
+
+    private void addNormalEmbers(@NotNull PsiElement element) {
+      HaxeComponentName componentName = null;
+      if (element instanceof HaxeComponentName haxeComponentName ) {
+        componentName = haxeComponentName;
+      }
+      else if (element instanceof HaxeNamedComponent namedComponent) {
+        componentName = namedComponent.getComponentName();
+      }
+      else if (element instanceof HaxeOpenParameterList parameterList) {
+        componentName = parameterList.getUntypedParameter().getComponentName();
+
+      }
+      if(componentName != null) result.add(componentName);
+    }
+
+    private void addMembersFromSwitchCase(PsiElement element) {
+      if (element instanceof HaxeSwitchCaseExpr expr) {
+        if (expr.getSwitchCaseCaptureVar() != null) {
+          HaxeComponentName componentName = expr.getSwitchCaseCaptureVar().getComponentName();
+          result.add(componentName);
+        }
+        else {
+          HaxeExpression expression = expr.getExpression();
+          if (expression instanceof HaxeEnumArgumentExtractor extractor) {
+            HaxeEnumExtractorArgumentList argumentList = extractor.getEnumExtractorArgumentList();
+
+            List<HaxeEnumExtractedValue> list = argumentList.getEnumExtractedValueList();
+            for (HaxeEnumExtractedValue extractedValue : list) {
+              HaxeEnumExtractedValueReference valueReference = extractedValue.getEnumExtractedValueReference();
+              if (valueReference != null) {
+                HaxeComponentName componentName = valueReference.getComponentName();
+                result.add(componentName);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 } // END class HaxeHierarchyUtils

@@ -189,6 +189,15 @@ public class HaxeGeneratedParserUtilBase extends GeneratedParserUtilBase {
     IElementType type = builder_.rawLookup(0) ;
     return type == DOLLAR || type == MACRO_ID;
   }
+  public static boolean incompleteMacroIdentifier(PsiBuilder builder_, int level) {
+    IElementType type = builder_.rawLookup(0) ;
+    if(type == DOLLAR) {
+      builder_.error(HaxeBundle.message("parsing.error.missing.identifier"));
+      consumeTokenFast(builder_, DOLLAR);
+      return  true;
+    }
+    return false;
+  }
 
   private static final com.intellij.openapi.util.Key<Stack<Boolean>> SEMICOLON_RULE_STATE = new Key<>("SEMICOLON_RULE_STATE");
   private static final com.intellij.openapi.util.Key<Stack<Boolean>> COLLECTION_INITIALIZER_STATE = new Key<>("COLLECTION_INITIALIZER_STATE");

@@ -17,6 +17,7 @@
 package com.intellij.plugins.haxe.ide.completion;
 
 import com.intellij.patterns.*;
+import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
 import com.intellij.plugins.haxe.lang.psi.*;
 
 import com.intellij.plugins.haxe.util.HaxeDebugPsiUtil;
@@ -73,8 +74,12 @@ public class HaxeCommonCompletionPattern {
   public static final PsiElementPattern.Capture<PsiElement> inFunctionTypeTag =
     elementPattern("inFunctionTypeTag")
       .afterLeafSkipping(skippableWhitespace, psiElement().withText(":"))
-      .andNot(inSwitchStatement)
-      ;
+      .andNot(inSwitchStatement);
+
+  public static final PsiElementPattern.Capture<PsiElement> inReificationOrMacro =
+    elementPattern("inReificationOrMacro")
+      .and(psiElement().withElementType(HaxeTokenTypes.MACRO_ID))
+      .andNot(StandardPatterns.instanceOf(HaxeStringLiteralExpression.class));
 
   /**
    * Create a new capture rule that requires the matched token to be a
