@@ -1,4 +1,14 @@
 # Changelog
+## 1.5.10
+* Improvement: Treat Optional parameter and field types as `null<T>` (same as compiler)
+* Improvement: Completion suggestion for reification and some macro expressions. 
+* Improvement: Extract method now checks if method needs to be static. 
+* Bugfix: Fixing issue with extra closing brace when typing `${` outside of strings (#298)
+* Bugfix: Fixing some incorrect missing semicolon parser errors
+* Bugfix: Fixing parser issues with callExpressions in ExtractorMatchExpression
+* Misc: Resolver tweaks when finding type from usage (use most specific type)
+* Misc: Internal plugin code changes attempting to more gracefully close projects(#1187) 
+
 ## 1.5.9
 * Bugfix: Completion did not work properly with haxe 3.1 extensions annotation in typedefs.(#1184)
 * Bugfix: Fixed issue where assign check from class to anonymous type would fail because inherited members where not included. 
