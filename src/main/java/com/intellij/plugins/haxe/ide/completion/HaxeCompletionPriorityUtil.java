@@ -59,7 +59,6 @@ public class HaxeCompletionPriorityUtil {
     if(reference != null && reference.getParent() instanceof HaxeAssignExpression assignExpression) {
       HaxeExpression assignTo = assignExpression.getExpressionList().get(0);
       assignToType = HaxeExpressionEvaluator.evaluate(assignTo, null).result;
-
     }
     if(reference != null && reference.getParent() instanceof HaxeVarInit init) {
       PsiElement parent = init.getParent();

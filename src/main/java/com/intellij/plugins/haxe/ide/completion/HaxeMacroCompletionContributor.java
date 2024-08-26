@@ -2,11 +2,12 @@ package com.intellij.plugins.haxe.ide.completion;
 
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
-import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.plugins.haxe.ide.hierarchy.HaxeHierarchyUtils;
+import com.intellij.plugins.haxe.ide.lookup.HaxeMacroLookupElement;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
-import com.intellij.plugins.haxe.lang.psi.HaxeNamedComponent;
-import com.intellij.plugins.haxe.model.HaxeModelTarget;
+import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
+import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ProcessingContext;
@@ -63,14 +64,14 @@ public class HaxeMacroCompletionContributor extends CompletionContributor {
   }
 
   private static void addMacroIdentifiers(CompletionResultSet result, PsiElement position) {
+    //TODO we need to add enum extractor values in some way.
     List<HaxeComponentName> members = HaxeHierarchyUtils.findMembersByWalkingTree(position);
     for (HaxeComponentName name : members) {
-      if (name.getParent() instanceof HaxeModelTarget modelTarget) {
-        LookupElementBuilder builder = HaxeLookupElementFactory.create(modelTarget.getModel(), "$" + name.getText(), false);
-        if (builder!= null) result.addElement(builder);
-      }else if (name.getParent() instanceof  HaxeNamedComponent namedComponent){
-        LookupElementBuilder builder = HaxeLookupElementFactory.create(namedComponent, "$" + name.getText());
-        result.addElement(builder);
+      // ignoring type definitions and method/function definitions
+      HaxeBaseMemberModel model = HaxeBaseMemberModel.fromPsi(name);
+      if (model != null && !(model instanceof HaxeMethodModel)) {
+        HaxeMacroLookupElement lookupElement = HaxeMacroLookupElement.create(name, new HaxeGenericResolver());
+        result.addElement(lookupElement.toPrioritized());
       }
     }
   }
@@ -83,7 +84,9 @@ public class HaxeMacroCompletionContributor extends CompletionContributor {
 
   public static void addReificationSuggestions(List<LookupElement> result, Set<MacroCompletionData> macroCompletionData) {
     for (MacroCompletionData completionData : macroCompletionData) {
-      result.add(reificationLookupElement(completionData));
+      LookupElement lookupElement = reificationLookupElement(completionData);
+      LookupElement withPriorityZero = PrioritizedLookupElement.withPriority(lookupElement, 0);
+      result.add(withPriorityZero);
     }
   }
 }
