@@ -419,11 +419,11 @@ public class HaxeHierarchyUtils {
            || method.hasModifierProperty(PsiModifier.STATIC);
   }
 
-  public  static List<HaxeComponentName> findMembersByWalkingTree (@NotNull PsiElement element) {
+  public static List<HaxeComponentName> findMembersByWalkingTree(@NotNull PsiElement element) {
     List<HaxeComponentName> members = new ArrayList<>();
     CollectMembersScopeProcessor processor = new CollectMembersScopeProcessor(members);
     PsiTreeUtil.treeWalkUp(processor, element, element.getContainingFile(), new ResolveState());
-      return members;
+    return members;
   }
 
   private static class CollectMembersScopeProcessor implements PsiScopeProcessor {

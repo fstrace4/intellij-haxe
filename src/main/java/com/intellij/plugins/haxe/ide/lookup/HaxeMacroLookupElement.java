@@ -74,15 +74,22 @@ public class HaxeMacroLookupElement extends LookupElement implements HaxeLookupE
 
     if (!isFunctionType) {
       final ItemPresentation myComponentNamePresentation = myComponentName.getPresentation();
-      if (myComponentNamePresentation == null) return;
-      icon = myComponentNamePresentation.getIcon(true);
-    } else {
-      // TODO functionType references should perhaps have its own icon?
-      icon = HaxeIcons.Field;
+      if (myComponentNamePresentation != null) {
+        icon = myComponentNamePresentation.getIcon(true);
+      }
+      else {
+        // TODO functionType references should perhaps have its own icon?
+        icon = HaxeIcons.Field;
+      }
+      if (model != null) {
+        determineStriketrough();
+        evaluateTypeTextAndPriorityBoost();
+      }
     }
-    if (model != null) {
-      determineStriketrough();
-      evaluateTypeTextAndPriorityBoost();
+    // currently defaulting to Variable icon for unspecified types (enum extracted values etc.)
+    if (icon == null) {
+      //TODO should probably make icons for extracted values etc.
+      icon = HaxeIcons.Variable;
     }
   }
 

@@ -4,16 +4,20 @@ import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.plugins.haxe.ide.hierarchy.HaxeHierarchyUtils;
 import com.intellij.plugins.haxe.ide.lookup.HaxeMacroLookupElement;
+import com.intellij.plugins.haxe.lang.psi.HaxeClass;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
-import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
-import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.lang.psi.impl.ComponentNameScopeProcessor;
+import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.ResolveState;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -64,15 +68,17 @@ public class HaxeMacroCompletionContributor extends CompletionContributor {
   }
 
   private static void addMacroIdentifiers(CompletionResultSet result, PsiElement position) {
-    //TODO we need to add enum extractor values in some way.
+    Set<HaxeComponentName> suggestedVariants = new HashSet<>();
+    PsiTreeUtil.treeWalkUp(new ComponentNameScopeProcessor(suggestedVariants), position, null, new ResolveState());
+
     List<HaxeComponentName> members = HaxeHierarchyUtils.findMembersByWalkingTree(position);
     for (HaxeComponentName name : members) {
       // ignoring type definitions and method/function definitions
-      HaxeBaseMemberModel model = HaxeBaseMemberModel.fromPsi(name);
-      if (model != null && !(model instanceof HaxeMethodModel)) {
+      HaxeModel model = HaxeBaseMemberModel.fromPsi(name);
+      if ((model instanceof HaxeMethodModel) || (name.getParent() instanceof HaxeClass)) continue;
         HaxeMacroLookupElement lookupElement = HaxeMacroLookupElement.create(name, new HaxeGenericResolver());
         result.addElement(lookupElement.toPrioritized());
-      }
+
     }
   }
 
