@@ -1445,6 +1445,7 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
   }
 
   private static final RecursionGuard<PsiElement> extensionsFromMetaGuard = RecursionManager.createGuard("extensionsFromMetaGuard");
+  private static final RecursionGuard<PsiElement> extensionsMethodGuard = RecursionManager.createGuard("extensionsMethodGuard");
 
   /**
    * Resolve a chain reference, given two references: the qualifier, and the name.
@@ -1465,10 +1466,15 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
 
     String identifier = reference instanceof HaxeReferenceExpression referenceExpression ? referenceExpression.getIdentifier().getText() : reference.getText();
     HaxeExpressionEvaluatorContext context = new HaxeExpressionEvaluatorContext(lefthandExpression);
-    ResultHolder result = HaxeExpressionEvaluator.evaluateWithRecursionGuard(lefthandExpression, context, null).result;
 
+    ResultHolder result = extensionsMethodGuard.doPreventingRecursion(lefthandExpression, true, () -> {
+      return HaxeExpressionEvaluator.evaluate(lefthandExpression, context, null).result;
+    });
+    if(result== null) {
+      extensionsMethodGuard.prohibitResultCaching(lefthandExpression);
+    }
 
-    SpecificHaxeClassReference classType = result.isUnknown() ? null : result.getClassType();
+    SpecificHaxeClassReference classType = result == null || result.isUnknown() ? null : result.getClassType();
     HaxeClass  haxeClass = classType != null ? classType.getHaxeClass() : null;
 
     // To avoid incorrect extension method results we avoid any results where we don't know type of left reference.
