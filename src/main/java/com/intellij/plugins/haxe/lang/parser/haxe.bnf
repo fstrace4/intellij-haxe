@@ -610,10 +610,10 @@ macroExpressionReification::=  (embeddedMeta)* <<canBeReification>> (| macroArra
 macroClassReification ::= 'macro' macroTopLevelDeclaration
 
 // type Reification
-private TPath ::=  simpleQualifiedReferenceExpression
+private TPath ::=  type
 private TFunction ::= arrowFunctionLiteral
 private TAnonymous ::= anonymousTypeBody  // TODO mlo: make a better expression
-private TParent ::= type
+private TParent ::= '(' type ')'
 private TExtend ::= '{>' type ',' identifier ',' type '}' // TODO mlo: make a better expression
 private TOptional ::= '?' type
 

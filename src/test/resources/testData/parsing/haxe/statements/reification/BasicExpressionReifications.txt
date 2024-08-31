@@ -45,14 +45,51 @@ Haxe File
                   TYPE
                     REFERENCE_EXPRESSION
                       IDENTIFIER
-                        HaxePsiToken:ID('Expr')
+                        HaxePsiToken:ID('Array')
+                    TYPE_PARAM
+                      HaxePsiToken:<('<')
+                      TYPE_LIST
+                        TYPE_LIST_PART
+                          TYPE_OR_ANONYMOUS
+                            TYPE
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('String')
+                      HaxePsiToken:>('>')
           HaxePsiToken:)(')')
+          TYPE_TAG
+            HaxePsiToken::(':')
+            TYPE_OR_ANONYMOUS
+              TYPE
+                REFERENCE_EXPRESSION
+                  IDENTIFIER
+                    HaxePsiToken:ID('ExprOf')
+                TYPE_PARAM
+                  HaxePsiToken:<('<')
+                  TYPE_LIST
+                    TYPE_LIST_PART
+                      TYPE_OR_ANONYMOUS
+                        TYPE
+                          REFERENCE_EXPRESSION
+                            IDENTIFIER
+                              HaxePsiToken:ID('Array')
+                          TYPE_PARAM
+                            HaxePsiToken:<('<')
+                            TYPE_LIST
+                              TYPE_LIST_PART
+                                TYPE_OR_ANONYMOUS
+                                  TYPE
+                                    REFERENCE_EXPRESSION
+                                      IDENTIFIER
+                                        HaxePsiToken:ID('String')
+                            HaxePsiToken:>('>')
+                  HaxePsiToken:>('>')
           BLOCK_STATEMENT
             HaxePsiToken:{('{')
             RETURN_STATEMENT
               HaxePsiToken:return('return')
-              PARENTHESIZED_EXPRESSION
-                HaxePsiToken:(('(')
+              MACRO_STATEMENT
+                HaxePsiToken:macro('macro')
                 VALUE_EXPRESSION
                   MACRO_EXPRESSION_REIFICATION
                     MACRO_ARRAY_REIFICATION
@@ -62,8 +99,7 @@ Haxe File
                         IDENTIFIER
                           HaxePsiToken:ID('inputArray')
                       HaxePsiToken:}('}')
-                HaxePsiToken:)(')')
-              HaxePsiToken:;(';')
+                HaxePsiToken:;(';')
             HaxePsiToken:}('}')
         METHOD_DECLARATION
           METHOD_MODIFIER
@@ -84,7 +120,7 @@ Haxe File
               TYPE
                 REFERENCE_EXPRESSION
                   IDENTIFIER
-                    HaxePsiToken:ID('Expr')
+                    HaxePsiToken:ID('ExprOf')
                 TYPE_PARAM
                   HaxePsiToken:<('<')
                   TYPE_LIST
@@ -148,17 +184,7 @@ Haxe File
                   TYPE
                     REFERENCE_EXPRESSION
                       IDENTIFIER
-                        HaxePsiToken:ID('Array')
-                    TYPE_PARAM
-                      HaxePsiToken:<('<')
-                      TYPE_LIST
-                        TYPE_LIST_PART
-                          TYPE_OR_ANONYMOUS
-                            TYPE
-                              REFERENCE_EXPRESSION
-                                IDENTIFIER
-                                  HaxePsiToken:ID('Expr')
-                      HaxePsiToken:>('>')
+                        HaxePsiToken:ID('Int')
           HaxePsiToken:)(')')
           BLOCK_STATEMENT
             HaxePsiToken:{('{')
@@ -299,7 +325,26 @@ Haxe File
               TYPE
                 REFERENCE_EXPRESSION
                   IDENTIFIER
-                    HaxePsiToken:ID('Dynamic')
+                    HaxePsiToken:ID('ExprOf')
+                TYPE_PARAM
+                  HaxePsiToken:<('<')
+                  TYPE_LIST
+                    TYPE_LIST_PART
+                      FUNCTION_TYPE
+                        FUNCTION_ARGUMENT
+                          TYPE_OR_ANONYMOUS
+                            TYPE
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('Void')
+                        HaxePsiToken:->('->')
+                        FUNCTION_RETURN_TYPE
+                          TYPE_OR_ANONYMOUS
+                            TYPE
+                              REFERENCE_EXPRESSION
+                                IDENTIFIER
+                                  HaxePsiToken:ID('Dynamic')
+                  HaxePsiToken:>('>')
           BLOCK_STATEMENT
             HaxePsiToken:{('{')
             RETURN_STATEMENT
