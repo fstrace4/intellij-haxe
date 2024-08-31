@@ -26,6 +26,12 @@ class MacroTest {
         // ComplexType.TOptional
         var optional:ComplexType = macro : ?String;
 
+        //ComplexType.TIntersection
+        var intersectionA:ComplexType = macro : {a:String} & {b:String};
+        var intersectionB:ComplexType = macro : MacroTest & {};
+        var intersectionC:ComplexType = macro : $anon & {};
+        var intersectionD:ComplexType = macro : {} & {};
+
     }
 
 

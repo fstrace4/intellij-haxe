@@ -612,13 +612,15 @@ macroClassReification ::= 'macro' macroTopLevelDeclaration
 // type Reification
 private TPath ::=  type
 private TFunction ::= arrowFunctionLiteral
-private TAnonymous ::= anonymousTypeBody  // TODO mlo: make a better expression
+private TAnonymous ::= anonymousTypeBody
 private TParent ::= '(' type ')'
-private TExtend ::= '{>' type ',' identifier ',' type '}' // TODO mlo: make a better expression
+private TExtend ::= '{' extendedAnonymousTypeBody '}'
 private TOptional ::= '?' type
+private TIntersection ::=  TypeOrAnonymous ('&' TypeOrAnonymous)+
+private TypeOrAnonymous ::= anonymousTypeBody | type
 
 //OBS make sure ordering is correct
-complexType ::= (TFunction | TAnonymous | TOptional | TParent | TExtend  | TPath)
+complexType ::= (TFunction |  TOptional | TParent | TIntersection | TExtend  | TAnonymous | TPath)
 macroTypeReification ::= 'macro' ':' complexType {pin=2}
 
 // macro statements can be used as "values" (ex. in method calls) and should not require ";" at the end
