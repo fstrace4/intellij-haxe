@@ -17,6 +17,8 @@
 package com.intellij.plugins.haxe.lang.psi.impl;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.HaxeImportModel;
 import com.intellij.psi.PsiElementVisitor;
@@ -53,9 +55,7 @@ public abstract class HaxeImportStatementPsiMixinImpl extends HaxeStatementPsiMi
   public boolean equals(Object obj) {
     if (obj == null) return false;
     if (obj == this) return true;
-    if (!(obj instanceof HaxeImportStatement)) return false;
-
-    HaxeImportStatement other = (HaxeImportStatement)obj;
+    if (!(obj instanceof HaxeImportStatement other)) return false;
 
     final HaxeReferenceExpression reference = getReferenceExpression();
     final HaxeReferenceExpression otherReference = other.getReferenceExpression();
@@ -81,6 +81,12 @@ public abstract class HaxeImportStatementPsiMixinImpl extends HaxeStatementPsiMi
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.getText());
+    String text;
+    if(ApplicationManager.getApplication().isReadAccessAllowed()) {
+      text = getText();
+    }else {
+      text = ApplicationManager.getApplication().runReadAction((Computable<String>)this::getText);
+    }
+    return Objects.hash(text);
   }
 }
