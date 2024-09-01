@@ -1352,7 +1352,8 @@ public class HaxeExpressionEvaluatorHandlers {
     }
     if (functionType instanceof SpecificFunctionReference ftype) {
 
-      ResultHolder returnType = ftype.getReturnType().tryUnwrapNullType();
+      ResultHolder returnType = ftype.getReturnType();
+      boolean nullWrapped = returnType.isNullWrappedType();
 
       HaxeGenericResolver functionResolver = new HaxeGenericResolver();
       functionResolver.addAll(resolver.withoutArgumentType());
@@ -1363,8 +1364,9 @@ public class HaxeExpressionEvaluatorHandlers {
         functionResolver.addAll(validation.getResolver());
       }
 
-      ResultHolder resolved = functionResolver.resolveReturnType(returnType);
+      ResultHolder resolved = functionResolver.resolveReturnType(returnType.tryUnwrapNullType());
       if (resolved != null && !resolved.isUnknown()) {
+        if(nullWrapped) resolved = resolved.wrapInNullType();
         returnType = resolved;
       }
       if(returnType.isUnknown() || returnType.isDynamic() || returnType.isVoid()) {

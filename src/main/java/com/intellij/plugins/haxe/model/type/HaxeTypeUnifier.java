@@ -77,17 +77,21 @@ public class HaxeTypeUnifier {
     if ((a.isDynamic() || a.isExpr()) && constantIsNullValue(a) && !b.isUnknown()) return b;
     if ((b.isDynamic() || b.isExpr()) && constantIsNullValue(b) && !a.isUnknown()) return a;
 
+    boolean isNullWrapped = a.isNullType() || b.isNullType();
+    SpecificTypeReference referenceA = a.isNullType() ? ((SpecificHaxeClassReference)a).unwrapNullType() : a;
+    SpecificTypeReference referenceB = b.isNullType() ? ((SpecificHaxeClassReference)b).unwrapNullType() : b;
 
-    if (a instanceof SpecificHaxeClassReference && b instanceof SpecificHaxeClassReference) {
+    if (referenceA instanceof SpecificHaxeClassReference classReferenceA && referenceB instanceof SpecificHaxeClassReference classReferenceB) {
 
       if (suggestedType  instanceof SpecificHaxeClassReference suggestedClassReference) {
-        SpecificTypeReference reference = unifyTypes(suggestedClassReference, (SpecificHaxeClassReference)a, context, rules);
-        reference = unifyTypes((SpecificHaxeClassReference)reference, (SpecificHaxeClassReference)b, context, rules);
+        SpecificTypeReference reference = unifyTypes(suggestedClassReference, classReferenceA, context, rules);
+        reference = unifyTypes((SpecificHaxeClassReference)reference, classReferenceB, context, rules);
         if (!reference.isUnknown()) {
           return reference;
         }
       }
-      return unifyTypes((SpecificHaxeClassReference)a, (SpecificHaxeClassReference)b, context, rules);
+      SpecificTypeReference reference = unifyTypes(classReferenceA, classReferenceB, context, rules);
+      return isNullWrapped?  reference.wrapInNullType() : reference;
     }
     if (a instanceof SpecificFunctionReference && b instanceof SpecificFunctionReference) {
       // TODO suggested type support for functions
@@ -164,6 +168,21 @@ public class HaxeTypeUnifier {
     if (b.isDynamic()) return b.withoutConstantValue();
     if (a.getHaxeClassModel() == null) return SpecificTypeReference.getDynamic(context);
     if (b.getHaxeClassModel() == null) return SpecificTypeReference.getDynamic(context);
+
+    // if not same type but typedef, resolve typdefs and try to unify real type
+    if (!a.isSameType(b) && (a.isTypeDef() || b.isTypeDef())) {
+      SpecificTypeReference referenceA = a;
+      SpecificTypeReference referenceB = b;
+      if (a.isTypeDef()) {
+        referenceA = a.fullyResolveTypeDefReference();
+      }
+      if (b.isTypeDef()) {
+        referenceB = b.fullyResolveTypeDefReference();
+      }
+      if (referenceA != null && referenceB != null) {
+        return unify(referenceA, referenceB, context, rules);
+      }
+    }
 
     @NotNull ResultHolder[] specificsA = a.getSpecifics();
     @NotNull ResultHolder[] specificsB = b.getSpecifics();
