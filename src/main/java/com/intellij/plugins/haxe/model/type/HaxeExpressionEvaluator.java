@@ -566,7 +566,7 @@ public class HaxeExpressionEvaluator {
         if (!possibleType.isUnknown()) {
           if (lastValue == null) {
             lastValue = possibleType;
-          } else if (!possibleType.isUnknown()) {
+          } else if (!possibleType.isUnknown() && !possibleType.isDynamic()) {
             //NOTE: don't use unify here (will break function type from  usage)
             // we want to search only for more specific types (ex. EnumValue  & SomeEnum)
             boolean canAssign = lastValue.canAssign(possibleType);

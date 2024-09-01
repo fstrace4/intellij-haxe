@@ -218,6 +218,27 @@ public class ResultHolder {
     return false;
   }
 
+  public boolean containsUnknownTypeParameters() {
+    return containsUnknownTypeParameters(this);
+  }
+  public static boolean containsUnknownTypeParameters(ResultHolder holder) {
+    if (holder.isUnknown()) return  false;
+    if (holder.isTypeParameter()) return true;
+    SpecificTypeReference type = holder.getType();
+    if (type instanceof  SpecificHaxeClassReference classReference) {
+      for (ResultHolder specific : classReference.getSpecifics()) {
+        if (type.isUnknown() || containsUnknownTypeParameters(specific)) return  true;
+      }
+    }
+    if (type instanceof SpecificFunctionReference  function) {
+      List<ResultHolder> parameters = function.getTypeParameters();
+      for (ResultHolder parameter : parameters) {
+          if(parameter.isUnknown()) return true;
+      }
+    }
+    return false;
+  }
+
   public ResultHolder tryUnwrapNullType() {
     SpecificHaxeClassReference classType = getClassType();
     if (classType != null && classType.isNullType()) {
@@ -234,7 +255,6 @@ public class ResultHolder {
   }
 
   public ResultHolder wrapInNullType() {
-    SpecificTypeReference typeToWrap = getType();
-    return SpecificHaxeClassReference.getNull(typeToWrap.getElementContext(), typeToWrap.createHolder()).createHolder();
+    return getType().wrapInNullType().createHolder();
   }
 }

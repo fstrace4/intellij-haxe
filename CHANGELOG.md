@@ -1,4 +1,11 @@
 # Changelog
+## 1.5.11
+* Improvement: Variables and members with only init expression "= null" should now correctly resolve to type Null<T>. 
+* Improvement: Added parser support for `TIntersection` reification (macro : type & type) 
+* Bugfix: Fixed incorrect parsing of `TParent` reification
+* Bugfix: Fixed issue where reification in for-loops would be incorrectly highlighted as error. 
+* Bugfix: Fixed issue where psiElement/Node text was attempted read from thread without read access.
+
 ## 1.5.10
 * Improvement: Treat Optional parameter and field types as `null<T>` (same as compiler)
 * Improvement: Completion suggestion for reification and some macro expressions. 

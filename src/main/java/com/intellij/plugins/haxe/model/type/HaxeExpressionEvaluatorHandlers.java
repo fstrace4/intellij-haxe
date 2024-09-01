@@ -460,7 +460,13 @@ public class HaxeExpressionEvaluatorHandlers {
     }else {
       HaxeVarInit init = declaration.getVarInit();
       if (init != null) {
-        return handle(init.getExpression(), context, resolver);
+        ResultHolder result = handle(init.getExpression(), context, resolver);
+        if (isDynamicBecauseOfNullValueInit(result)) {
+          HaxeComponentName element = declaration.getComponentName();
+          final ResultHolder hint = result;
+          result = tryToFindTypeFromUsage(element, result, hint, context, resolver, null);
+        }
+        return result;
       }
     }
     return createUnknown(declaration);
@@ -558,6 +564,11 @@ public class HaxeExpressionEvaluatorHandlers {
         return SpecificTypeReference.getDynamic(expression).createHolder();
       }
       ResultHolder hint = resolver.getAssignHint();
+      // remove Null wrapping in hints, a new expression can not be Null<> and just adds another unnecessary layer to the generic resolvers
+      if(hint != null && hint.isNullWrappedType()) {
+        hint = hint.tryUnwrapNullType();
+      }
+
       ResultHolder typeHolder = HaxeTypeResolver.getTypeFromType(type, resolver);
       if (hint != null && hint.isClassType()) {
         HaxeGenericResolver localResolver = new HaxeGenericResolver();
@@ -1449,21 +1460,39 @@ public class HaxeExpressionEvaluatorHandlers {
       // search for usage to determine type
       HaxeComponentName element = varDeclaration.getComponentName();
       final ResultHolder hint = result;
-      RecursionManager.markStack();
-      ResultHolder searchResult = evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> {
-          return searchReferencesForType(element, context, resolver, null, hint);
-      });
-      if (searchResult != null) {
-          if (result == null) {
-            result = searchResult;
-          }else if (searchResult.getType().isSameType(result.getType())) {
-            result = HaxeTypeUnifier.unify(result, searchResult);
-          }
+
+      result = tryToFindTypeFromUsage(element, result, hint, context, resolver, null);
+
+      if(result != null && result.containsUnknownTypeParameters()) {
+        result = searchReferencesForTypeParameters(varDeclaration, context, resolver, result);
       }
+
     }
     result = tryGetEnumValuesDeclaringClass(result);
     context.setLocal(name.getText(), result);
     return result != null ? result : createUnknown(varDeclaration);
+  }
+  public static @Nullable ResultHolder tryToFindTypeFromUsage(HaxeComponentName element,
+                                                               ResultHolder result,
+                                                               ResultHolder hint,
+                                                               HaxeExpressionEvaluatorContext context,
+                                                               HaxeGenericResolver resolver,
+                                                              @Nullable PsiElement scope
+  ) {
+    RecursionManager.markStack();
+    ResultHolder searchResult = evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> {
+      return searchReferencesForType(element, context, resolver, scope, hint);
+    });
+    if (searchResult != null && !searchResult.isUnknown()) {
+      if (result == null) {
+        result = searchResult;
+      }else if(isDynamicBecauseOfNullValueInit(result)){
+        result = HaxeTypeUnifier.unify(result, searchResult, UnificationRules.UNIFY_NULL);
+      }else if (searchResult.getType().isSameType(result.getType())) {
+        result = HaxeTypeUnifier.unify(result, searchResult);
+      }
+    }
+    return result;
   }
 
   private static @Nullable ResultHolder tryGetEnumValuesDeclaringClass(ResultHolder result) {
@@ -1489,7 +1518,7 @@ public class HaxeExpressionEvaluatorHandlers {
     return false;
   }
 
-  private static boolean isDynamicBecauseOfNullValueInit(ResultHolder result) {
+  public static boolean isDynamicBecauseOfNullValueInit(ResultHolder result) {
     return  result.getType().isDynamic() && result.getType().getConstant() instanceof HaxeNull;
   }
 

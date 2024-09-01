@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static com.intellij.plugins.haxe.model.type.UnificationRules.UNIFY_NULL;
+
 public class HaxeTypeUnifier {
   @NotNull
   static public ResultHolder unify(ResultHolder a, ResultHolder b) {
@@ -61,8 +63,17 @@ public class HaxeTypeUnifier {
     if (a.isDynamic() && a.getConstant() == null) return a;
     if (b.isDynamic() && b.getConstant() == null) return b;
 
-    //TODO if constant is null, we might have to wrap with Null<T> for the other type
 
+    // Using UnificationRules to make sure we only unify when assigned and not other cases like for instance
+    // `var x = 1 + null`, if we unify null here we would get Null<Int> but this expression should not be allowed
+    if(rules == UNIFY_NULL) {
+      if (constantIsNullValue(a) && !b.isUnknown() && !b.isNullType()) {
+        return b.wrapInNullType();
+      }
+      if (constantIsNullValue(b) && !a.isUnknown() && !a.isNullType()) {
+        return a.wrapInNullType();
+      }
+    }
     if ((a.isDynamic() || a.isExpr()) && constantIsNullValue(a) && !b.isUnknown()) return b;
     if ((b.isDynamic() || b.isExpr()) && constantIsNullValue(b) && !a.isUnknown()) return a;
 

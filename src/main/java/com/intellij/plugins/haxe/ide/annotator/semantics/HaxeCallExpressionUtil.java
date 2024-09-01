@@ -711,9 +711,9 @@ public class HaxeCallExpressionUtil {
       //TODO
       //function literals can inherit from method parameters, and if parameter list contains type parameters then
       // it should be ok to use callies resolver values here, but currently it might add a bit much
-      if (argument instanceof HaxeFunctionLiteral && expressionType.containsTypeParameters()){
+      //if (argument instanceof HaxeFunctionLiteral && expressionType.containsTypeParameters()){
         //if (callieResolver != null) expressionType = callieResolver.resolve(expressionType);
-      }
+      //}
     }
 
 

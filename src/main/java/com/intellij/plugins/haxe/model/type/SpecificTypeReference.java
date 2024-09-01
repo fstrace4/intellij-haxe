@@ -22,7 +22,6 @@ package com.intellij.plugins.haxe.model.type;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeDummyASTNode;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxePsiCompositeElementImpl;
-import com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.util.HaxeProjectUtil;
 import com.intellij.psi.PsiElement;
@@ -567,5 +566,9 @@ public abstract class SpecificTypeReference {
       }
     }
     return typeParams;
+  }
+
+  public SpecificHaxeClassReference wrapInNullType() {
+    return SpecificHaxeClassReference.getNull(this.getElementContext(), this.createHolder());
   }
 }

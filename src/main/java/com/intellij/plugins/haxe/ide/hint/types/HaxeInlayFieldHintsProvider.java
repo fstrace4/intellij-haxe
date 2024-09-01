@@ -43,7 +43,7 @@ public class HaxeInlayFieldHintsProvider implements InlayHintsProvider {
         if (expression != null) {
 
           HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(expression);
-          ResultHolder type = HaxeTypeResolver.getPsiElementType(expression, element, resolver);
+          ResultHolder type = HaxeTypeResolver.getPsiElementType(element,  resolver);
 
           if (!type.isUnknown() && !type.getType().isInvalid()) {
             int offset;

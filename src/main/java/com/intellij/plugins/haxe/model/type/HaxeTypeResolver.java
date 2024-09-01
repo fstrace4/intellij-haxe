@@ -41,6 +41,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.isDynamicBecauseOfNullValueInit;
+import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.tryToFindTypeFromUsage;
+
 public class HaxeTypeResolver {
   @NotNull
   static public ResultHolder getFieldOrMethodReturnType(@NotNull AbstractHaxeNamedComponent comp) {
@@ -140,11 +143,11 @@ public class HaxeTypeResolver {
 
     if (comp instanceof HaxePsiField psiField) {
       ResultHolder result = null;
-
+      ResultHolder initType = null;
       HaxeVarInit init = psiField.getVarInit();
       if (init != null) {
         PsiElement child = init.getExpression();
-        final ResultHolder initType = HaxeTypeResolver.getPsiElementType(child, resolver);
+        initType = HaxeTypeResolver.getPsiElementType(child, resolver);
         boolean isConstant = psiField.hasModifierProperty(HaxePsiModifier.INLINE) && psiField.isStatic();
         result = isConstant ? initType : initType.withConstantValue(null);
       }
@@ -169,6 +172,10 @@ public class HaxeTypeResolver {
         HaxeTypeResolver.getPsiElementType(psiField, null);
       }
       if (result != null) {
+        if (typeTag == null && isDynamicBecauseOfNullValueInit(initType)) {
+          HaxeComponentName componentName = psiField.getComponentName();
+          result = tryToFindTypeFromUsage(componentName, initType, initType, new HaxeExpressionEvaluatorContext(psiField), resolver, componentName.getContainingFile());
+        }
         return result;
       }
     }
