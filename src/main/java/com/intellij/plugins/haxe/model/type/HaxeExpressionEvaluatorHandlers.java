@@ -1228,30 +1228,10 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeGenericResolver resolver,
     HaxeCallExpression callExpression) {
     HaxeExpression callExpressionRef = callExpression.getExpression();
-
-    HaxeGenericResolver localResolver = new HaxeGenericResolver();
+    // generateResolverFromScopeParents -  making sure we got typeParameters from arguments/parameters
+    HaxeGenericResolver localResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(callExpression);
     localResolver.addAll(resolver);
-    ResultHolder callie = tryGetCallieType(callExpression);
 
-    if (callie != null && callie.getClassType() != null && callie.getClassType().isNullType()) {
-      callie = callie.getClassType().unwrapNullType().createHolder();
-    }
-    // TODO should we resolve callie if callie is typeParam ?
-
-    HaxeGenericResolver resolverForMethodDeclaringClass = new HaxeGenericResolver();
-    if (callie != null && !callie.isUnknown() && !callie.isTypeParameter() ) {
-      if (callExpression.getExpression() instanceof HaxeReferenceExpression referenceExpression) {
-        PsiElement resolve = referenceExpression.resolve();
-        if (resolve instanceof HaxeMethodDeclaration methodDeclaration) {
-          HaxeClassModel aClass = methodDeclaration.getModel().getDeclaringClass();
-          SpecificHaxeClassReference type = callie.getClassType();
-          if (type != null && type.getHaxeClass() != null) {
-            resolverForMethodDeclaringClass = createInheritedClassResolver(aClass.haxeClass, type.getHaxeClass(), resolverForMethodDeclaringClass);
-            localResolver.addAll(resolverForMethodDeclaringClass);
-          }
-        }
-      }
-    }
     SpecificTypeReference functionType = handle(callExpressionRef, context, localResolver).getType();
     boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
     boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
