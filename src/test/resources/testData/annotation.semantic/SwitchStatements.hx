@@ -61,6 +61,19 @@ class PatternMachingTest {
                 trace("4");
         }
     }
+    public function testSwitchEnumExtractor() {
+        var enumVar:TestExtraction<Float>;
+        switch (enumVar) {
+            case SingleParam(_):
+                trace("0");
+            case SingleGenericParam(_ => 1.0):
+                trace("1");
+            case ComplexValue(_, [_ => {value :SingleParam(v)}], i):
+                trace("2");
+            case ComplexValue(_, [ComplexValue(_.get("") => { kind: SingleParam(e) }, _)]):
+                trace("2");
+        }
+    }
 
     public function  testSwitchOnStructure() {
         var person = { name: "Mark", age: 33, subElement: {id:"abc"} };
@@ -86,5 +99,10 @@ class PatternMachingTest {
                 trace("unknown");
         }
     }
+}
 
+enum TestExtraction<T> {
+    SingleParam(s:String);
+    SingleGenericParam(s:T);
+    ComplexValue(t:Map<String, String>, params:Array<{value:TestExtraction<Int>}>, i:Int);
 }
