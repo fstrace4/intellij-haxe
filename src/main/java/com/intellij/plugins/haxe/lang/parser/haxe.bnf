@@ -765,7 +765,7 @@ guard ::= 'if' '(' expression ')'
 private guard_recovery ::= !('(' | ')' | '{')
 guardedStatement ::= statement
 elseStatement ::= 'else' statement
-ifStatement ::= guard guardedStatement (';'? elseStatement)? ';'? {pin=2}
+ifStatement ::= guard guardedStatement (';'? elseStatement)? ';'? {pin=1}
 
 tryStatement ::= 'try' statement ';'? catchStatement*
 catchStatement ::= 'catch' '(' parameter ')' statement ';'?

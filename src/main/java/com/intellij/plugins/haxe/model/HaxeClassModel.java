@@ -85,7 +85,13 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   }
   public SpecificHaxeClassReference getInstanceReference() {
     if (reference  == null) {
-      reference = SpecificHaxeClassReference.withoutGenerics(getReference());
+      HaxeGenericResolver genericResolver = getGenericResolver(null);
+      if (genericResolver.isEmpty()) {
+        reference = SpecificHaxeClassReference.withoutGenerics(getReference());
+      }else {
+        reference = SpecificHaxeClassReference.withGenerics(getReference(),genericResolver.getSpecifics());
+
+      }
     }
     return reference;
   }

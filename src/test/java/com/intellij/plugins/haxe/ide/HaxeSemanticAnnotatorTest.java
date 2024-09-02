@@ -639,10 +639,10 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
   public void testMissingInterfaceMethodsOnConstrainedGenericOverrides() throws Exception {
       doTestNoFixWithWarnings();
   }
-
-  //@Test public void testAssignmentOfParameterizedType() throws Exception {
-  //  doTestNoFixWithWarnings();
-  //}
+  @Test
+  public void testMultiLevelGenericInheritance() throws Exception {
+      doTestNoFixWithWarnings();
+  }
 
   @Test
   public void testNoErrorOnOptionalParameterWithFieldConstant() throws Exception {

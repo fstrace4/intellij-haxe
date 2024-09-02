@@ -11,6 +11,7 @@ import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.model.type.resolver.ResolverEntry;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiTreeUtil;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
@@ -87,8 +88,14 @@ public class HaxeCallExpressionUtil {
     // if  this is not a static extension method we can inherit callie's class type parameter
     if(!validation.isStaticExtension) {
       if (callieType.isClassType() && !callieType.isUnknown()) {
-          classTypeResolver.addAll(callieType.getClassType().getGenericResolver(), ResolveSource.CLASS_TYPE_PARAMETER);
+        classTypeResolver = callieType.getClassType().getGenericResolver();
+        HaxeClassModel methodClass = methodModel.getDeclaringClass();
+        // map type Parameters to method declaring class resolver if necessary
+        if (methodClass != null && methodClass.haxeClass != null) {
+          HaxeClass callieClass = callieType.getClassType().getHaxeClass();
+          classTypeResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodClass.haxeClass, callieClass, classTypeResolver);
         }
+      }
     }
     HaxeGenericResolver resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, classTypeResolver);
 
@@ -973,6 +980,14 @@ public class HaxeCallExpressionUtil {
         ResultHolder result = HaxeExpressionEvaluator.evaluateWithRecursionGuard(child, evaluatorContext, null).result;
 
         if (!result.isUnknown()) return result;
+      }else {
+        HaxeClass type = PsiTreeUtil.getParentOfType(callExpression.getExpression(), HaxeClass.class);
+        if(type != null) {
+          HaxeClassModel model = type.getModel();
+          if(model != null) {
+            return model.getInstanceType();
+          }
+        }
       }
     }
 

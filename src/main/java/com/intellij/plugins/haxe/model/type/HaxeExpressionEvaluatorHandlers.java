@@ -1227,10 +1227,20 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
     HaxeCallExpression callExpression) {
+
     HaxeExpression callExpressionRef = callExpression.getExpression();
     // generateResolverFromScopeParents -  making sure we got typeParameters from arguments/parameters
     HaxeGenericResolver localResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(callExpression);
     localResolver.addAll(resolver);
+
+
+    // map type Parameters to methods declaring class resolver if necessary
+    SpecificHaxeClassReference callyClassRef = tryGetCallieType(callExpression).getClassType();
+    HaxeClass callieType = callyClassRef != null ? callyClassRef.getHaxeClass() : null;
+    HaxeClass methodTypeClassType = tryGetMethodDeclaringClass(callExpression);
+    if(callieType != null && methodTypeClassType != null) {
+      localResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodTypeClassType,callieType, localResolver);
+    }
 
     SpecificTypeReference functionType = handle(callExpressionRef, context, localResolver).getType();
     boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
@@ -1373,6 +1383,20 @@ public class HaxeExpressionEvaluatorHandlers {
 
     // @TODO: resolve the function type return type
     return createUnknown(callExpression);
+  }
+
+  private static HaxeClass tryGetMethodDeclaringClass(HaxeCallExpression expression) {
+    if (expression.getExpression() instanceof HaxeReference reference) {
+      final PsiElement resolved = reference.resolve();
+      if (resolved instanceof HaxeMethod method) {
+        HaxeMethodModel model = method.getModel();
+        if(model != null) {
+          HaxeClassModel classModel = model.getDeclaringClass();
+          if(classModel != null) return classModel.haxeClass;
+        }
+      }
+    }
+    return null;
   }
 
   private static boolean isInMacroFunction(HaxeExpression ref) {
