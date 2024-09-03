@@ -123,7 +123,7 @@ public class HaxeGenericResolverUtil {
         stack.add(call);
 
       HaxeExpression callExpression = call.getExpression();
-      PsiElement callTarget = callExpression instanceof HaxeReferenceExpression ? ((HaxeReferenceExpression)callExpression).resolve() : null;
+      PsiElement callTarget = callExpression instanceof HaxeReferenceExpression referenceExpression ? referenceExpression.resolve() : null;
       if (null != callTarget) {
         HaxeGenericResolver methodResolver = null;
         List<HaxeParameterModel> methodParameters = null;
@@ -195,8 +195,7 @@ public class HaxeGenericResolverUtil {
   // Since null<T> references in some places are handled as if they where type T
   // we also have to support resolving Type Parameters as if Null<T> was just T
   public  static  HaxeGenericResolver getResolverSkipAbstractNullScope(@Nullable HaxeClassModel model, @NotNull HaxeGenericResolver resolver) {
-    if (model instanceof HaxeAbstractClassModel) {
-      HaxeAbstractClassModel abstractClassModel = (HaxeAbstractClassModel)model;
+    if (model instanceof HaxeAbstractClassModel abstractClassModel) {
       if ("Null".equals(abstractClassModel.getName()) && abstractClassModel.isCoreType()) {
         HaxeGenericParam param = abstractClassModel.getAbstractClass().getGenericParam();
         if (param != null) {

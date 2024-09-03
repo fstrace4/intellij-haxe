@@ -1,7 +1,6 @@
 package com.intellij.plugins.haxe.ide.annotator.semantics;
 
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.util.text.Strings;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodDeclarationImpl;
@@ -16,7 +15,6 @@ import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.intellij.plugins.haxe.ide.annotator.semantics.TypeParameterUtil.*;
 import static com.intellij.plugins.haxe.model.type.HaxeTypeCompatible.canAssignToFrom;
@@ -197,11 +195,11 @@ public class HaxeCallExpressionUtil {
       }
 
       // when methods has type-parameters we can inherit the type from arguments (note that they may contain constraints)
-      if (containsTypeParameter(parameterType, typeParamTable)) {
-        inheritTypeParametersFromArgument(parameterType, argumentType, argumentResolver, resolver, typeParamTable);
-        // attempt re-resolve after adding inherited type parameters
-        parameterType = resolveParameterType(parameter, argumentResolver);
+      ResultHolder unresolvedParameterType = parameter.getType();
+      if (containsTypeParameter(unresolvedParameterType, typeParamTable)) {
+        inheritTypeParametersFromArgument(unresolvedParameterType, argumentType, argumentResolver, resolver, typeParamTable);
       }
+
       // heck if functionType has untyped open parameterlist, if so inherit type
       if (parameterType.isFunctionType() &&  argumentType.isFunctionType()
          &&  argument instanceof HaxeFunctionLiteral literal && literal.getOpenParameterList() != null) {
@@ -224,13 +222,10 @@ public class HaxeCallExpressionUtil {
       if (optionalTypeParameterConstraint.isPresent()) {
         HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getBasePsi(), argument);
         // Note that we use parameter type without resolved typeParameters here to check against method and class constraints.
-        assignContext.setConstraintCheck(containsTypeParameter(parameter.getType(), typeParamTable));
+        assignContext.setConstraintCheck(containsTypeParameter(unresolvedParameterType, typeParamTable));
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         if (canAssignToFrom(constraint, argumentType, assignContext)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
+          updateValidationData(validation, argumentCounter, parameterCounter, argumentType, parameterType, parameter);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -253,10 +248,7 @@ public class HaxeCallExpressionUtil {
 
         HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getBasePsi(), argument);
         if (canAssignToFrom(resolvedParameterType, argumentType, assignContext)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
+          updateValidationData(validation, argumentCounter, parameterCounter, argumentType, parameterType, parameter);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -276,16 +268,20 @@ public class HaxeCallExpressionUtil {
     }
     validation.completed = true;
     validation.resolver = resolver;
+    validation.reResolveParameters();
     return validation;
   }
 
+  private static void addOriginalParameterTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
+    validation.originalParameterIndexToType.put(index - 1, type);
+  }
 
 
   private static void addArgumentTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
     validation.argumentIndexToType.put(index - 1, type);
   }
   private static void addParameterTypeToIndex(CallExpressionValidation validation, int index, ResultHolder type) {
-    validation.ParameterIndexToType.put(index - 1, type);
+    validation.parameterIndexToType.put(index - 1, type);
   }
 
   @NotNull
@@ -427,6 +423,7 @@ public class HaxeCallExpressionUtil {
           addToIndexMap(validation, argumentCounter, parameterCounter);
           addArgumentTypeToIndex(validation, argumentCounter, argumentType);
           addParameterTypeToIndex(validation, parameterCounter, parameterType);
+          addOriginalParameterTypeToIndex(validation, parameterCounter, parameter.getType());
           validation.ParameterNames.add(parameter.getName());
         }else {
           if (parameter.isOptional()) {
@@ -589,10 +586,7 @@ public class HaxeCallExpressionUtil {
         ResultHolder constraint = optionalTypeParameterConstraint.get();
         HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getType().getElementContext(), argument);
         if (canAssignToFrom(constraint, argumentType, assignContext)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
+          updateValidationData(validation, argumentCounter, parameterCounter, argumentType, parameterType, parameter);
         } else {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
@@ -608,10 +602,7 @@ public class HaxeCallExpressionUtil {
 
         HaxeAssignContext  assignContext = new HaxeAssignContext(parameter.getType().getElementContext(), argument);
         if (canAssignToFrom(resolvedParameterType, argumentType, assignContext)) {
-          addToIndexMap(validation, argumentCounter, parameterCounter);
-          addArgumentTypeToIndex(validation, argumentCounter, argumentType);
-          addParameterTypeToIndex(validation, parameterCounter, parameterType);
-          validation.ParameterNames.add(parameter.getName());
+          updateValidationData(validation, argumentCounter, parameterCounter, argumentType, parameterType, parameter);
         }
         else {
           if (parameter.isOptional()) {
@@ -626,6 +617,21 @@ public class HaxeCallExpressionUtil {
     validation.completed = true;
     validation.resolver = resolver;
     return validation;
+  }
+
+  private static void updateValidationData(CallExpressionValidation validation,
+                                           int argumentCounter,
+                                           int parameterCounter,
+                                           ResultHolder argumentType,
+                                           ResultHolder parameterType,
+                                           HaxeParameterModel parameter) {
+
+    addToIndexMap(validation, argumentCounter, parameterCounter);
+    addArgumentTypeToIndex(validation, argumentCounter, argumentType);
+    addParameterTypeToIndex(validation, parameterCounter, parameterType);
+    addOriginalParameterTypeToIndex(validation, parameterCounter, parameter.getType());
+
+    validation.ParameterNames.add(parameter.getName());
   }
 
 
@@ -947,7 +953,8 @@ public class HaxeCallExpressionUtil {
   public static class CallExpressionValidation {
     Map<Integer, Integer> argumentToParameterIndex = new HashMap<>();
     Map<Integer, ResultHolder> argumentIndexToType = new HashMap<>();
-    Map<Integer, ResultHolder> ParameterIndexToType = new HashMap<>();
+    Map<Integer, ResultHolder> parameterIndexToType = new HashMap<>();
+    Map<Integer, ResultHolder> originalParameterIndexToType = new HashMap<>();
     List<String> ParameterNames = new ArrayList<>();
     ResultHolder returnType;
 
@@ -963,6 +970,18 @@ public class HaxeCallExpressionUtil {
     boolean isFunction = false;
     boolean isMethod = false;
 
+    public void reResolveParameters() {
+      HaxeGenericResolver genericResolver = resolver.withoutUnknowns();
+      for (Map.Entry<Integer, ResultHolder> entry : originalParameterIndexToType.entrySet()) {
+        ResultHolder resolve = genericResolver.resolve(entry.getValue());
+        if ( resolve != null && !resolve.isUnknown()) {
+          ResultHolder firstType = parameterIndexToType.get(entry.getKey());
+          if(firstType.canAssign(resolve)){
+            parameterIndexToType.put(entry.getKey(), resolve);
+          }
+        }
+      }
+    }
   }
   public record ErrorRecord (TextRange range, String message){};
   public record WarningRecord (TextRange range, String message){};

@@ -566,15 +566,13 @@ public class HaxeExpressionEvaluator {
         if (!possibleType.isUnknown()) {
           if (lastValue == null) {
             lastValue = possibleType;
-          } else if (!possibleType.isUnknown() && !possibleType.isDynamic()) {
+          }
+          if (!lastValue.isDynamic()) {
+            // monomorphs should only use the first real value found (right?)
             //NOTE: don't use unify here (will break function type from  usage)
-            // we want to search only for more specific types (ex. EnumValue  & SomeEnum)
-            if (lastValue.isEnumValueType() || lastValue.isFunctionType()) {
-              boolean canAssign = lastValue.canAssign(possibleType);
-              if (canAssign) lastValue = possibleType;
-            }else {
-              break;
-            }
+            if (!lastValue.isFunctionType()) break;
+            boolean canAssign = lastValue.canAssign(possibleType);
+            if (canAssign) lastValue = possibleType;
           }
         }
       }
