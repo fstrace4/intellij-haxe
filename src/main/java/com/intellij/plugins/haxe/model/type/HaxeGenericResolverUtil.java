@@ -16,6 +16,7 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeClassWrapperForTypeParameter;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
@@ -273,6 +274,9 @@ public class HaxeGenericResolverUtil {
   }
 
   private static boolean findClassHierarchy(HaxeClass from, HaxeClass to, List<SpecificHaxeClassReference> path) {
+    // stop if "from" is typeParameter
+    if(from instanceof HaxeClassWrapperForTypeParameter)return false;
+
     HaxeClassModel fromModel = from.getModel();
     if (fromModel.isTypedef()) {
       SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(new HaxeGenericResolver());

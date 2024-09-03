@@ -18,10 +18,13 @@ package com.intellij.plugins.haxe.ide.annotator;
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.model.type.HaxeAssignContext;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 /**
  * A library of annotations that can be re-used.  Place annotations that are used more than
@@ -49,13 +52,19 @@ public class HaxeStandardAnnotation {
                                         context.getMissingMembersString());
     return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
   }
-  public static @NotNull AnnotationBuilder typeMismatchWrongTypeMembers(@NotNull AnnotationHolder holder,
-                                                                        @NotNull PsiElement incompatibleElement,
-                                                                        HaxeAssignContext context) {
+  public static @NotNull void addtypeMismatchWrongTypeMembersAnnotations(@NotNull AnnotationHolder holder,
+                                                                         @NotNull PsiElement incompatibleElement,
+                                                                         HaxeAssignContext context) {
 
-    String message = HaxeBundle.message("haxe.semantic.incompatible.type.wrong.member.types.0",  context.geWrongTypeMembersString());
-                                        
-    return holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement);
+    TextRange expectedRange = incompatibleElement.getTextRange();
+    Map<PsiElement, String> wrongTypeMap = context.getWrongTypeMap();
+    boolean allInRange = wrongTypeMap.keySet().stream().allMatch(psi -> expectedRange.contains(psi.getTextRange()));
+    if (allInRange) {
+      wrongTypeMap.forEach((key, value) -> holder.newAnnotation(HighlightSeverity.ERROR, value).range(key).create());
+    }else {
+      String message = HaxeBundle.message("haxe.semantic.incompatible.type.wrong.member.types.0",  context.geWrongTypeMembersString());
+      holder.newAnnotation(HighlightSeverity.ERROR, message).range(incompatibleElement).create();
+    }
   }
 
   public static @NotNull AnnotationBuilder returnTypeMismatch(@NotNull AnnotationHolder holder,

@@ -40,7 +40,7 @@ public class HaxeSemanticsUtil {
         if(context.hasMissingMembers()) {
           typeMismatchMissingMembers(holder, erroredElement, context).create();
         }else if(context.hasWrongTypeMembers()) {
-          typeMismatchWrongTypeMembers(holder, erroredElement, context).create();
+          addtypeMismatchWrongTypeMembersAnnotations(holder, erroredElement, context);
         }else {
           AnnotationBuilder builder = typeMismatch(holder, erroredElement, initType.toStringWithoutConstant(), varType.toStringWithoutConstant());
           if (null != initType.getClassType()) {

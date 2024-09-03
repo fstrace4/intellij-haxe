@@ -165,7 +165,7 @@ public class HaxeCallExpressionUtil {
         else {
           // out of parameters and last is not var arg, must mean that ve have skipped optionals and still had arguments left
           if (parameterType != null && argumentType != null) {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, null));
+            validation.errors.addAll(annotateTypeMismatch(parameterType, argumentType, argument, null));
           }
           break;
         }
@@ -237,7 +237,7 @@ public class HaxeCallExpressionUtil {
             }else if (argumentType.isClassType() && argumentType.isMissingClassModel()){
               validation.warnings.add(annotateUnableToCompare( argumentType, argument));
             }else {
-              validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
+              validation.errors.addAll(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
             }
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
@@ -259,7 +259,7 @@ public class HaxeCallExpressionUtil {
             }else if (argumentType.isClassType() && argumentType.isMissingClassModel()){
               validation.warnings.add(annotateUnableToCompare( argumentType, argument));
             }else {
-              validation.errors.add(annotateTypeMismatch(resolvedParameterType, argumentType, argument, assignContext));
+              validation.errors.addAll(annotateTypeMismatch(resolvedParameterType, argumentType, argument, assignContext));
             }
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
@@ -397,7 +397,7 @@ public class HaxeCallExpressionUtil {
           else {
             // out of parameters and last is not var arg, must mean that ve have skipped optionals and still had arguments left
             if (parameterType != null && argumentType != null) {
-              validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, null));
+              validation.errors.addAll(annotateTypeMismatch(parameterType, argumentType, argument, null));
             }
             break;
           }
@@ -429,7 +429,7 @@ public class HaxeCallExpressionUtil {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
           } else {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
+            validation.errors.addAll(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -592,7 +592,7 @@ public class HaxeCallExpressionUtil {
             argumentCounter--; //retry argument with next parameter
           }
           else {
-            validation.errors.add(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
+            validation.errors.addAll(annotateTypeMismatch(constraint, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -608,7 +608,7 @@ public class HaxeCallExpressionUtil {
           if (parameter.isOptional()) {
             argumentCounter--; //retry argument with next parameter
           }else {
-            validation.errors.add(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
+            validation.errors.addAll(annotateTypeMismatch(parameterType, argumentType, argument, assignContext));
             addToIndexMap(validation, argumentCounter, parameterCounter);
           }
         }
@@ -839,25 +839,34 @@ public class HaxeCallExpressionUtil {
   }
 
 
-  private static ErrorRecord annotateTypeMismatch(ResultHolder expected, ResultHolder got, HaxeExpression expression,
+  private static List<ErrorRecord> annotateTypeMismatch(ResultHolder expected, ResultHolder got, HaxeExpression expression,
                                                   HaxeAssignContext context) {
     if (context != null) {
       if (context.hasMissingMembers()) {
         String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch.missing.members",
                                             context.getMissingMembersString());
-        return new ErrorRecord(expression.getTextRange(), message);
+        return List.of(new ErrorRecord(expression.getTextRange(), message));
 
       } else if (context.hasWrongTypeMembers()) {
-        String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch.wrong.type.members",
-                                            context.geWrongTypeMembersString());
-        return new ErrorRecord(expression.getTextRange(), message);
+        TextRange expectedRange = expression.getTextRange();
+        // we are not allowed to annotate outside the expression so we check if all are inside before attempting to make them
+        // if they are not inside, we fall back to just annotating the entire expression
+        Map<PsiElement, String> wrongTypeMap = context.getWrongTypeMap();
+        boolean allInRange = wrongTypeMap.keySet().stream().allMatch(psi -> expectedRange.contains(psi.getTextRange()));
+        if(allInRange) {
+          return wrongTypeMap.entrySet().stream().map(e -> new ErrorRecord(e.getKey().getTextRange(), e.getValue())).toList();
+        }else {
+          String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch.wrong.type.members",
+                                              context.geWrongTypeMembersString());
+          return  List.of(new ErrorRecord(expression.getTextRange(), message));
+        }
       }
     }
 
     String message = HaxeBundle.message("haxe.semantic.method.parameter.mismatch",
                                         expected.toPresentationString(),
                                         got.toPresentationString());
-    return new ErrorRecord(expression.getTextRange(), message);
+    return List.of(new ErrorRecord(expression.getTextRange(), message));
   }
 
   private static WarningRecord annotateUnableToCompare( ResultHolder problemType, HaxeExpression expression) {

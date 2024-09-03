@@ -28,12 +28,14 @@ public class HaxeAssignContext {
 
   final List<String> missingMembers = new ArrayList<>();
   final Map<String, String> wrongTypeMembers = new HashMap<>();
+  final Map<PsiElement, String> wrongTypePsi = new HashMap<>();
 
   public void addMissingMember(String name) {
     missingMembers.add(name);
   }
-  public void addWrongTypeMember(String have, String wants) {
+  public void addWrongTypeMember(String have, String wants, PsiElement psi) {
     wrongTypeMembers.put(have, wants);
+    wrongTypePsi.put(psi,  "have '" + have + "' wants '" + wants + "'");
   }
 
   public boolean hasMissingMembers() {
@@ -43,12 +45,18 @@ public class HaxeAssignContext {
     return !wrongTypeMembers.isEmpty();
   }
 
+  // TODO use map to generate errors
+  public Map<PsiElement, String> getWrongTypeMap(){
+    return wrongTypePsi;
+  }
+
   public String getMissingMembersString() {
     return Strings.join(getMissingMembers(), ", ");
   }
   public String geWrongTypeMembersString() {
     return  getWrongTypeMembers().entrySet().stream()
-      .map(entry -> "have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
+      //TODO bundle
+      .map(entry -> "Incompatible type:  have '" + entry.getKey() + "' wants '" + entry.getValue() + "'")
       .collect(Collectors.joining(", "));
   }
 

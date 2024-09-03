@@ -577,7 +577,9 @@ public class HaxeTypeCompatible {
           if(!toType.canAssign(fromType)) {
             allMacteches = false;
             if (context != null) {
-              context.addWrongTypeMember(fromMemberModel.getPresentableText(null), parameter.getPresentableText(toResolver));
+              context.addWrongTypeMember(fromMemberModel.getPresentableText(null),
+                                         parameter.getPresentableText(toResolver),
+                                         fromMemberModel.getNamePsi());
             }
           }
         } else {
@@ -640,10 +642,41 @@ public class HaxeTypeCompatible {
       boolean ignored = false;
       if (toMember instanceof HaxeMethodModel methodModel){
         if(!isStruct) {
+          // check for declarations in types
           memberExists = fromMembers.stream().filter(model -> model instanceof HaxeMethodModel)
             .map(model -> (HaxeMethodModel)model)
             .filter(mm -> methodModel.getParameters().size() == mm.getParameters().size())
             .anyMatch(model -> model.getNamePsi().textMatches(name));
+          if (checkAnonymousMemberTypes) {
+            if (!memberExists) {
+              Optional<HaxeBaseMemberModel> first = fromMembers.stream().filter(model -> model.getNamePsi().getIdentifier().textMatches(name)).findFirst();
+              if (first.isPresent()) {
+                memberExists = true;
+                if (checkAnonymousMemberTypes) {
+                  HaxeBaseMemberModel fromMember = first.get();
+                  if (context != null && context.getFromOrigin() != null) {
+                    SpecificFunctionReference toType = methodModel.getFunctionType(toResolver);
+
+                    ResultHolder fromType = containsMembersRecursionGuard.computePreventingRecursion(context.getFromOrigin(), false, () ->
+                      fromMember.getResultType(isObjectLiteral ? toResolver : fromResolver)
+                    );
+
+                    if(toType == null ||  fromType == null) {
+                      log.warn("Unable to evaluate fieldType compatibility");
+                      return true;
+                    }
+
+                    if (!toType.canAssign(fromType)) {
+                      String fromText = fromMember.getPresentableText(null, isObjectLiteral ? toResolver : fromResolver);
+                      String toText = toMember.getPresentableText(null, toResolver);
+                      context.addWrongTypeMember(fromText, toText, fromMember.getBasePsi());
+                      allMembersMatches = false;
+                    }
+                  }
+                }
+              }
+            }
+          }
         }else {
           // ignore methods in @:structInit classes
           ignored = true;
@@ -675,7 +708,7 @@ public class HaxeTypeCompatible {
               if (!toType.canAssign(fromType)) {
                 String fromText = fromMember.getPresentableText(null, isObjectLiteral ? toResolver : fromResolver);
                 String toText = toMember.getPresentableText(null, toResolver);
-                context.addWrongTypeMember(fromText, toText);
+                context.addWrongTypeMember(fromText, toText, fromMember.getBasePsi());
                 allMembersMatches = false;
               }
             }

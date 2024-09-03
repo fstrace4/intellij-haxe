@@ -79,8 +79,7 @@ public class HaxeAssignExpressionAnnotator implements Annotator {
             .create();
         }
         if(context.hasWrongTypeMembers()) {
-          HaxeStandardAnnotation.typeMismatchWrongTypeMembers(holder, rhs, context)
-            .create();
+          HaxeStandardAnnotation.addtypeMismatchWrongTypeMembersAnnotations(holder, rhs, context);
         }
       }else {
         AnnotationBuilder builder = typeMismatch(holder, rhs, rhsType.toPresentationString(), lhsType.toPresentationString());

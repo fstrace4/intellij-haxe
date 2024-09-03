@@ -14,7 +14,7 @@ class Test {
     // CORRECT (TypeParameter)
     var typeParamA:MyTypeParamStruct<String> = {valueA:"name", valueB:30};
     // WRONG (TypeParameter)
-    var <error descr="Incompatible type: Incompatible member type(s) (have 'valueA:String' wants 'valueA:Int')">typeParamB:MyTypeParamStruct<Int> = {valueA:"name", valueB:30}</error>;
+    var typeParamB:MyTypeParamStruct<Int> = {<error descr="have 'valueA:String' wants 'valueA:Int'">valueA:"name"</error>, valueB:30};
 
       //CORRECT (constructor)
     var NormalConstructor:ConstrcutorStruct<String> = {name:"str",  value:1.0, type: ValueA};
@@ -22,8 +22,8 @@ class Test {
     var usingDefaults:ConstrcutorStruct<String> =  {value:1.0,  name:"str"};
 
       // WRONG (constructor)
-    var <error descr="Incompatible type: Incompatible member type(s) (have 'value:String' wants 'value:Float')">wrongType:ConstrcutorStruct<String> =  {value:"1.0",  name:"str"}</error>;
-    var <error descr="Incompatible type: Incompatible member type(s) (have 'name:Int' wants 'name:String')">wrongTypeTypeParameter:ConstrcutorStruct<String> =  {value:1.0,  name:1}</error>;
+    var wrongType:ConstrcutorStruct<String> =  {<error descr="have 'value:String' wants 'value:Float'"><error descr="have 'value:String' wants 'value:Float'">value</error>:"1.0"</error>,  name:"str"};
+    var wrongTypeTypeParameter:ConstrcutorStruct<String> =  {value:1.0,  <error descr="have 'name:Int' wants 'name:String'"><error descr="have 'name:Int' wants 'name:String'">name</error>:1</error>};
     var <error descr="Incompatible type: missing member(s) value">missingField:ConstrcutorStruct<String> =  { name:"str"}</error>;
 
   }

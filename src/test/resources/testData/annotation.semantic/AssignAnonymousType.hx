@@ -29,13 +29,13 @@ class Test {
     typeA = <error descr="Incompatible type: missing member(s) b:Float">{a:"1"}</error>;
 
     //WRONG: incorrect type for "b"
-    typeA = <error descr="Incompatible type: Incompatible member type(s) (have 'b:String' wants 'b:Float')">{a:"1", b:"Str"}</error>;
+    typeA = {a:"1", <error descr="have 'b:String' wants 'b:Float'">b:"Str"</error>};
     //WRONG missing members
     parameterTestB(<error descr="Type mismatch, missing member(s) (x:Int, y:Float)">typeA</error>);
     //WRONG: incorrect types
-    parameterTestC(<error descr="Type mismatch, Incompatible member type(s) (have 'x:String' wants 'x:Int', have 'y:String' wants 'y:Float')">typeZ</error>);
+    parameterTestC(<error descr="Type mismatch, Incompatible member type(s) (Incompatible type:  have 'x:String' wants 'x:Int', Incompatible type:  have 'y:String' wants 'y:Float')">typeZ</error>);
     //WRONG: incorrect types
-    parameterTestC(<error descr="Type mismatch, Incompatible member type(s) (have 'x:String' wants 'x:Int', have 'y:String' wants 'y:Float')">{x:"i", y:"j"}</error>);
+    parameterTestC({<error descr="have 'x:String' wants 'x:Int'">x:"i"</error>, <error descr="have 'y:String' wants 'y:Float'">y:"j"</error>});
 
   }
 
