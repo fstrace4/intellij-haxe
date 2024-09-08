@@ -164,7 +164,7 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
     if ((resolver == null || resolver.isEmpty()) // must not use resolver
         && haxeMethod.getReturnType() !=null // must have type tag
         && haxeMethod.getGenericParam() != null) { // must not have generics
-      return CachedValuesManager.getProjectPsiDependentCache(haxeMethod,  HaxeMethodModel::getReturnTypeCacheProvider).getValue();
+      return CachedValuesManager.getProjectPsiDependentCache(haxeMethod,  HaxeMethodModel::getReturnTypeCacheProvider);
     }else {
       Boolean data = haxeMethod.getUserData(isVoidReturn);
       if (data == Boolean.TRUE) {
@@ -180,9 +180,8 @@ public class HaxeMethodModel extends HaxeMemberModel implements HaxeExposableMod
     }
   }
 
-  private static CachedValueProvider.Result<ResultHolder> getReturnTypeCacheProvider(HaxeMethod haxeMethod) {
-    ResultHolder type = HaxeTypeResolver.getFieldOrMethodReturnType(haxeMethod, null);
-    return new CachedValueProvider.Result<>(type, haxeMethod);
+  private static ResultHolder getReturnTypeCacheProvider(HaxeMethod haxeMethod) {
+    return HaxeTypeResolver.getFieldOrMethodReturnType(haxeMethod, null);
   }
 
   public SpecificFunctionReference getFunctionType(@Nullable HaxeGenericResolver resolver) {

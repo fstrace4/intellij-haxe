@@ -462,22 +462,22 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   //caching  implicit cast  method lookup results
   @NotNull
   private List<HaxeMethodModel> getCastToMethods() {
-    return  CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getCastToMethodsCached).getValue();
+    return  CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getCastToMethodsCached);
   }
 
-  private static CachedValueProvider.Result<List<HaxeMethodModel>> getCastToMethodsCached(@NotNull HaxeClass haxeClass) {
+  private static List<HaxeMethodModel> getCastToMethodsCached(@NotNull HaxeClass haxeClass) {
     List<HaxeMethodModel> castToMethods = getMethodsWithMetadata(haxeClass.getModel(), "to", HaxeMeta.COMPILE_TIME, null);
-    return  CachedValueProvider.Result.create(castToMethods, haxeClass);
+    return  List.copyOf(castToMethods);
   }
 
   //caching implicit cast method lookup  results
   @NotNull
   private List<HaxeMethodModel> getCastFromMethods() {
-    return  CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getCastFromMethodsCached).getValue();
+    return  CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getCastFromMethodsCached);
   }
-  private static CachedValueProvider.Result<List<HaxeMethodModel>> getCastFromMethodsCached(@NotNull HaxeClass haxeClass) {
+  private static List<HaxeMethodModel> getCastFromMethodsCached(@NotNull HaxeClass haxeClass) {
     List<HaxeMethodModel> castFromMethods = getMethodsWithMetadata(haxeClass.getModel(), "from", HaxeMeta.COMPILE_TIME, null);
-    return  CachedValueProvider.Result.create(castFromMethods, haxeClass);
+    return  List.copyOf(castFromMethods);
   }
 
   @NotNull
@@ -677,20 +677,20 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
   }
   @NotNull
   public List<HaxeType> getExtendsList() {
-    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getHaxeExtendsListCached).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getHaxeExtendsListCached);
   }
-  private static CachedValueProvider.Result<List<HaxeType>> getHaxeExtendsListCached(@NotNull HaxeClass haxeClass) {
+  private static List<HaxeType> getHaxeExtendsListCached(@NotNull HaxeClass haxeClass) {
     List<HaxeType> list = haxeClass.getHaxeExtendsList();
-    return  CachedValueProvider.Result.create(list, haxeClass);
+    return  List.copyOf(list);
   }
 
   @NotNull
   public List<HaxeType> getImplementsList() {
-    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getHaxeImplementsListCached).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getHaxeImplementsListCached);
   }
-  private static CachedValueProvider.Result<List<HaxeType>> getHaxeImplementsListCached(@NotNull HaxeClass haxeClass) {
+  private static List<HaxeType> getHaxeImplementsListCached(@NotNull HaxeClass haxeClass) {
     List<HaxeType> list = haxeClass.getHaxeImplementsList();
-    return  CachedValueProvider.Result.create(list, haxeClass);
+    return  List.copyOf(list);
   }
 
   @NotNull
@@ -826,13 +826,13 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
 
   @Nullable
   private HaxeGenericParam getGenericParamPsi() {
-    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getGenericParamPsiCached).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(haxeClass, HaxeClassModel::getGenericParamPsiCached);
   }
 
-  private static CachedValueProvider.Result<HaxeGenericParam> getGenericParamPsiCached(@NotNull HaxeClass haxeClass) {
+  private static HaxeGenericParam getGenericParamPsiCached(@NotNull HaxeClass haxeClass) {
     boolean isAnonymous = haxeClass instanceof HaxeAnonymousType;
     HaxeGenericParam param = isAnonymous ? getGenericParamFromParent(haxeClass) : haxeClass.getGenericParam();
-    return  CachedValueProvider.Result.create(param, haxeClass);
+    return  param;
   }
 
   /**

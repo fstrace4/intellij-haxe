@@ -317,6 +317,8 @@
 
     <projectService serviceImplementation="com.intellij.plugins.haxe.haxelib.HaxelibModuleManagerService"/>
 
+    <projectService serviceImplementation="com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorCacheService"/>
+
     <projectConfigurable instance="com.intellij.plugins.haxe.config.HaxeProjectSettingsConfigurable"
                          parentId="build"
                          id="com.intellij.plugins.haxe.config.HaxeProjectSettingsConfigurable"
@@ -498,6 +500,8 @@
               topic="com.intellij.openapi.project.ProjectManagerListener"/>
     <listener class="com.intellij.plugins.haxe.haxelib.HaxelibModuleManagerService"
               topic="com.intellij.openapi.project.ModuleListener"/>
+    <listener class="com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorCacheService"
+              topic="com.intellij.psi.util.PsiModificationTracker$Listener"/>
   </applicationListeners>
 
 

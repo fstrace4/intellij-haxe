@@ -105,7 +105,7 @@ abstract public class HaxeMemberModel extends HaxeBaseMemberModel {
   @Override
   @Nullable
   public HaxeClassModel getDeclaringClass() {
-    return  CachedValuesManager.getProjectPsiDependentCache(getMemberPsi(), HaxeMemberModel::_getDeclaringClass).getValue();
+    return  CachedValuesManager.getProjectPsiDependentCache(getMemberPsi(), HaxeMemberModel::_getDeclaringClass);
   }
 
   ///TODO make  model reusable and cache result
@@ -115,12 +115,12 @@ abstract public class HaxeMemberModel extends HaxeBaseMemberModel {
     return new HaxeModuleModel(module);
   }
 
-  private static CachedValueProvider.Result<HaxeClassModel> _getDeclaringClass(PsiMember member) {
+  private static HaxeClassModel _getDeclaringClass(PsiMember member) {
     PsiClass containingClass = member.getContainingClass();
     if (containingClass instanceof HaxeClass haxeClass) {
-      return new CachedValueProvider.Result<>(haxeClass.getModel(), member);
+      return haxeClass.getModel();
     }else {
-      return new CachedValueProvider.Result<>(null, member);
+      return null;
     }
   }
 

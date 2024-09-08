@@ -67,15 +67,15 @@ abstract public class AbstractHaxeNamedComponent extends HaxePsiCompositeElement
   @Nullable
   @NonNls
   public String getName() {
-    return CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxeNamedComponent::_getName).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(this, AbstractHaxeNamedComponent::_getName);
   }
 
-  private static CachedValueProvider.Result<String> _getName(AbstractHaxeNamedComponent namedComponent) {
+  private static String _getName(AbstractHaxeNamedComponent namedComponent) {
       final HaxeComponentName name = namedComponent.getComponentName();
       if (name != null) {
-        return new CachedValueProvider.Result<>(name.getText(), name, namedComponent);
+        return name.getText();
       } else {
-        return new CachedValueProvider.Result<>(namedComponent._getNameFromSuper(), namedComponent);
+        return namedComponent._getNameFromSuper();
       }
   }
   private String _getNameFromSuper() {

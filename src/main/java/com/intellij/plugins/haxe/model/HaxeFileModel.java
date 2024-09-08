@@ -129,13 +129,12 @@ public class HaxeFileModel implements HaxeExposableModel {
   }
   @NotNull
   private static List<PsiElement> getChildren(HaxeFile file) {
-    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeFileModel::_getChildren).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeFileModel::_getChildren);
   }
 
-  private static CachedValueProvider.Result<List<PsiElement>> _getChildren(HaxeFile file) {
+  private static List<PsiElement> _getChildren(HaxeFile file) {
     PsiElement[] children = file.getChildren();
-    List<PsiElement> list = Arrays.asList(children);
-    return new CachedValueProvider.Result<>(list, file);
+    return Arrays.asList(children);
   }
 
   @NotNull

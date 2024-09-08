@@ -19,12 +19,10 @@ public class HaxeExprFileModel extends HaxeFileModel {
   }
 
   public static HaxeExprFileModel fromFile(@NotNull HaxeFile file) {
-    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeExprFileModel::cacheValueProvider).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeExprFileModel::cacheValueProvider);
   }
 
-  private static CachedValueProvider.Result<HaxeExprFileModel> cacheValueProvider(@NotNull HaxeFile file) {
-    return CachedValueProvider.Result.create(new HaxeExprFileModel(file),
-                                             ModificationTracker.EVER_CHANGED,
-                                             ProjectRootModificationTracker.getInstance(file.getProject()));
+  private static HaxeExprFileModel cacheValueProvider(@NotNull HaxeFile file) {
+    return new HaxeExprFileModel(file);
   }
 }

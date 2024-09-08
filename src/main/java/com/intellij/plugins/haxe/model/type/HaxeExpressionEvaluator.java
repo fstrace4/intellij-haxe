@@ -118,7 +118,9 @@ public class HaxeExpressionEvaluator {
                                      final HaxeGenericResolver resolver) {
     try {
       ProgressIndicatorProvider.checkCanceled();
-      return _handle(element, context, resolver);
+
+        HaxeExpressionEvaluatorCacheService service = element.getProject().getService(HaxeExpressionEvaluatorCacheService.class);
+        return service.handleWithResultCaching(element, context, resolver);
     }
     catch (NullPointerException e) {
       // Make sure that these get into the log, because the GeneralHighlightingPass swallows them.
@@ -139,7 +141,7 @@ public class HaxeExpressionEvaluator {
   }
 
   @NotNull
-  static private ResultHolder _handle(final PsiElement element,
+  static  ResultHolder _handle(final PsiElement element,
                                       final HaxeExpressionEvaluatorContext context,
                                       HaxeGenericResolver optionalResolver) {
     if (element == null) {
@@ -187,8 +189,7 @@ public class HaxeExpressionEvaluator {
       }
 
       if (element instanceof HaxeIfStatement ifStatement) {
-        //return handleIfStatement(context, resolver, ifStatement);
-        return resolveWithCache(ifStatement, resolver, () -> handleIfStatement(context, resolver, ifStatement));
+        return handleIfStatement(context, resolver, ifStatement);
       }
     }
 
@@ -216,7 +217,7 @@ public class HaxeExpressionEvaluator {
         return handleValueIterator(context, resolver, valueIterator);
       }
       if (element instanceof HaxeIteratorkey || element instanceof HaxeIteratorValue) {
-        return resolveWithCache(element, resolver, () -> findIteratorType(element));
+        return findIteratorType(element);
       }
 
 
@@ -229,7 +230,7 @@ public class HaxeExpressionEvaluator {
       if (element instanceof HaxeParameter parameter) {
         boolean isUntyped = parameter.getTypeTag() == null && parameter.getVarInit() == null;
         if (isUntyped) {
-          return resolveWithCache(element, resolver, () -> handleParameter(context, resolver, parameter));
+          return handleParameter(context, resolver, parameter);
         }
         return handleParameter(context, resolver, parameter);
       }
@@ -237,7 +238,7 @@ public class HaxeExpressionEvaluator {
     }
 
     if (element instanceof HaxeEnumExtractedValueReference extractedValue) {
-      return resolveWithCache(extractedValue, resolver, () -> handleEnumExtractedValue(extractedValue, resolver));
+      return handleEnumExtractedValue(extractedValue, resolver);
     }
 
 
@@ -256,11 +257,11 @@ public class HaxeExpressionEvaluator {
       }
 
       if (element instanceof HaxeCallExpression callExpression) {
-        return resolveWithCache(callExpression, resolver, () -> handleCallExpression(context, resolver, callExpression));
+        return handleCallExpression(context, resolver, callExpression);
       }
 
       if (element instanceof HaxeReferenceExpression referenceExpression) {
-        return resolveWithCache(referenceExpression, resolver, () -> handleReferenceExpression(context, resolver, referenceExpression));
+        return handleReferenceExpression(context, resolver, referenceExpression);
       }
 
       if (element instanceof HaxeCastExpression castExpression) {
@@ -335,7 +336,7 @@ public class HaxeExpressionEvaluator {
     }
 
     if (element instanceof HaxeFunctionLiteral function) {
-      return resolveWithCache(function, resolver, () -> handleFunctionLiteral(context, resolver, function));
+      return handleFunctionLiteral(context, resolver, function);
     }
 
     if (element instanceof HaxeObjectLiteralImpl objectLiteral) {
@@ -452,33 +453,6 @@ public class HaxeExpressionEvaluator {
     return HaxeMacroTypeUtil.getExpr(macroStatement).createHolder();
   }
 
-  private static ResultHolder resolveWithCache(@NotNull PsiElement element, @NotNull HaxeGenericResolver resolver, Supplier<ResultHolder> resolveLogic) {
-    Map<PsiElement, CacheRecord> map = resultCache.get();
-    Map<PsiElement, AtomicInteger> hitCounter = resultCacheHits.get();
-    String resolverAsString = resolver.toCacheString();
-    if (map.containsKey(element) && map.get(element).resolverAsString().equals(resolverAsString)) {
-      CacheRecord cacheRecord = map.get(element);
-      hitCounter.get(element).incrementAndGet();
-      return cacheRecord.holder();
-    }else {
-      ResultHolder result = resolveLogic.get();
-      if (!result.isUnknown()) {
-
-        if (result.getClassType() != null) {
-          if (!result.isTypeParameter() && result.getClassType().getGenericResolver().isEmpty()) {
-            hitCounter.put(element, new AtomicInteger(0));
-            map.put(element, new CacheRecord(result, resolverAsString));
-          }
-        }else  if (result.isFunctionType() && result.getFunctionType() != null) {
-          if (!containsUnknowns(result.getFunctionType())) {
-              hitCounter.put(element, new AtomicInteger(0));
-              map.put(element, new CacheRecord(result, resolverAsString));
-          }
-        }
-      }
-      return result;
-    }
-  }
 
   private static boolean containsUnknowns(SpecificFunctionReference type) {
     if (type.getReturnType().isUnknown()) return true;

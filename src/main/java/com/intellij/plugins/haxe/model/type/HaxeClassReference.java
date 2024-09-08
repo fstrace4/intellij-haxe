@@ -71,15 +71,14 @@ public class HaxeClassReference {
 
   private String getClassName(HaxeClassModel clazz) {
     if(clazz.getPsi().getParent() != null) {
-      return CachedValuesManager.getProjectPsiDependentCache(clazz.getPsi(), HaxeClassReference::getNameCached).getValue();
+      return CachedValuesManager.getProjectPsiDependentCache(clazz.getPsi(), HaxeClassReference::getNameCached);
     }else {
       return getClassNameInternal(clazz.getPsi().getModel());
     }
   }
 
-  private static CachedValueProvider.Result<String> getNameCached(HaxeClass aClass) {
-    String name = getClassNameInternal(aClass.getModel());
-    return  CachedValueProvider.Result.create(name, aClass);
+  private static String getNameCached(HaxeClass aClass) {
+    return getClassNameInternal(aClass.getModel());
   }
 
   private static String getClassNameInternal(HaxeClassModel clazz) {

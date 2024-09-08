@@ -35,13 +35,11 @@ public class HaxeStdTypesFileModel extends HaxeFileModel {
   }
 
   public static HaxeStdTypesFileModel fromFile(@NotNull HaxeFile file) {
-    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeStdTypesFileModel::cacheValueProvider).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(file, HaxeStdTypesFileModel::cacheValueProvider);
   }
 
-  private static CachedValueProvider.Result<HaxeStdTypesFileModel> cacheValueProvider(@NotNull HaxeFile file) {
-    return CachedValueProvider.Result.create(new HaxeStdTypesFileModel(file),
-                                             ModificationTracker.EVER_CHANGED,
-                                             ProjectRootModificationTracker.getInstance(file.getProject()));
+  private static HaxeStdTypesFileModel cacheValueProvider(@NotNull HaxeFile file) {
+    return new HaxeStdTypesFileModel(file);
   }
 
 }

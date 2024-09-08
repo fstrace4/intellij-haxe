@@ -20,22 +20,25 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.psi.PsiElement;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
 import java.util.List;
 
+@EqualsAndHashCode
 public class ResultHolder {
   static public ResultHolder[] EMPTY = new ResultHolder[0];
 
+  @Getter private final PsiElement origin;
+
   @NotNull
   private SpecificTypeReference type;
-  private boolean initExpression = false;
   private boolean canMutate = true;
   private int mutationCount = 0;
 
-  private PsiElement origin;
 
   public ResultHolder(@NotNull SpecificTypeReference type) {
     this(type, null);
@@ -186,9 +189,6 @@ public class ResultHolder {
   public ResultHolder withOrigin(PsiElement origin) {
     return new ResultHolder(this.getType(), origin);
   }
-  public PsiElement getOrigin() {
-    return origin;
-  }
 
   public boolean isInvalid() {
     return type.isInvalid();
@@ -213,7 +213,7 @@ public class ResultHolder {
       }
     }
     if (type instanceof SpecificFunctionReference  function) {
-      if(!function.getTypeParameters().isEmpty()) return true;
+      return !function.getTypeParameters().isEmpty();
     }
     return false;
   }

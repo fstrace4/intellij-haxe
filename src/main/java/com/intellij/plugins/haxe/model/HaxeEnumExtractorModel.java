@@ -36,7 +36,7 @@ public class HaxeEnumExtractorModel implements HaxeModel {
 
   @Nullable
   private PsiElement resolveEnumValueCached() {
-    return CachedValuesManager.getProjectPsiDependentCache(extractor, HaxeEnumExtractorModel::computeResolveEnumValue).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(extractor, HaxeEnumExtractorModel::computeResolveEnumValue);
   }
 
 
@@ -95,22 +95,15 @@ public class HaxeEnumExtractorModel implements HaxeModel {
   }
 
   private @NotNull PsiElement[] getChildrenCached() {
-    return CachedValuesManager.getProjectPsiDependentCache(extractor, HaxeEnumExtractorModel::computeChildren).getValue();
+    return CachedValuesManager.getProjectPsiDependentCache(extractor, HaxeEnumExtractorModel::computeChildren);
   }
 
-  private static CachedValueProvider.Result<PsiElement[]> computeChildren(HaxeEnumArgumentExtractor extractor) {
-    PsiElement[] children = extractor.getEnumExtractorArgumentList().getChildren();
-    PsiElement[] elements = ArrayUtils.addAll(children, extractor);
-    return new CachedValueProvider.Result<>(children, (Object[])elements);
+  private static PsiElement[] computeChildren(HaxeEnumArgumentExtractor extractor) {
+    return extractor.getEnumExtractorArgumentList().getChildren();
   }
 
-  private static CachedValueProvider.Result<PsiElement> computeResolveEnumValue(HaxeEnumArgumentExtractor extractor) {
-    PsiElement resolve = extractor.getEnumValueReference().getReferenceExpression().resolve();
-    if (resolve != null) {
-      return new CachedValueProvider.Result<>(resolve, extractor, resolve);
-    }else {
-      return new CachedValueProvider.Result<>(null, extractor);
-    }
+  private static PsiElement computeResolveEnumValue(HaxeEnumArgumentExtractor extractor) {
+    return extractor.getEnumValueReference().getReferenceExpression().resolve();
   }
 
   @NotNull
