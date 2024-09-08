@@ -500,10 +500,13 @@
               topic="com.intellij.openapi.project.ProjectManagerListener"/>
     <listener class="com.intellij.plugins.haxe.haxelib.HaxelibModuleManagerService"
               topic="com.intellij.openapi.project.ModuleListener"/>
-    <listener class="com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorCacheService"
-              topic="com.intellij.psi.util.PsiModificationTracker$Listener"/>
+
   </applicationListeners>
 
+  <projectListeners>
+    <listener class="com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorCacheChangeListener"
+              topic="com.intellij.psi.util.PsiModificationTracker$Listener"/>
+  </projectListeners>
 
   <actions>
     <action id="Haxe.NewHaxeClass" class="com.intellij.plugins.haxe.ide.actions.CreateClassAction"

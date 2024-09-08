@@ -1235,8 +1235,8 @@ public class HaxeExpressionEvaluatorHandlers {
 
 
     // map type Parameters to methods declaring class resolver if necessary
-    SpecificHaxeClassReference callyClassRef = tryGetCallieType(callExpression).getClassType();
-    HaxeClass callieType = callyClassRef != null ? callyClassRef.getHaxeClass() : null;
+    SpecificHaxeClassReference callieClassRef = tryGetCallieType(callExpression).getClassType();
+    HaxeClass callieType = callieClassRef != null ? callieClassRef.getHaxeClass() : null;
     HaxeClass methodTypeClassType = tryGetMethodDeclaringClass(callExpression);
     if(callieType != null && methodTypeClassType != null) {
       localResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodTypeClassType,callieType, localResolver);

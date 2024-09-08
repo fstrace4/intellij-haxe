@@ -1,7 +1,6 @@
 package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.util.PsiModificationTracker;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -15,14 +14,16 @@ import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator._hand
  * contains SpecificTypeReference elements both as the type and as generics and these contain PsiElements
  * that might become invalid
  */
-public class HaxeExpressionEvaluatorCacheService implements PsiModificationTracker.Listener {
+public class HaxeExpressionEvaluatorCacheService  {
 
-  private final Map<EvaluationKey, ResultHolder> cacheMap = new ConcurrentHashMap<>();
-
+  private volatile  Map<EvaluationKey, ResultHolder> cacheMap = new ConcurrentHashMap<>();
+  public boolean skipCaching = false;
 
   public @NotNull ResultHolder handleWithResultCaching(final PsiElement element,
                                                        final HaxeExpressionEvaluatorContext context,
                                                        final HaxeGenericResolver resolver) {
+
+    if(skipCaching) return  _handle(element, context, resolver);
 
     EvaluationKey key = new EvaluationKey(element, resolver == null ? "NO_RESOLVER" : resolver.toCacheString());
     if (cacheMap.containsKey(key)) {
@@ -37,15 +38,11 @@ public class HaxeExpressionEvaluatorCacheService implements PsiModificationTrack
     }
   }
 
-  @Override
-  public void modificationCountChanged() {
-    clearCaches();
-  }
 
-  private void clearCaches() {
+  public void clearCaches() {
     cacheMap.clear();
   }
 }
 
-record EvaluationKey(PsiElement element, String evalParamString) {
+record EvaluationKey( PsiElement element, String evalParamString) {
 }

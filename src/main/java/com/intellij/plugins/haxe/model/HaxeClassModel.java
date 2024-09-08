@@ -290,6 +290,13 @@ public class HaxeClassModel implements HaxeCommonMembersModel {
         HaxeAnonymousType anon = typeOrAnon.getAnonymousType();
         if (anon != null) {
           // Anonymous types don't have parameters of their own, but when they are part of a typedef, they use the parameters from it.
+          if(element instanceof  HaxeTypedefDeclaration typedefDeclaration && typedefDeclaration.isGeneric()) {
+            HaxeGenericResolver memberResolver = typedefDeclaration.getMemberResolver(null);
+            if(memberResolver != null) {
+              HaxeClassReference classReference = new HaxeClassReference(anon.getModel(), element);
+              return SpecificHaxeClassReference.withGenerics(classReference, memberResolver.getSpecificsFor(classReference), element);
+            }
+          }
           return SpecificHaxeClassReference.withGenerics(new HaxeClassReference(anon.getModel(), element), resolver.getSpecifics(), element);
         }
       }

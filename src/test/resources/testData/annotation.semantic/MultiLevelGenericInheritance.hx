@@ -11,12 +11,14 @@ class Level3Class<T:String> extends Level2Class {
         var paramB:Int = testTypeParam(1);
         var fieldA:Int = this.field;
         var fieldB:Int = field;
+        var fnA:Int -> Int = this.testTypeParam;
 
         // WRONG
         var <error descr="Incompatible type: Int should be String">paramA:String = this.testTypeParam(<error descr="Type mismatch (Expected: 'Int' got: 'String')">"1"</error>)</error>;
         var <error descr="Incompatible type: Int should be String">paramB:String = testTypeParam(<error descr="Type mismatch (Expected: 'Int' got: 'String')">"1"</error>)</error>;
         var <error descr="Incompatible type: Int should be String">fieldA:String = this.field</error>;
         var <error descr="Incompatible type: Int should be String">fieldB:String = field</error>;
+        var <error descr="Incompatible type: Int->Int should be String->String">fnA:String -> String = this.testTypeParam</error>;
 
     }
 }

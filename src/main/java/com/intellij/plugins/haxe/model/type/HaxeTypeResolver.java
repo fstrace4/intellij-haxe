@@ -317,7 +317,6 @@ public class HaxeTypeResolver {
     // Resolve any generics on the resolved type as well.
     typeReference = result.getType();
     if (typeReference instanceof SpecificHaxeClassReference classReference) {
-      RecursionManager.markStack();
       ResultHolder holder = propagateRecursionGuard.computePreventingRecursion(result, true, () ->
         SpecificHaxeClassReference.propagateGenericsToType(classReference.createHolder(), finalResolver, returnType));
       if (holder != null) result = holder;

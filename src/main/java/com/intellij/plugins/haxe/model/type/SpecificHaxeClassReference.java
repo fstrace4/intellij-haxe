@@ -281,14 +281,19 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
         localResolver.addAll(result.getGenericResolver());
       }
     }
-    HaxeNamedComponent method = aClass.findHaxeMethodByName(name, localResolver);
-    if (method != null) {
+    HaxeNamedComponent namedComponent = aClass.findHaxeMethodByName(name, localResolver);
+    if (namedComponent  instanceof HaxeMethod method) {
       if (context.root == method) return null;
       if (isMacroMethod(method)) {
         // if macro method replace Expr / ExprOf types
         ResultHolder functionType = HaxeTypeResolver.getMethodFunctionType(method, localResolver.withoutUnknowns());
         return HaxeMacroUtil.resolveMacroTypesForFunction(functionType);
       }
+      // if inherited method map resolver to match declaring class
+      if(method.getContainingClass() instanceof  HaxeClass methodTypeClassType){
+        localResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodTypeClassType, clazz, localResolver);
+      }
+
       return HaxeTypeResolver.getMethodFunctionType(method, localResolver);
     }
 

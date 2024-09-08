@@ -257,15 +257,14 @@ public class HaxeGenericResolverUtil {
     }
   }
 
-
-  public static HaxeGenericResolver createInheritedClassResolver(HaxeClass inheritedClass, HaxeClass ownerClass,
+  public static HaxeGenericResolver createInheritedClassResolver(HaxeClass targetClass, HaxeClass currentClass,
                                                                   HaxeGenericResolver localResolver) {
 
     List<SpecificHaxeClassReference> path = new ArrayList<>();
-    findClassHierarchy(ownerClass, inheritedClass, path);
+    findClassHierarchy(currentClass, targetClass, path);
 
     Collections.reverse(path);
-    HaxeGenericResolver resolver = ownerClass.getMemberResolver(localResolver);
+    HaxeGenericResolver resolver = currentClass.getMemberResolver(localResolver);
     for (SpecificHaxeClassReference reference : path) {
       ResultHolder resolved = resolver.resolve(reference.createHolder());
       resolver = resolved.getClassType().getGenericResolver();
@@ -279,7 +278,7 @@ public class HaxeGenericResolverUtil {
 
     HaxeClassModel fromModel = from.getModel();
     if (fromModel.isTypedef()) {
-      SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(new HaxeGenericResolver());
+      SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(fromModel.getGenericResolver(null));
       if (reference!= null) {
         path.add(reference);
         SpecificHaxeClassReference resolvedTypeDef = reference.resolveTypeDefClass();
