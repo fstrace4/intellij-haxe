@@ -26,6 +26,7 @@ import com.intellij.navigation.ItemPresentation;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
+import com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificFunctionReference;
 import com.intellij.plugins.haxe.util.HaxePresentableUtil;
@@ -89,9 +90,17 @@ public class HaxeMemberLookupElement extends LookupElement  implements HaxeLooku
       }
       if (!shouldBeIgnored) {
         HaxeBaseMemberModel model = HaxeBaseMemberModel.fromPsi(componentName);
-        if (model instanceof  HaxeMethodModel) {
-          // adding functionType in addition to method call
-          result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver, model, true));
+        if (model != null) {
+          HaxeClassModel classModel = model.getDeclaringClass();
+          if (classModel != null && leftReferenceResolveResult != null) {
+            HaxeClass currentClass = leftReferenceResolveResult.getHaxeClass();
+            HaxeClass membersClass = classModel.haxeClass;
+            resolver = HaxeGenericResolverUtil.createInheritedClassResolver(membersClass, currentClass, resolver);
+          }
+          if (model instanceof  HaxeMethodModel) {
+            // adding functionType in addition to method call
+            result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver, model, true));
+          }
         }
         result.add(new HaxeMemberLookupElement(leftReferenceResolveResult, componentName, context, resolver, model));
       }

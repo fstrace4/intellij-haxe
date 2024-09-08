@@ -1,4 +1,9 @@
 # Changelog
+## 1.5.12
+* Bugfix: Function types for inherited methods could in some cases show wrong signature when type parameters where used.
+* Bugfix: Auto-completion would in some cases show wrong types when type parameters where used. 
+* Improvement: performance improvements (expression evaluation cache)  
+* 
 ## 1.5.11
 * Improvement: Variables and members with only init expression "= null" should now correctly resolve to type Null<T>. 
 * Improvement: Added parser support for `TIntersection` reification (macro : type & type) 

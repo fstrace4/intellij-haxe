@@ -40,7 +40,9 @@ public class HaxeExpressionEvaluatorCacheService  {
 
 
   public void clearCaches() {
-    cacheMap.clear();
+    synchronized(this) {
+      cacheMap.clear();
+    }
   }
 }
 
