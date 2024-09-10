@@ -19,15 +19,27 @@ public class HaxeAnonymousTypeModel extends HaxeClassModel {
     this.anonymousType = anonymousType;
   }
 
+  //TODO consolidate composite types (`{> type, ...}`) and extension types (`typeX & typeY`)
   public List<ResultHolder> getCompositeTypes() {
     List<HaxeType> typeList  = getCompositeTypesPsi();
     return typeList.stream().map(HaxeTypeResolver::getTypeFromType).toList();
   }
+  public List<ResultHolder> getExtendsTypes() {
+    List<HaxeType> typeList  = getExtendsList();
+    return typeList.stream().map(HaxeTypeResolver::getTypeFromType).toList();
+  }
+
   public  List<HaxeType> getCompositeTypesPsi() {
     return CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getCompositeTypes);
   }
   public  List<HaxeType> getExtensionTypesPsi() {
     return CachedValuesManager.getProjectPsiDependentCache(anonymousType, HaxeAnonymousTypeModel::_getExtendsTypes);
+  }
+  @NotNull
+  public List<HaxeType> getExtendsList() {
+    List<HaxeType> extendList = new ArrayList<>(getCompositeTypesPsi());
+    extendList.addAll(getExtensionTypesPsi());
+    return extendList;
   }
 
   private static List<HaxeType> _getCompositeTypes(HaxeAnonymousType anonymousType) {

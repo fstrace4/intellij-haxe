@@ -1236,9 +1236,10 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
     // if not first in chain
     // foo.bar.baz
     HaxeResolveResult result = null;
+    HaxeGenericResolver resolver = null;
     final HaxeReference leftReference = HaxeResolveUtil.getLeftReference(this);
     if (leftReference != null) {
-      HaxeGenericResolver resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(leftReference);
+      resolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(leftReference);
       ResultHolder leftResult = HaxeTypeResolver.getPsiElementType(leftReference, resolver);
       if (leftResult.getClassType() != null) {
         SpecificTypeReference reference = leftResult.getClassType().fullyResolveTypeDefAndUnwrapNullTypeReference();
@@ -1250,14 +1251,14 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
 
     HaxeClass haxeClass = null;
     String name = null;
-    HaxeGenericResolver resolver = null;
+
     if (result != null) {
       if (result != HaxeResolveResult.EMPTY) {
         haxeClass = result.getHaxeClass();
         if (haxeClass != null) {
           name = haxeClass.getName();
         }
-        resolver = result.getSpecialization().toGenericResolver(haxeClass);
+        resolver.addAll(result.getSpecialization().toGenericResolver(haxeClass));
       }
       if (leftReference.resolve() instanceof  HaxeImportAlias alias) {
         name = alias.getIdentifier().getText();
@@ -1493,7 +1494,13 @@ abstract public class HaxeReferenceImpl extends HaxeExpressionImpl implements Ha
         }
       }
     }
-
+    // if type parameter, try to find constraints and use  those ?
+    if(haxeClass instanceof HaxeClassWrapperForTypeParameter typeParameter) {
+      ResultHolder resolved = resolver.resolve(typeParameter);
+      if (resolved != null && resolved.isClassType()) {
+        haxeClass = resolved.getClassType().getHaxeClass();
+      }
+    }
     for (HaxeNamedComponent namedComponent : HaxeResolveUtil.findNamedSubComponents(resolver, haxeClass)) {
       final boolean needFilter = filterByAccess && !namedComponent.isPublic();
       if (isAbstractEnum && HaxeAbstractEnumUtil.couldBeAbstractEnumField(namedComponent)) {

@@ -211,6 +211,11 @@ public class ReferenceCompletionTest extends HaxeCompletionTestBase {
     myFixture.configureByFiles("TypedefOptionalField.hx");
     doTestVariantsInner("TypedefOptionalField.txt");
   }
+  @Test
+  public void testTypeParameterConstraints() throws Throwable {
+    myFixture.configureByFiles("std/String.hx", "std/StdTypes.hx", "std/Array.hx");
+    doTestInclude();
+  }
 
   //https://github.com/TiVo/intellij-haxe/issues/262
   @Test

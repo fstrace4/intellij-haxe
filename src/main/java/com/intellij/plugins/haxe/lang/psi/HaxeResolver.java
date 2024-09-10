@@ -26,6 +26,7 @@ import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes;
+import com.intellij.plugins.haxe.lang.psi.impl.HaxeClassWrapperForTypeParameter;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceExpressionImpl;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
@@ -1481,6 +1482,8 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     // this is important as recursion guards might prevent us from getting the type and returning a different result depending on
     // whether or not we got the type is bad and causes issues.
     if (haxeClass != null && !result.isUnknown()) {
+      // if type parameter, try to find constraints and use those ?
+      haxeClass = useConstraintsIfTypeParameter(reference, haxeClass);
       HaxeClassModel classModel = haxeClass.getModel();
       HaxeBaseMemberModel member = classModel.getMember(identifier, classType.getGenericResolver());
       if (member != null) {
@@ -1565,6 +1568,21 @@ public class HaxeResolver implements ResolveCache.AbstractResolver<HaxeReference
     // Try resolving keywords (super, new), arrays, literals, etc.
     return resolveByClassAndSymbol(haxeClass, reference);
 
+  }
+
+  private static HaxeClass useConstraintsIfTypeParameter(HaxeReference reference, HaxeClass haxeClass) {
+    if(haxeClass instanceof HaxeClassWrapperForTypeParameter typeParameter) {
+      HaxeGenericResolver referenceResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(reference);
+      ResultHolder resolved = referenceResolver.resolve(typeParameter);
+      if (resolved != null && resolved.isClassType()) {
+        SpecificHaxeClassReference classReference = resolved.getClassType();
+        if (classReference != null) {
+          HaxeClass newClassValue = classReference.getHaxeClass();
+          if(newClassValue != null) haxeClass = newClassValue;
+        }
+      }
+    }
+    return haxeClass;
   }
 
   private PsiElement resolveQualifiedReference(HaxeReference reference) {

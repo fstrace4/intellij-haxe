@@ -676,15 +676,19 @@ public class HaxeGenericResolver {
   }
 
   public HaxeGenericResolver withoutMethodTypeParameters() {
-    HaxeGenericResolver copy = copy();
-    copy.resolvers.removeIf(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER);
-    copy.constaints.removeIf(entry -> entry.resolveSource() == METHOD_TYPE_PARAMETER);
-    return copy;
+    return without(METHOD_TYPE_PARAMETER);
   }
   public HaxeGenericResolver withoutArgumentType() {
+    return without(ARGUMENT_TYPE);
+  }
+
+  public HaxeGenericResolver withoutClassTypeParameters() {
+    return without(CLASS_TYPE_PARAMETER);
+  }
+  public HaxeGenericResolver without(ResolveSource source) {
     HaxeGenericResolver copy = copy();
-    copy.resolvers.removeIf(entry -> entry.resolveSource() == ARGUMENT_TYPE);
-    copy.constaints.removeIf(entry -> entry.resolveSource() == ARGUMENT_TYPE);
+    copy.resolvers.removeIf(entry -> entry.resolveSource() == source);
+    copy.constaints.removeIf(entry -> entry.resolveSource() == source);
     return copy;
   }
 }

@@ -111,6 +111,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
 
   private HaxeClassModel _model = null;
 
+  @NotNull
   public HaxeClassModel getModel() {
     if (_model == null) {
       if (this instanceof HaxeTypeParameterMultiType multiType) {
@@ -261,7 +262,7 @@ public abstract class AbstractHaxePsiClass extends AbstractHaxeNamedComponent im
   }
 
   private static CachedValueProvider.Result<List<HaxeNamedComponent>> getHaxeFieldAllCached(@NotNull AbstractHaxePsiClass haxePsiClass) {
-    List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM, HaxeComponentType.ABSTRACT);
+    List<HaxeNamedComponent> all = haxePsiClass.getHaxeFieldAll(HaxeComponentType.CLASS, HaxeComponentType.ENUM, HaxeComponentType.ABSTRACT, HaxeComponentType.TYPEDEF);
 
     List<PsiElement> dependencies = collectCacheDependencies(haxePsiClass);
     return CachedValueProvider.Result.create(all,  dependencies);

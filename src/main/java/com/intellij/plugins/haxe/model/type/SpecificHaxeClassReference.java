@@ -298,9 +298,9 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
     }
 
     HaxeNamedComponent field = aClass.findHaxeFieldByName(name, localResolver);
-    if (field != null) {
+    if (field instanceof HaxePsiField haxePsiField) {
       if (context.root == field) return null;
-      HaxeClass containingClass = (HaxeClass)((HaxePsiField)field).getContainingClass();
+      HaxeClass containingClass = (HaxeClass)haxePsiField.getContainingClass();
       if (containingClass != aClass) {
         localResolver.addAll(createInheritedClassResolver(containingClass, aClass, localResolver));
       }
@@ -634,7 +634,7 @@ public class SpecificHaxeClassReference extends SpecificTypeReference {
         return resolver.resolve(reference1);
       }
       reference = typeDef.getTargetClass(resolver);
-      if (reference.isTypeDefOfClass()) {
+      if (reference!= null && reference.isTypeDefOfClass()) {
         haxeClass = reference.getHaxeClass();
         resolver = reference.getGenericResolver();
       }else{

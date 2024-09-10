@@ -91,7 +91,9 @@ public class HaxeCallExpressionUtil {
         // map type Parameters to method declaring class resolver if necessary
         if (methodClass != null && methodClass.haxeClass != null) {
           HaxeClass callieClass = callieType.getClassType().getHaxeClass();
-          classTypeResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodClass.haxeClass, callieClass, classTypeResolver);
+          if(callieClass != null) {
+            classTypeResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodClass.haxeClass, callieClass, classTypeResolver);
+          }
         }
       }
     }

@@ -185,10 +185,8 @@ public class HaxeExpressionEvaluatorHandlers {
 
         if (typeReference.isUnknown()) continue;
 
-        // unwrap Null
-        //TODO make util for unwrap/get underlying type of Null<T>? (or fix resolver ?)
         if (typeReference.isNullType()) {
-          typeHolder = typeHolder.getClassType().getSpecifics()[0];
+          typeHolder = typeHolder.tryUnwrapNullType();
         }
 
         // TODO: Yo! Eric!!  This needs to get fixed.  The resolver is coming back as Dynamic, when it should be String
@@ -201,6 +199,7 @@ public class HaxeExpressionEvaluatorHandlers {
 
         SpecificHaxeClassReference classType = typeHolder.getClassType();
         if (null != classType) {
+          localResolver = localResolver.withoutClassTypeParameters();
           localResolver.addAll(classType.getGenericResolver());
         }
         String accessName = child.getText();
@@ -281,6 +280,11 @@ public class HaxeExpressionEvaluatorHandlers {
                   HaxeGenericResolver resolverForContainingClass = inheritedClassResolver.getSpecialization(null).toGenericResolver(containingClass);
                   ResultHolder resolve = resolverForContainingClass.resolve(typeHolder);
                   if (resolve != null && !resolve.isUnknown()) typeHolder = resolve;
+                }else if (typeHolder.isTypeParameter()) {
+                  ResultHolder resolve = resolver.resolve(typeHolder);
+                  if(resolve != null && !resolve.isUnknown()) {
+                    typeHolder = resolve;
+                  }
                 }
 
               }
@@ -907,8 +911,13 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeArrayAccessExpression arrayAccessExpression) {
     final List<HaxeExpression> list = arrayAccessExpression.getExpressionList();
     if (list.size() >= 2) {
-      final SpecificTypeReference left = handle(list.get(0), context, resolver).getType();
-      final SpecificTypeReference right = handle(list.get(1), context, resolver).getType();
+      SpecificTypeReference left = handle(list.get(0), context, resolver).getType();
+      SpecificTypeReference right = handle(list.get(1), context, resolver).getType();
+      // if left is typeParameter try to use typeParameter constraints and see if it have array accessor
+      if(left.isTypeParameter()) {
+        ResultHolder resolve = resolver.resolve(left.createHolder());
+        if(resolve != null && !resolve.isUnknown())left = resolve.getType();
+      }
       if (left.isArray()) {
         Object constant = null;
         if (left.isConstant()) {

@@ -22,12 +22,17 @@ import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.HaxeAnonymousTypeModel;
+import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.impl.PsiClassImplUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author: Fedor.Korotkov
@@ -42,6 +47,18 @@ public abstract class AnonymousHaxeTypeImpl extends AbstractHaxePsiClass impleme
   public List<HaxeType> getHaxeExtendsList() {
     HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel) getModel();
     return model.getExtensionTypesPsi();
+  }
+
+  @Override
+  @NotNull
+  public PsiClass[] getSupers() {
+    HaxeAnonymousTypeModel model = (HaxeAnonymousTypeModel) getModel();
+    return model.getExtendsTypes().stream()
+      .map(ResultHolder::getClassType)
+      .filter(Objects::nonNull)
+      .map(SpecificHaxeClassReference::getHaxeClass)
+      .filter(Objects::nonNull)
+      .toArray(PsiClass[]::new);
   }
 
   @Override

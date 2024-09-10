@@ -257,17 +257,21 @@ public class HaxeGenericResolverUtil {
     }
   }
 
-  public static HaxeGenericResolver createInheritedClassResolver(HaxeClass targetClass, HaxeClass currentClass,
-                                                                  HaxeGenericResolver localResolver) {
+  public static HaxeGenericResolver createInheritedClassResolver(@NotNull HaxeClass targetClass, @NotNull HaxeClass currentClass,
+                                                                  @Nullable HaxeGenericResolver localResolver) {
 
     List<SpecificHaxeClassReference> path = new ArrayList<>();
     findClassHierarchy(currentClass, targetClass, path);
 
     Collections.reverse(path);
+
     HaxeGenericResolver resolver = currentClass.getMemberResolver(localResolver);
+    if(resolver == null) resolver = new HaxeGenericResolver();
     for (SpecificHaxeClassReference reference : path) {
       ResultHolder resolved = resolver.resolve(reference.createHolder());
-      resolver = resolved.getClassType().getGenericResolver();
+      if(resolved.isClassType()) {
+        resolver = resolved.getClassType().getGenericResolver();
+      }
     }
     return resolver;
   }
@@ -280,12 +284,23 @@ public class HaxeGenericResolverUtil {
     if (fromModel.isTypedef()) {
       SpecificHaxeClassReference reference = fromModel.getUnderlyingClassReference(fromModel.getGenericResolver(null));
       if (reference!= null) {
-        path.add(reference);
+        // NOTE: anonymous types can extend/ combine multiple definitions
+        // we therefor only add to path when we have found and reached the target (when the recursive calls returns true)
         SpecificHaxeClassReference resolvedTypeDef = reference.resolveTypeDefClass();
         if (resolvedTypeDef != null) {
           HaxeClass childClass = resolvedTypeDef.getHaxeClass();
-          if (childClass == to) return true;
-          if (childClass != null) return findClassHierarchy(childClass, to, path);
+          if (childClass == to){
+            path.add(reference);
+            return true;
+          }
+          if (childClass != null){
+            return findClassHierarchy(childClass, to, path);
+          }
+        }else {
+          if (reference.getHaxeClass() == to) {
+            path.add(reference);
+            return true;
+          }
         }
       }
     }
@@ -304,10 +319,6 @@ public class HaxeGenericResolverUtil {
         }
       }
     }
-
     return false;
   }
-
-
-
 }
