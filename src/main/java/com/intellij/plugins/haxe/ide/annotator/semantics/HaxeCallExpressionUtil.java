@@ -5,6 +5,8 @@ import com.intellij.plugins.haxe.HaxeBundle;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodDeclarationImpl;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.model.type.resolver.ResolverEntry;

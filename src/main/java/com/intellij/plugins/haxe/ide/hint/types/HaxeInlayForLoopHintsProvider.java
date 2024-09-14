@@ -3,6 +3,7 @@ package com.intellij.plugins.haxe.ide.hint.types;
 import com.intellij.codeInsight.hints.declarative.*;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;

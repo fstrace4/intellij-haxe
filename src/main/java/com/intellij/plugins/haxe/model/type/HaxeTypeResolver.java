@@ -22,11 +22,13 @@ package com.intellij.plugins.haxe.model.type;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.openapi.util.RecursionGuard;
 import com.intellij.openapi.util.RecursionManager;
-import com.intellij.plugins.haxe.ide.hierarchy.HaxeHierarchyUtils;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeMethodImpl;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorReturnInfo;
 import com.intellij.plugins.haxe.model.type.SpecificFunctionReference.Argument;
 import com.intellij.plugins.haxe.util.HaxeAbstractEnumUtil;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
@@ -41,8 +43,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.isDynamicBecauseOfNullValueInit;
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.tryToFindTypeFromUsage;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorHandlers.isDynamicBecauseOfNullValueInit;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.tryToFindTypeFromUsage;
 
 public class HaxeTypeResolver {
   @NotNull
@@ -679,9 +681,9 @@ public class HaxeTypeResolver {
     final HaxeTypeTag typeTag = UsefulPsiTreeUtil.getChild(element, HaxeTypeTag.class);
     ResultHolder expectedType = SpecificTypeReference.getDynamic(element).createHolder();
     if (typeTag == null) {
-      final List<ReturnInfo> infos = context.getReturnInfos();
+      final List<HaxeExpressionEvaluatorReturnInfo> infos = context.getReturnInfos();
       if (!infos.isEmpty()) {
-        expectedType = infos.get(0).type;
+        expectedType = infos.get(0).type();
       }
     }
     else {
@@ -689,12 +691,12 @@ public class HaxeTypeResolver {
     }
 
     if (expectedType == null) return;
-    for (ReturnInfo retinfo : context.getReturnInfos()) {
+    for (HaxeExpressionEvaluatorReturnInfo retinfo : context.getReturnInfos()) {
       if (context.holder != null) {
-        if (expectedType.canAssign(retinfo.type)) continue;
+        if (expectedType.canAssign(retinfo.type())) continue;
         context.addError(
-          retinfo.element,
-          "Can't return " + retinfo.type + ", expected " + expectedType.toStringWithoutConstant()
+          retinfo.element(),
+          "Can't return " + retinfo.type() + ", expected " + expectedType.toStringWithoutConstant()
         );
       }
     }

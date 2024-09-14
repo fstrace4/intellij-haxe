@@ -3,6 +3,7 @@ package com.intellij.plugins.haxe.model;
 import com.intellij.plugins.haxe.lang.psi.HaxeComponentName;
 import com.intellij.plugins.haxe.lang.psi.HaxeObjectLiteral;
 import com.intellij.plugins.haxe.lang.psi.HaxeObjectLiteralElement;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.*;
 import org.jetbrains.annotations.Nullable;
 

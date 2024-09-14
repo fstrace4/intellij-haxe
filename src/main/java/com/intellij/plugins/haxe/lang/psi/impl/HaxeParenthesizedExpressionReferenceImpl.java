@@ -17,6 +17,8 @@ package com.intellij.plugins.haxe.lang.psi.impl;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.plugins.haxe.lang.psi.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;

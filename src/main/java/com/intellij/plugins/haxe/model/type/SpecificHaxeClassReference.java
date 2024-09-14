@@ -30,6 +30,7 @@ import com.intellij.plugins.haxe.metadata.HaxeMetadataList;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
 import com.intellij.psi.PsiElement;

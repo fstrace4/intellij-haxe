@@ -19,6 +19,7 @@ package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.plugins.haxe.model.HaxeMethodModel;
 import com.intellij.plugins.haxe.model.HaxeParameterModel;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.psi.PsiElement;
 
 import java.util.ArrayList;

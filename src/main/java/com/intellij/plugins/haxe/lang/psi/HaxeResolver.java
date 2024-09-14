@@ -32,6 +32,8 @@ import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataCompileTimeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.util.HaxeAbstractForwardUtil;
 import com.intellij.plugins.haxe.util.HaxeDebugUtil;
@@ -49,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findObjectLiteralType;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.findObjectLiteralType;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
 import static com.intellij.plugins.haxe.util.HaxeResolveUtil.searchInSameFileForEnumValues;
 import static com.intellij.plugins.haxe.util.HaxeStringUtil.elide;

@@ -1,4 +1,4 @@
-package com.intellij.plugins.haxe.model.type;
+package com.intellij.plugins.haxe.model.evaluator;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.util.PsiModificationTracker;

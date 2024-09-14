@@ -1,4 +1,4 @@
-package com.intellij.plugins.haxe.model.type;
+package com.intellij.plugins.haxe.model.evaluator;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.annotation.AnnotationBuilder;
@@ -15,6 +15,7 @@ import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceExpressionImpl;
 import com.intellij.plugins.haxe.model.*;
 import com.intellij.plugins.haxe.model.fixer.*;
+import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.model.type.resolver.ResolveSource;
 import com.intellij.plugins.haxe.util.*;
 import com.intellij.psi.PsiElement;
@@ -38,10 +39,12 @@ import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypeSets.ONLY_COMMEN
 import static com.intellij.plugins.haxe.lang.lexer.HaxeTokenTypes.KUNTYPED;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.getLiteralClassName;
 import static com.intellij.plugins.haxe.lang.psi.impl.HaxeReferenceImpl.tryToFindTypeFromCallExpression;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.searchReferencesForTypeParameters;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.tryToFindTypeFromUsage;
 import static com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil.createInheritedClassResolver;
 import static com.intellij.plugins.haxe.model.type.HaxeMacroUtil.resolveMacroTypesForFunction;
 import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.*;
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.*;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.*;
 
 @CustomLog
 public class HaxeExpressionEvaluatorHandlers {
@@ -1487,28 +1490,7 @@ public class HaxeExpressionEvaluatorHandlers {
     context.setLocal(name.getText(), result);
     return result != null ? result : createUnknown(varDeclaration);
   }
-  public static @Nullable ResultHolder tryToFindTypeFromUsage(HaxeComponentName element,
-                                                               ResultHolder result,
-                                                               ResultHolder hint,
-                                                               HaxeExpressionEvaluatorContext context,
-                                                               HaxeGenericResolver resolver,
-                                                              @Nullable PsiElement scope
-  ) {
-    RecursionManager.markStack();
-    ResultHolder searchResult = evaluatorHandlersRecursionGuard.computePreventingRecursion(element, true, () -> {
-      return searchReferencesForType(element, context, resolver, scope, hint);
-    });
-    if (searchResult != null && !searchResult.isUnknown()) {
-      if (result == null) {
-        result = searchResult;
-      }else if(isDynamicBecauseOfNullValueInit(result)){
-        result = HaxeTypeUnifier.unify(result, searchResult, UnificationRules.UNIFY_NULL);
-      }else if (searchResult.getType().isSameType(result.getType())) {
-        result = HaxeTypeUnifier.unify(result, searchResult);
-      }
-    }
-    return result;
-  }
+
 
   private static @Nullable ResultHolder tryGetEnumValuesDeclaringClass(ResultHolder result) {
     if (result != null && result.isEnumValueType()) {
@@ -1965,5 +1947,8 @@ public class HaxeExpressionEvaluatorHandlers {
     }
     return false;
   }
+
+
+
 
 }

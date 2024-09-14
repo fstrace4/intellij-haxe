@@ -3,6 +3,8 @@ package com.intellij.plugins.haxe.model.type;
 import com.intellij.plugins.haxe.lang.psi.HaxeCallExpression;
 import com.intellij.plugins.haxe.lang.psi.HaxeExpression;
 import com.intellij.plugins.haxe.model.HaxeParameterModel;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

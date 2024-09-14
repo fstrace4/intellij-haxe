@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.model.type;
+package com.intellij.plugins.haxe.model.evaluator;
 
 import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.progress.*;
@@ -28,6 +28,7 @@ import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.AbstractHaxeNamedComponent;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeObjectLiteralImpl;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.*;
 import com.intellij.psi.search.LocalSearchScope;
 import com.intellij.psi.search.PsiSearchHelper;
@@ -40,11 +41,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 
-import  static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.*;
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluatorHandlers.handleWithRecursionGuard;
+import  static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorHandlers.*;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorHandlers.handleWithRecursionGuard;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.findUsageAsParameterInFunctionCall;
 import static com.intellij.plugins.haxe.model.type.HaxeMacroTypeUtil.getTypeDefinition;
 
 @CustomLog
@@ -686,201 +687,8 @@ public class HaxeExpressionEvaluator {
     return null;
   }
 
-  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeExpression referenceExpression,
-                                                  HaxeCallExpression callExpression,
-                                                  HaxeCallExpressionList list,
-                                                                           SpecificFunctionReference functionReference) {
-    int index = -1;
-    if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
-    if (index == -1) return null;
-    HaxeCallExpressionUtil.CallExpressionValidation validation =
-      HaxeCallExpressionUtil.checkFunctionCall(callExpression, functionReference);
-
-    if (validation.isStaticExtension()) index++;
-    return validation.getParameterIndexToType().getOrDefault(index, null);
-  }
-  private static @Nullable ResultHolder findUsageAsParameterInFunctionCall(HaxeExpression referenceExpression,
-                                                  HaxeCallExpression callExpression,
-                                                  HaxeCallExpressionList list,
-                                                  PsiElement resolved) {
-    int index = -1;
-    if (list != null) index = list.getExpressionList().indexOf(referenceExpression);
-    if (index == -1) return null;
-
-    if (resolved instanceof HaxeMethod method) {
-      HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
-      if (validation.isStaticExtension()) index++;
-      return validation.getParameterIndexToType().getOrDefault(index, null);
-    }
-    return null;
-  }
-
-  @NotNull
-  public static ResultHolder searchReferencesForTypeParameters(final HaxePsiField field,
-                                                               final HaxeExpressionEvaluatorContext context,
-                                                               final HaxeGenericResolver resolver, ResultHolder resultHolder) {
-    resultHolder = resultHolder.duplicate();
-    HaxeComponentName componentName = field.getComponentName();
-    SpecificHaxeClassReference type = resultHolder.getClassType();
-    SpecificHaxeClassReference classType = type;
-
-    HaxeGenericResolver classResolver = classType.getGenericResolver();
-    PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
-    final SearchScope useScope = searchHelper.getCodeUsageScope(componentName);
-
-    List<PsiReference> references = referenceSearch(componentName, useScope);
-
-    for (PsiReference reference : references) {
-      if (reference instanceof HaxeExpression expression) {
-        if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
-          HaxeExpression rightExpression = assignExpression.getRightExpression();
-          ResultHolder result = handleWithRecursionGuard(rightExpression, context, resolver);
-          if (result != null && !result.isUnknown() && result.getType().isSameType(resultHolder.getType())) {
-            HaxeGenericResolver resultResolver = result.getClassType().getGenericResolver();
-            HaxeGenericResolver resultResolverWithoutUnknowns = resultResolver.withoutUnknowns();
-            // check that assigned value does not contain any unknown typeParameters (ex. someArrVar = [])
-            if (resultResolver.names().length == resultResolverWithoutUnknowns.names().length) {
-              return result;
-            }
-          }
-        }
-        if (expression.getParent() instanceof HaxeReferenceExpression referenceExpression) {
-          PsiElement resolved = referenceExpression.resolve();
-          if (resolved instanceof HaxeMethodDeclaration methodDeclaration
-              && referenceExpression.getParent() instanceof HaxeCallExpression callExpression) {
-
-            HaxeMethodModel methodModel = methodDeclaration.getModel();
-
-            HaxeCallExpressionUtil.CallExpressionValidation validation =
-              HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod());
-
-            HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
-            if (resolverFromCallExpression != null) {
-              // removing any typeParameters that are local to the method (we only want type parameters that are class specific)
-              resolverFromCallExpression.removeAll(methodModel.getGenericResolver(null).names());
-              // bit of a hack to get rid of any unknowns
-              ResultHolder resolve = resolverFromCallExpression.resolve(resultHolder.getClassType().replaceUnknownsWithTypeParameter());
-              if (resolve != null && !resolve.isUnknown()) {
-                return resolve;
-              }
-            }
-
-          }
-        }
-        if (expression.getParent() instanceof HaxeArrayAccessExpression arrayAccessExpression) {
-          // try to find setter first if that fails try getter
-          if (classType.getHaxeClass() != null) { // need to check if Haxe class exists as it will be null when SDK is missing
-            HaxeNamedComponent arrayAccessSetter = classType.getHaxeClass().findArrayAccessSetter(resolver);
-            if (arrayAccessSetter instanceof HaxeMethodDeclaration methodDeclaration) {
-              HaxeMethodModel methodModel = methodDeclaration.getModel();
-              // make sure we are using class level typeParameters (and not method level)
-              if (methodModel.getGenericParams().isEmpty()) {
-                List<HaxeParameterModel> parameters = methodModel.getParameters();
-
-                HaxeTypeTag keyParamPsi = parameters.get(0).getTypeTagPsi();
-                HaxeTypeTag valueParamPsi = parameters.get(1).getTypeTagPsi();
 
 
-                @NotNull String[] specificNames = classResolver.names();
-                for (int i = 0; i < specificNames.length; i++) {
-                  String keyPsiName = keyParamPsi.getTypeOrAnonymous().getType().getText();
-                  // key
-                  if (keyPsiName.equals(specificNames[i])) {
-                    HaxeExpression keyExpression = arrayAccessExpression.getExpressionList().get(1);
-                    ResultHolder handle = handle(keyExpression, context, resolver);
-                    if (type.getSpecifics()[i].isUnknown()) {
-                      type.getSpecifics()[i] = handle;
-                    }
-                    else {
-                      ResultHolder specific = type.getSpecifics()[i];
-                      ResultHolder unified = specific.isTypeParameter() ? handle : HaxeTypeUnifier.unify(handle, specific);
-                      type.getSpecifics()[i] = unified;
-                    }
-                  }
-                  // value
-                  if (arrayAccessExpression.getParent() instanceof HaxeBinaryExpression binaryExpression) {
-                    String valuePsiName = valueParamPsi.getTypeOrAnonymous().getType().getText();
-                    if (valuePsiName.equals(specificNames[i])) {
-                      HaxeExpression keyExpression = binaryExpression.getExpressionList().get(1);
-                      ResultHolder handle = handle(keyExpression, context, resolver);
-                      if (type.getSpecifics()[i].isUnknown()) {
-                        type.getSpecifics()[i] = handle;
-                      }
-                      else {
-                        ResultHolder specific = type.getSpecifics()[i];
-                        ResultHolder unified = specific.isTypeParameter() ? handle : HaxeTypeUnifier.unify(handle, specific);
-                        type.getSpecifics()[i] = unified;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            else {
-              HaxeNamedComponent arrayAccessGetter = classType.getHaxeClass().findArrayAccessGetter(resolver);
-              if (arrayAccessGetter instanceof HaxeMethodDeclaration methodDeclaration) {
-                HaxeMethodModel methodModel = methodDeclaration.getModel();
-                // make sure we are using class level typeParameters (and not method level)
-                if (methodModel.getGenericParams().isEmpty()) {
-                  List<HaxeParameterModel> parameters = methodModel.getParameters();
-                  HaxeParameterModel keyParameter = parameters.get(0);
-                  HaxeTypeTag keyParamPsi = keyParameter.getTypeTagPsi();
-
-                  @NotNull String[] specificNames = classResolver.names();
-                  for (int i = 0; i < specificNames.length; i++) {
-                    String keyPsiName = keyParamPsi.getTypeOrAnonymous().getType().getText();
-                    if (keyPsiName.equals(specificNames[i])) {
-                      HaxeExpression keyExpression = arrayAccessExpression.getExpressionList().get(1);
-                      ResultHolder handle = handle(keyExpression, context, resolver);
-                      if (type.getSpecifics()[i].isUnknown()) {
-                        type.getSpecifics()[i] = handle;
-                      }
-                      else {
-                        ResultHolder unified = HaxeTypeUnifier.unify(handle, type.getSpecifics()[i]);
-                        type.getSpecifics()[i] = unified;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        if(expression.getParent() instanceof  HaxeObjectLiteralElement literalElement) {
-          HaxeObjectLiteral objectLiteral = PsiTreeUtil.getParentOfType(literalElement, HaxeObjectLiteral.class);
-          if(objectLiteral == null) continue;
-
-          ResultHolder objectLiteralType = findObjectLiteralType(context, resolver, objectLiteral);
-
-          if (objectLiteralType != null && !objectLiteralType.isUnknown()) {
-            SpecificHaxeClassReference typeFromUsage = objectLiteralType.getClassType();
-            if (typeFromUsage != null && typeFromUsage.getHaxeClassModel() != null) {
-              HaxeBaseMemberModel objectLiteralElementAsMember = typeFromUsage.getHaxeClassModel()
-                .getMember(literalElement.getName(), typeFromUsage.getGenericResolver());
-
-              if (objectLiteralElementAsMember != null) {
-                ResultHolder objectLiteralElementType = objectLiteralElementAsMember.getResultType(resolver);
-                if (objectLiteralElementType.getClassType() != null) {
-                  @NotNull ResultHolder[] specifics = objectLiteralElementType.getClassType().getSpecifics();
-
-                  for (int i = 0; i < type.getSpecifics().length; i++) {
-                    if (type.getSpecifics()[i].isUnknown()) {
-                      type.getSpecifics()[i] = specifics[i];
-                    }
-                    else {
-                      ResultHolder unified = HaxeTypeUnifier.unify(specifics[i], type.getSpecifics()[i]);
-                      type.getSpecifics()[i] = unified;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return  resultHolder;
-  }
 
   public static @Nullable ResultHolder findObjectLiteralType(HaxeExpressionEvaluatorContext context,
                                                   HaxeGenericResolver resolver,

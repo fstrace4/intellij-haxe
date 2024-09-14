@@ -17,8 +17,10 @@ package com.intellij.plugins.haxe.model.type;
 
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.util.UsefulPsiTreeUtil;
 import com.intellij.psi.PsiElement;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,10 +29,10 @@ import java.util.List;
 
 public class SpecificEnumValueReference extends SpecificTypeReference {
 
-  final HaxeEnumValueDeclaration declaration;
-  final SpecificHaxeClassReference enumClass;
-  final HaxeGenericResolver resolver;
-  final Object constantValue;
+  public final HaxeEnumValueDeclaration declaration;
+  public final SpecificHaxeClassReference enumClass;
+  public final HaxeGenericResolver resolver;
+  public final Object constantValue;
 
   SpecificFunctionReference constructor = null;
 

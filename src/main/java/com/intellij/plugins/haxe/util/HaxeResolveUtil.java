@@ -41,6 +41,8 @@ import com.intellij.plugins.haxe.lang.psi.impl.HaxeParenthesizedExpressionRefere
 import com.intellij.plugins.haxe.lang.psi.impl.HaxePsiCompositeElementImpl;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeTypeParameterMultiType;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
@@ -56,8 +58,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.evaluate;
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.findIteratorType;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.evaluate;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.findIteratorType;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;
 
 /**

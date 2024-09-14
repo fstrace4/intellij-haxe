@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.plugins.haxe.model.type;
+package com.intellij.plugins.haxe.model.evaluator;
 
 import com.intellij.lang.annotation.AnnotationBuilder;
 import com.intellij.lang.annotation.AnnotationHolder;
@@ -24,6 +24,7 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.plugins.haxe.ide.highlight.HaxeSyntaxHighlighterColors;
 import com.intellij.plugins.haxe.model.HaxeDocumentModel;
 import com.intellij.plugins.haxe.model.fixer.HaxeFixer;
+import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +37,7 @@ public class HaxeExpressionEvaluatorContext {
   public ResultHolder result;
   private List<ResultHolder> returns = new ArrayList<ResultHolder>();
   private List<PsiElement> returnElements = new ArrayList<PsiElement>();
-  private List<ReturnInfo> returnInfos = new ArrayList<ReturnInfo>();
+  private List<HaxeExpressionEvaluatorReturnInfo> returnInfos = new ArrayList<HaxeExpressionEvaluatorReturnInfo>();
 
   public AnnotationHolder holder;
   private HaxeScope<ResultHolder> scope = new HaxeScope<ResultHolder>();
@@ -63,7 +64,7 @@ public class HaxeExpressionEvaluatorContext {
   public void addReturnType(ResultHolder type, PsiElement element) {
     this.returns.add(type);
     this.returnElements.add(element);
-    this.returnInfos.add(new ReturnInfo(element, type));
+    this.returnInfos.add(new HaxeExpressionEvaluatorReturnInfo(element, type));
   }
 
   public ResultHolder getReturnType() {
@@ -75,7 +76,7 @@ public class HaxeExpressionEvaluatorContext {
     return returns;
   }
 
-  public List<ReturnInfo> getReturnInfos() {
+  public List<HaxeExpressionEvaluatorReturnInfo> getReturnInfos() {
     return returnInfos;
   }
 
@@ -156,15 +157,5 @@ public class HaxeExpressionEvaluatorContext {
 
   public HaxeScope<ResultHolder> getScope() {
     return scope;
-  }
-}
-
-class ReturnInfo {
-  final public ResultHolder type;
-  final public PsiElement element;
-
-  public ReturnInfo(PsiElement element, ResultHolder type) {
-    this.element = element;
-    this.type = type;
   }
 }

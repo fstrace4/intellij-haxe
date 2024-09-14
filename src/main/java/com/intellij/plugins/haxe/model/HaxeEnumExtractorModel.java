@@ -6,16 +6,14 @@ import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.plugins.haxe.model.type.SpecificHaxeClassReference;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.evaluate;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.evaluate;
 
 public class HaxeEnumExtractorModel implements HaxeModel {
 

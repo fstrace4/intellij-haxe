@@ -1,12 +1,14 @@
-package com.intellij.plugins.haxe.model.type;
+package com.intellij.plugins.haxe.model.evaluator;
 
+import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
+import com.intellij.plugins.haxe.model.type.ResultHolder;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator._handle;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator._handle;
 
 /**
  * To avoid unnecessary re-evaluation of elements used by  other expressions (ex. functions without type tags etc)

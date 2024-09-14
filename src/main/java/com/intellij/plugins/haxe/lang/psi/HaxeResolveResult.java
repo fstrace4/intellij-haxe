@@ -22,6 +22,8 @@ package com.intellij.plugins.haxe.lang.psi;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeClassWrapperForTypeParameter;
 import com.intellij.plugins.haxe.model.HaxeClassModel;
 import com.intellij.plugins.haxe.model.HaxeMethodModel;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.util.HaxeResolveUtil;
 import com.intellij.plugins.haxe.util.ThreadLocalCounter;
@@ -494,7 +496,8 @@ public class HaxeResolveResult implements Cloneable {
 
   public void specializeByTypeInference(PsiElement element) {
     HaxeGenericResolver resolver = specialization != null ? specialization.toGenericResolver(element) : new HaxeGenericResolver();
-    HaxeExpressionEvaluatorContext evaluated = HaxeExpressionEvaluator.evaluate(element, new HaxeExpressionEvaluatorContext(this.getHaxeClass()), resolver);
+    HaxeExpressionEvaluatorContext
+      evaluated = HaxeExpressionEvaluator.evaluate(element, new HaxeExpressionEvaluatorContext(this.getHaxeClass()), resolver);
     if (null != evaluated.result) {
       SpecificHaxeClassReference classType = evaluated.result.getClassType();
       if (null != classType) {

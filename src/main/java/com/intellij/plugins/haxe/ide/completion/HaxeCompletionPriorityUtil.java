@@ -9,6 +9,7 @@ import com.intellij.plugins.haxe.ide.annotator.semantics.HaxeCallExpressionUtil;
 import com.intellij.plugins.haxe.ide.lookup.*;
 import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;

@@ -39,6 +39,8 @@ import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.model.type.*;
 import com.intellij.plugins.haxe.util.*;
 import com.intellij.psi.*;
@@ -57,7 +59,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static com.intellij.openapi.util.text.StringUtil.defaultIfEmpty;
-import static com.intellij.plugins.haxe.model.type.HaxeExpressionEvaluator.searchReferencesForType;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.searchReferencesForType;
 import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.ARRAY;
 import static com.intellij.plugins.haxe.model.type.SpecificTypeReference.CLASS;
 import static com.intellij.plugins.haxe.util.HaxeDebugLogUtil.traceAs;

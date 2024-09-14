@@ -23,6 +23,7 @@ import com.intellij.plugins.haxe.lang.psi.*;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxeDummyASTNode;
 import com.intellij.plugins.haxe.lang.psi.impl.HaxePsiCompositeElementImpl;
 import com.intellij.plugins.haxe.model.*;
+import com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorContext;
 import com.intellij.plugins.haxe.util.HaxeProjectUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -64,7 +65,7 @@ public abstract class SpecificTypeReference {
   /**
    * The context is a parent to be used in a treeWalkUp -- see {@link PsiElement#getContext()}.
    */
-  final protected PsiElement context;
+  final public PsiElement context;
 
   public SpecificTypeReference(@NotNull PsiElement context) {
     this.context = context;
