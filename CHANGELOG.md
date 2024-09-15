@@ -2,7 +2,10 @@
 ## 1.5.12
 * Bugfix: Function types for inherited methods could in some cases show wrong signature when type parameters where used.
 * Bugfix: Auto-completion would in some cases show wrong types when type parameters where used. 
-* Improvement: performance improvements (expression evaluation cache)  
+* Bugfix: Fix NPE when evaluating callExpression made out of reifications
+* Improvement: More correctly handling monomorphism  
+* Improvement: Resolver should now resolve known members from typeParameter constraints.   
+* Improvement: performance improvements (expression evaluation cache & fix for slow forward lookups)  
 * 
 ## 1.5.11
 * Improvement: Variables and members with only init expression "= null" should now correctly resolve to type Null<T>. 
