@@ -139,7 +139,7 @@ public class HaxeExpressionEvaluator {
       //log.warn("Error evaluating expression type for element " + (null == element ? "<null>" : element.toString()), t);
       //throw t;
     }
-    return createUnknown(element != null ? element : context.root);
+    return createUnknown(element.getNode() != null ? element : context.root);
   }
 
   // if recursion guard is triggered value will be null

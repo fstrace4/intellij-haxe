@@ -95,6 +95,10 @@ public class HaxeExpressionEvaluatorHandlers {
         SpecificTypeReference right = handle(children[2], context, resolver).getType();
         left = resolveAnyTypeDefs(left);
         right = resolveAnyTypeDefs(right);
+        // we might have constraints that help up here
+        if(left.isTypeParameter())  left = tryResolveTypeParameter(left, resolver);
+        if(right.isTypeParameter())  right = tryResolveTypeParameter(right, resolver);
+
         return HaxeOperatorResolver.getBinaryOperatorResult(expression, left, right, operatorText, context).createHolder();
       }
       else {
@@ -103,10 +107,22 @@ public class HaxeExpressionEvaluatorHandlers {
         SpecificTypeReference right = handle(children[1], context, resolver).getType();
         left = resolveAnyTypeDefs(left);
         right = resolveAnyTypeDefs(right);
+        // we might have constraints that help up here
+        if(left.isTypeParameter())  left = tryResolveTypeParameter(left, resolver);
+        if(right.isTypeParameter())  right = tryResolveTypeParameter(right, resolver);
+
         return HaxeOperatorResolver.getBinaryOperatorResult(expression, left, right, operatorText, context).createHolder();
       }
     }
     return createUnknown(expression);
+  }
+
+  private static SpecificTypeReference tryResolveTypeParameter(SpecificTypeReference typeParam, HaxeGenericResolver resolver) {
+    ResultHolder resolve = resolver.resolve(typeParam.createHolder());
+    if( resolve != null && !resolve.isUnknown()) {
+      return resolve.getType();
+    }
+    return typeParam;
   }
 
   static ResultHolder handleTypeCheckExpr(
