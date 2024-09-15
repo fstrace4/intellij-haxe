@@ -438,7 +438,7 @@ public class HaxeExpressionEvaluator {
                                                                              ResultHolder typeHolder) {
     // if new expression is missing typeParameters try to resolve from usage
     HaxeType type = expression.getType();
-    if (type.getTypeParam() == null && typeHolder.getClassType() != null && typeHolder.getClassType().getSpecifics().length > 0) {
+    if (type != null && type.getTypeParam() == null && typeHolder.getClassType() != null && typeHolder.getClassType().getSpecifics().length > 0) {
       HaxePsiField fieldDeclaration = PsiTreeUtil.getParentOfType(expression, HaxePsiField.class);
       if (fieldDeclaration != null && fieldDeclaration.getTypeTag() == null) {
         SpecificHaxeClassReference classType = typeHolder.getClassType();

@@ -591,14 +591,6 @@ public class HaxeGenericResolver {
     return null;
   }
 
-  public void addAssignHint(HaxeGenericResolver resolver) {
-    Optional<ResolverEntry> assign = resolver.findAssignToType();
-    if(assign.isPresent()) {
-      // remove old if present
-      resolvers.removeIf(entry -> entry.resolveSource() == ResolveSource.ASSIGN_TYPE);
-      resolvers.add(assign.get().copy());
-    }
-  }
 
   public SpecificFunctionReference substituteTypeParamsWithAssignHintTypes(SpecificFunctionReference type) {
     Optional<ResolverEntry> assignHint = findAssignToType();

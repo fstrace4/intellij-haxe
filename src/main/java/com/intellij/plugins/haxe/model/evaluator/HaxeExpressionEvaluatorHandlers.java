@@ -369,7 +369,7 @@ public class HaxeExpressionEvaluatorHandlers {
           else {
             // attempt to resolve sub-element using default handle logic
             if (!(subelement instanceof PsiPackage)) {
-              typeHolder = handleWithRecursionGuard(subelement, context, resolver);//TODO null should probably block result cache
+              typeHolder = handleWithRecursionGuard(subelement, context, resolver);
             }
           }
         }

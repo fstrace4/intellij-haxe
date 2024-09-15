@@ -213,12 +213,32 @@ public class HaxeCallExpressionUtil {
         inheritTypeParametersFromArgument(unresolvedParameterType, argumentType, argumentResolver, resolver, typeParamTable);
       }
 
-      // heck if functionType has untyped open parameterlist, if so inherit type
-      if (parameterType.isFunctionType() &&  argumentType.isFunctionType()
-         &&  argument instanceof HaxeFunctionLiteral literal && literal.getOpenParameterList() != null) {
+      // hack if functionType has untyped open parameterlist, if so inherit type, (lambdas can also be missing type)
+      if (parameterType.isFunctionType() &&  argumentType.isFunctionType()  &&  argument instanceof HaxeFunctionLiteral literal) {
         SpecificFunctionReference paramFn = parameterType.getFunctionType();
         SpecificFunctionReference argFn = argumentType.getFunctionType();
-        argumentType = new SpecificFunctionReference(paramFn.getArguments(), argFn.getReturnType(),  null, literal, literal).createHolder();
+        if(literal.getOpenParameterList() != null) {
+          argumentType =  new SpecificFunctionReference(paramFn.getArguments(), argFn.getReturnType(), null, literal, literal).createHolder();
+        }else if (literal.getParameterList() != null) {
+          List<HaxeParameter> list = literal.getParameterList().getParameterList();
+          List<SpecificFunctionReference.Argument> argumentsArgs = argFn.getArguments();
+          List<SpecificFunctionReference.Argument> paramsArgs = paramFn.getArguments();
+          int min = Math.min(Math.min(list.size(), argumentsArgs.size()),paramsArgs.size());
+
+          for (int i = 0; i < min; i++) {
+            HaxeParameter haxeParameter = list.get(i);
+            if (haxeParameter.getTypeTag() == null && haxeParameter.getVarInit() == null) {
+              SpecificFunctionReference.Argument argArg = argumentsArgs.get(i);
+              SpecificFunctionReference.Argument paramArg = paramsArgs.get(i);
+              ResultHolder argArgType = argArg.getType();
+              ResultHolder paramArgType = paramArg.getType();
+              if(argArgType.isUnknown() && !paramArgType.isUnknown()) {
+                argumentsArgs.set(i, argArg.withType(paramArgType));
+              }
+            }
+          }
+          argumentType =  new SpecificFunctionReference(argumentsArgs, argFn.getReturnType(), null, literal, literal).createHolder();
+        }
       }
 
       //TODO properly resolve typedefs

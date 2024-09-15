@@ -36,6 +36,8 @@ class MonomorphTest {
         mapDelayed.set(<error descr="Type mismatch (Expected: 'String' got: 'Int')">1</error>, <error descr="Type mismatch (Expected: 'Int' got: 'String')">"test"</error>);
     }
 
+    var myMap = new Map<String,Int>();
+
     public function advancemonomorphism(morphA, morphB):Void {
         var arr = [""];
         arr.push(morphA);
@@ -48,6 +50,12 @@ class MonomorphTest {
 
         morphB = <error descr="Incompatible type: String should be Int">""</error>; // Wrong already morphed Int
         var <error descr="Incompatible type: Int should be String">test2:String = morphB</error>; // Wrong already morphed Int
+
+        var someMap = new Map();
+        myMap = someMap;
+
+        someMap.set(<error descr="Type mismatch (Expected: 'String' got: 'Int')">1</error>,1);  // Wrong already morphed to Map<String, Int>
+
     }
 
 }

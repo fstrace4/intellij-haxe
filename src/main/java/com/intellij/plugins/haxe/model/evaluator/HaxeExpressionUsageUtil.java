@@ -110,22 +110,22 @@ public class HaxeExpressionUsageUtil {
         PsiElement parent = expression.getParent();
 
         if (reference instanceof HaxeReferenceExpression referenceExpression) {
-          ResultHolder unified = tryFindTypeWhenUsedAsParameterInCallExpression(resultHolder, referenceExpression, parent);
-          if (unified != null) return unified;
+          ResultHolder result = tryFindTypeWhenUsedAsParameterInCallExpression(resultHolder, referenceExpression, parent);
+          if (result != null) return mapTypeParameter(resultHolder, result);
         }
 
         if (parent instanceof HaxeAssignExpression assignExpression) {
-          ResultHolder result = tryTypeFromAssignExpression(context, resolver, resultHolder, assignExpression);
-          if (result != null) return result;
+          ResultHolder result = tryTypeFromAssignExpression(context, resolver, resultHolder, assignExpression, componentName);
+          if (result != null) return mapTypeParameter(resultHolder, result);
         }
         if (parent instanceof HaxeReferenceExpression referenceExpression) {
-          ResultHolder resolve = tryFindTypeFromMethodCallOnReference(resultHolder, referenceExpression, isFirst);
-          if (resolve != null) return resolve;
+          ResultHolder result = tryFindTypeFromMethodCallOnReference(resultHolder, referenceExpression, isFirst);
+          if (result != null) return mapTypeParameter(resultHolder, result);
         }
 
         if (parent instanceof HaxeObjectLiteralElement literalElement) {
           ResultHolder result = tryTypeFromObjectLiteral(context, resolver, literalElement);
-          if (result != null) return result;
+          if (result != null) return mapTypeParameter(resultHolder, result);
         }
 
         if (parent instanceof HaxeArrayAccessExpression arrayAccessExpression) {
@@ -139,6 +139,13 @@ public class HaxeExpressionUsageUtil {
       isFirst = false;
     }
     return  resultHolder;
+  }
+
+  private static @NotNull ResultHolder mapTypeParameter(ResultHolder current, ResultHolder found) {
+    if(current.canAssign(found)) {
+      return found;
+    }
+    return current;
   }
 
   private static void tryUpdateTypePAramFromOjbectLiteral(HaxeExpressionEvaluatorContext context,
@@ -316,11 +323,37 @@ public class HaxeExpressionUsageUtil {
   }
 
   private static @Nullable ResultHolder tryTypeFromAssignExpression(HaxeExpressionEvaluatorContext context,
-                                                  HaxeGenericResolver resolver,
-                                                  ResultHolder resultHolder,
-                                                  HaxeAssignExpression assignExpression) {
+                                                                    HaxeGenericResolver resolver,
+                                                                    ResultHolder resultHolder,
+                                                                    HaxeAssignExpression assignExpression, HaxeComponentName componentName) {
+    boolean isRight = false;
+    boolean isLeft = false;
+
     HaxeExpression rightExpression = assignExpression.getRightExpression();
-    ResultHolder result = handleWithRecursionGuard(rightExpression, context, resolver);
+    HaxeExpression leftExpression = assignExpression.getLeftExpression();
+
+
+    if(rightExpression instanceof  HaxeReferenceExpression referenceExpression) {
+      PsiElement resolve = referenceExpression.resolve();
+      if(resolve instanceof HaxeNamedComponent namedComponent) {
+        if(namedComponent.getComponentName() == componentName) {
+          isRight = true;
+        }
+      }
+    }
+    if(!isRight) {
+      if (leftExpression instanceof HaxeReferenceExpression referenceExpression) {
+        PsiElement resolve = referenceExpression.resolve();
+        if (resolve instanceof HaxeNamedComponent namedComponent) {
+          if (namedComponent.getComponentName() == componentName) {
+            isLeft = true;
+          }
+        }
+      }
+    }
+
+  if(isLeft || isRight) {
+    ResultHolder result = handleWithRecursionGuard(isLeft ? rightExpression : leftExpression, context, resolver);
     if (result != null && !result.isUnknown() && result.getType().isSameType(resultHolder.getType())) {
       HaxeGenericResolver resultResolver = result.getClassType().getGenericResolver();
       HaxeGenericResolver resultResolverWithoutUnknowns = resultResolver.withoutUnknowns();
@@ -329,6 +362,8 @@ public class HaxeExpressionUsageUtil {
         return result;
       }
     }
+  }
+
     return null;
   }
 
