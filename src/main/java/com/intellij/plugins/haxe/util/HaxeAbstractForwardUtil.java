@@ -28,15 +28,13 @@ import com.intellij.plugins.haxe.metadata.psi.HaxeMeta;
 import com.intellij.plugins.haxe.metadata.psi.HaxeMetadataContent;
 import com.intellij.plugins.haxe.metadata.util.HaxeMetadataUtils;
 import com.intellij.plugins.haxe.model.HaxeAbstractClassModel;
+import com.intellij.plugins.haxe.model.HaxeBaseMemberModel;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.intellij.plugins.haxe.model.type.HaxeGenericResolverUtil.getResolverSkipAbstractNullScope;
 
@@ -63,10 +61,16 @@ public class HaxeAbstractForwardUtil {
           return HaxeResolveUtil.findNamedSubComponents(forwardResolver, underlyingClass);
         }
         List<HaxeNamedComponent> haxeNamedComponentList = new ArrayList<>();
+        List<HaxeBaseMemberModel> members = underlyingClass.getModel().getMembers(resolver);
+
+        Map<String, HaxeNamedComponent> namedComponentMap = new HashMap<>();
+        for (HaxeBaseMemberModel member : members) {
+          namedComponentMap.put(member.getName(), member.getNamedComponentPsi());
+        }
+
         for (String fieldName : forwardingFieldsNames) {
-          HaxeNamedComponent component = HaxeResolveUtil.findNamedSubComponent(underlyingClass, fieldName, resolver);
-          if (component != null) {
-            haxeNamedComponentList.add(component);
+          if (namedComponentMap.containsKey(fieldName)) {
+            haxeNamedComponentList.add(namedComponentMap.get(fieldName));
           }
         }
         return haxeNamedComponentList;
