@@ -1245,25 +1245,32 @@ public class HaxeExpressionEvaluatorHandlers {
     HaxeGenericResolver localResolver = HaxeGenericResolverUtil.generateResolverFromScopeParents(callExpression);
     localResolver.addAll(resolver);
 
+    SpecificTypeReference functionType;
+    if (callExpressionRef != null) {   // can be null if the entire expression is a macro  of callExpression
+      // map type Parameters to methods declaring class resolver if necessary
+      SpecificHaxeClassReference callieClassRef = tryGetCallieType(callExpression).getClassType();
+      HaxeClass callieType = callieClassRef != null ? callieClassRef.getHaxeClass() : null;
+      HaxeClass methodTypeClassType = tryGetMethodDeclaringClass(callExpression);
+      if (callieType != null && methodTypeClassType != null) {
+        localResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodTypeClassType, callieType, localResolver);
+      }
 
-    // map type Parameters to methods declaring class resolver if necessary
-    SpecificHaxeClassReference callieClassRef = tryGetCallieType(callExpression).getClassType();
-    HaxeClass callieType = callieClassRef != null ? callieClassRef.getHaxeClass() : null;
-    HaxeClass methodTypeClassType = tryGetMethodDeclaringClass(callExpression);
-    if(callieType != null && methodTypeClassType != null) {
-      localResolver = HaxeGenericResolverUtil.createInheritedClassResolver(methodTypeClassType,callieType, localResolver);
-    }
-
-    SpecificTypeReference functionType = handle(callExpressionRef, context, localResolver).getType();
-    boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
-    boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
-    if (varIsMacroFunction && !callIsFromMacroContext) {
-      ResultHolder holder = resolveMacroTypesForFunction(functionType.createHolder());
-      functionType = holder.getFunctionType();
+      functionType = handle(callExpressionRef, context, localResolver).getType();
+      boolean varIsMacroFunction = isCallExpressionToMacroMethod(callExpressionRef);
+      boolean callIsFromMacroContext = isInMacroFunction(callExpressionRef);
+      if (varIsMacroFunction && !callIsFromMacroContext) {
+        ResultHolder holder = resolveMacroTypesForFunction(functionType.createHolder());
+        functionType = holder.getFunctionType();
+      }
+    }else  if (callExpression.getMacroExpressionReification() != null) {
+      functionType = SpecificTypeReference.getUnknown(callExpression.getMacroExpressionReification());
+    }else {
+      // should not happen
+      functionType = SpecificTypeReference.getUnknown(callExpression);
     }
 
     // @TODO: this should be innecessary when code is working right!
-    if (functionType.isUnknown()) {
+    if ( functionType == null  || functionType.isUnknown()) {
       if (callExpressionRef instanceof HaxeReference) {
         PsiReference reference = callExpressionRef.getReference();
         if (reference != null) {
@@ -1275,8 +1282,8 @@ public class HaxeExpressionEvaluatorHandlers {
       }
     }
 
-    if (functionType.isUnknown()) {
-      if(log.isDebugEnabled()) log.debug("Couldn't resolve " + callExpressionRef.getText());
+    if (functionType == null || functionType.isUnknown()) {
+      if(log.isDebugEnabled()) log.debug("Couldn't resolve " + callExpressionRef);
     }
 
     List<HaxeExpression> parameterExpressions = null;
