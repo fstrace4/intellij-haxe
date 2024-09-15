@@ -18,7 +18,8 @@ import java.util.*;
 public class TypeParameterUtil {
 
   @NotNull
-  public static TypeParameterTable createTypeParameterConstraintTable(HaxeMethod method, HaxeGenericResolver resolver) {
+  public static TypeParameterTable createTypeParameterConstraintTable(HaxeMethod method, HaxeGenericResolver resolver,
+                                                                      boolean prohibitClassTypeParameters) {
 
     TypeParameterTable typeParamTable = new TypeParameterTable();
 
@@ -31,7 +32,7 @@ public class TypeParameterUtil {
       }
       if (method.isConstructor()) {
         HaxeClassModel declaringClass = method.getModel().getDeclaringClass();
-        if (declaringClass != null) {
+        if (declaringClass != null && !prohibitClassTypeParameters) {
           params = declaringClass.getGenericParams();
           for (HaxeGenericParamModel model : params) {
             ResultHolder constraint = model.getConstraint(resolver);
@@ -47,7 +48,9 @@ public class TypeParameterUtil {
           ResultHolder constraint = model.getConstraint(resolver);
           // make sure we do not add if method type parameter with the same name is present
           if(!typeParamTable.contains(model.getName(), ResolveSource.METHOD_TYPE_PARAMETER)) {
-            typeParamTable.put(model.getName(), constraint, ResolveSource.CLASS_TYPE_PARAMETER);
+            if(!prohibitClassTypeParameters) {
+              typeParamTable.put(model.getName(), constraint, ResolveSource.CLASS_TYPE_PARAMETER);
+            }
           }
         }
       }

@@ -57,9 +57,9 @@ public class HaxeExpressionEvaluatorHandlers {
   static ResultHolder handleWithRecursionGuard(PsiElement element,
                                                HaxeExpressionEvaluatorContext context,
                                                HaxeGenericResolver resolver) {
-    RecursionManager.markStack();
+
     if (element == null ) return null;
-    return evaluatorHandlersRecursionGuard.doPreventingRecursion(element, false, () -> handle(element, context, resolver));
+    return evaluatorHandlersRecursionGuard.doPreventingRecursion(element, true, () -> handle(element, context, resolver));
   }
 
 
@@ -158,10 +158,11 @@ public class HaxeExpressionEvaluatorHandlers {
     return expr.createHolder();
   }
 
+  @Nullable
   static ResultHolder handleReferenceExpression( HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver,
                                                          HaxeReferenceExpression element) {
     PsiElement[] children = element.getChildren();
-    ResultHolder typeHolder;
+    ResultHolder typeHolder = null;
     if (children.length == 0) {
        typeHolder  = SpecificTypeReference.getUnknown(element).createHolder();
     }else {
@@ -352,11 +353,7 @@ public class HaxeExpressionEvaluatorHandlers {
           else {
             // attempt to resolve sub-element using default handle logic
             if (!(subelement instanceof PsiPackage)) {
-              typeHolder = handleWithRecursionGuard(subelement, context, resolver);
-
-            }
-            if (typeHolder == null) {
-              typeHolder = SpecificTypeReference.getUnknown(element).createHolder();
+              typeHolder = handleWithRecursionGuard(subelement, context, resolver);//TODO null should probably block result cache
             }
           }
         }
@@ -379,7 +376,8 @@ public class HaxeExpressionEvaluatorHandlers {
       return typeHolder;
     }
 
-    return SpecificTypeReference.getDynamic(element).createHolder();
+    return typeHolder;
+    //return SpecificTypeReference.getDynamic(element).createHolder();
   }
 
   private static boolean isReificationExpression(HaxeReferenceExpression element) {
@@ -595,7 +593,7 @@ public class HaxeExpressionEvaluatorHandlers {
             HaxeMethod method = constructor.getMethod();
             HaxeMethodModel methodModel = method.getModel();
             if (methodModel.getGenericParams().isEmpty()) {
-              //TODO needs stackoverflow protecting
+              //TODO needs stackoverflow protecting ?
               HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkConstructor(expression);
               HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
 
@@ -607,20 +605,7 @@ public class HaxeExpressionEvaluatorHandlers {
           }
         }
       }
-      // if new expression is missing typeParameters try to resolve from usage
-      if (type.getTypeParam() == null && typeHolder.getClassType() != null && typeHolder.getClassType().getSpecifics().length > 0) {
-        HaxePsiField fieldDeclaration = PsiTreeUtil.getParentOfType(expression, HaxePsiField.class);
-        if (fieldDeclaration != null && fieldDeclaration.getTypeTag() == null) {
-          SpecificHaxeClassReference classType = typeHolder.getClassType();
-          // if class does not have any  generics there  no need to search for references
-          if (classType != null  && classType.getSpecifics().length > 0) {
-            ResultHolder searchResult = searchReferencesForTypeParameters(fieldDeclaration, context, resolver, typeHolder);
-            if (!searchResult.isUnknown()) {
-              typeHolder = searchResult;
-            }
-          }
-        }
-      }
+
       if (typeHolder.getType() instanceof SpecificHaxeClassReference classReference) {
         final HaxeClassModel clazz = classReference.getHaxeClassModel();
         if (clazz != null) {
@@ -1178,8 +1163,11 @@ public class HaxeExpressionEvaluatorHandlers {
           HaxePsiField declaringField =
             UsefulPsiTreeUtil.findParentOfTypeButStopIfTypeIs(arrayLiteral, HaxePsiField.class, HaxeCallExpression.class);
           if (declaringField != null) {
-            ResultHolder searchResult = searchReferencesForTypeParameters(declaringField, context, resolver, holder);
-            if (!searchResult.isUnknown()) holder = searchResult;
+            HaxeComponentName componentName = declaringField.getComponentName();
+            if(componentName != null) {
+              ResultHolder searchResult = searchReferencesForTypeParameters(componentName, context, resolver, holder);
+              if (!searchResult.isUnknown()) holder = searchResult;
+            }
           }
         }
       }
@@ -1440,6 +1428,7 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
 
+  @Nullable
   static ResultHolder handleVarInit(
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
@@ -1448,11 +1437,11 @@ public class HaxeExpressionEvaluatorHandlers {
     if (expression == null) {
       return SpecificTypeReference.getInvalid(varInit).createHolder();
     }
-    ResultHolder holder = handleWithRecursionGuard(expression, context, resolver);
-    return holder != null ? holder : createUnknown(varInit);
+    return handleWithRecursionGuard(expression, context, resolver);
+
   }
 
-  @NotNull
+  @Nullable
   static ResultHolder handleLocalVarDeclaration(
     HaxeExpressionEvaluatorContext context,
     HaxeGenericResolver resolver,
@@ -1478,24 +1467,24 @@ public class HaxeExpressionEvaluatorHandlers {
     }
 
     if (result == null && init != null) {
-      result = handle(init, context, localResolver);
+      result = _handle(init, context, localResolver);
     }
 
-    if (result == null || isDynamicBecauseOfNullValueInit(result) || isUnknownLiteralArray(result)) {
-      // search for usage to determine type
-      HaxeComponentName element = varDeclaration.getComponentName();
-      final ResultHolder hint = result;
+    // search for usage to determine type
+    HaxeComponentName element = varDeclaration.getComponentName();
+    final ResultHolder hint = result;
 
+    if (result == null || isDynamicBecauseOfNullValueInit(result)) {
       result = tryToFindTypeFromUsage(element, result, hint, context, resolver, null);
-
-      if(result != null && result.containsUnknownTypeParameters()) {
-        result = searchReferencesForTypeParameters(varDeclaration, context, resolver, result);
-      }
-
     }
+
+    if (isUnknownLiteralArray(result) && result.containsUnknownTypeParameters()) {
+      result = searchReferencesForTypeParameters(name, context, resolver, result);
+    }
+
     result = tryGetEnumValuesDeclaringClass(result);
     context.setLocal(name.getText(), result);
-    return result != null ? result : createUnknown(varDeclaration);
+    return result;
   }
 
 
@@ -1508,6 +1497,7 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
   private static boolean isUnknownLiteralArray(ResultHolder result) {
+    if (result == null) return false;
     SpecificHaxeClassReference classType = result.getClassType();
     if (classType != null && result.getClassType().isArray()) {
       @NotNull ResultHolder[] specifics = classType.getSpecifics();
@@ -1523,6 +1513,7 @@ public class HaxeExpressionEvaluatorHandlers {
   }
 
   public static boolean isDynamicBecauseOfNullValueInit(ResultHolder result) {
+    if (result == null) return false;
     return  result.getType().isDynamic() && result.getType().getConstant() instanceof HaxeNull;
   }
 

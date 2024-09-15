@@ -640,6 +640,11 @@ public class HaxeSemanticAnnotatorTest extends HaxeCodeInsightFixtureTestCase {
       doTestNoFixWithWarnings();
   }
   @Test
+  public void testMonomorphism() throws Exception {
+      doTestNoFixWithWarnings();
+  }
+
+  @Test
   public void testMultiLevelGenericInheritance() throws Exception {
       doTestNoFixWithWarnings();
   }

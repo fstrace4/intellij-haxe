@@ -1,7 +1,10 @@
 package com.intellij.plugins.haxe.model.evaluator;
 
+import com.intellij.openapi.util.RecursionGuard;
+import com.intellij.openapi.util.RecursionManager;
 import com.intellij.plugins.haxe.model.type.HaxeGenericResolver;
 import com.intellij.plugins.haxe.model.type.ResultHolder;
+import com.intellij.plugins.haxe.model.type.SpecificTypeReference;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,13 +22,18 @@ import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluator.
 public class HaxeExpressionEvaluatorCacheService  {
 
   private volatile  Map<EvaluationKey, ResultHolder> cacheMap = new ConcurrentHashMap<>();
-  public boolean skipCaching = false;
+  public static boolean skipCaching = false;// just convenience flag for debugging
 
-  public @NotNull ResultHolder handleWithResultCaching(final PsiElement element,
+
+  public @NotNull ResultHolder handleWithResultCaching(@NotNull final PsiElement element,
                                                        final HaxeExpressionEvaluatorContext context,
                                                        final HaxeGenericResolver resolver) {
 
-    if(skipCaching) return  _handle(element, context, resolver);
+    if(skipCaching){
+      ResultHolder holder = _handle(element, context, resolver);
+      if(holder == null) return SpecificTypeReference.getUnknown(element).createHolder();
+      return holder;
+    }
 
     EvaluationKey key = new EvaluationKey(element, resolver == null ? "NO_RESOLVER" : resolver.toCacheString());
     if (cacheMap.containsKey(key)) {
@@ -33,7 +41,8 @@ public class HaxeExpressionEvaluatorCacheService  {
     }
     else {
       ResultHolder holder = _handle(element, context, resolver);
-      if (!holder.isUnknown()) {
+      if(holder == null) return SpecificTypeReference.getUnknown(element).createHolder();
+      if (!holder.isUnknown() && !holder.containsUnknownTypeParameters()) {
         cacheMap.put(key, holder);
       }
       return holder;

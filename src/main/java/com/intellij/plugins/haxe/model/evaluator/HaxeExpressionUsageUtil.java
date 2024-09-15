@@ -82,11 +82,16 @@ public class HaxeExpressionUsageUtil {
 
 
   @NotNull
-  public static ResultHolder searchReferencesForTypeParameters(final HaxePsiField field,
+  public static ResultHolder searchReferencesForTypeParameters(final HaxeComponentName componentName,
                                                                final HaxeExpressionEvaluatorContext context,
                                                                final HaxeGenericResolver resolver, ResultHolder resultHolder) {
+   return searchReferencesForTypeParameters(componentName,context,resolver,resultHolder,0);
+  }
+  @NotNull
+  public static ResultHolder searchReferencesForTypeParameters(final HaxeComponentName componentName,
+                                                               final HaxeExpressionEvaluatorContext context,
+                                                               final HaxeGenericResolver resolver, ResultHolder resultHolder, int continueFrom) {
     resultHolder = resultHolder.duplicate();
-    HaxeComponentName componentName = field.getComponentName();
     SpecificHaxeClassReference type = resultHolder.getClassType();
     SpecificHaxeClassReference classType = type;
 
@@ -97,12 +102,14 @@ public class HaxeExpressionUsageUtil {
     List<PsiReference> references = referenceSearch(componentName, useScope);
     //TODO we should handle this logic as monomorph as well and only accpet first value
     // NOTE : we might have to change this code a bit if we need to  iterate several references to collect multiple typeParameters / specifics
-    for (PsiReference reference : references) {
+    boolean isFirst = true;
+    for (int i = continueFrom, size = references.size(); i < size; i++) {
+      PsiReference reference = references.get(i);
       if (reference instanceof HaxeExpression expression) {
         PsiElement parent = expression.getParent();
 
         if (reference instanceof HaxeReferenceExpression referenceExpression) {
-          ResultHolder unified = tryTypeFromParameterFromCallExpression(resultHolder, referenceExpression, parent);
+          ResultHolder unified = tryFindTypeWhenUsedAsParameterInCallExpression(resultHolder, referenceExpression, parent);
           if (unified != null) return unified;
         }
 
@@ -111,7 +118,7 @@ public class HaxeExpressionUsageUtil {
           if (result != null) return result;
         }
         if (parent instanceof HaxeReferenceExpression referenceExpression) {
-          ResultHolder resolve = tryTypeFromReference(resultHolder, referenceExpression);
+          ResultHolder resolve = tryFindTypeFromMethodCallOnReference(resultHolder, referenceExpression, isFirst);
           if (resolve != null) return resolve;
         }
 
@@ -128,6 +135,7 @@ public class HaxeExpressionUsageUtil {
           tryUpdateTypePAramFromOjbectLiteral(context, resolver, literalElement, type);
         }
       }
+      isFirst = false;
     }
     return  resultHolder;
   }
@@ -282,7 +290,7 @@ public class HaxeExpressionUsageUtil {
     return null;
   }
 
-  private static @Nullable ResultHolder tryTypeFromReference(ResultHolder resultHolder, HaxeReferenceExpression referenceExpression) {
+  private static @Nullable ResultHolder tryFindTypeFromMethodCallOnReference(ResultHolder resultHolder, HaxeReferenceExpression referenceExpression, boolean isFirstRef) {
     PsiElement resolved = referenceExpression.resolve();
     if (resolved instanceof HaxeMethodDeclaration methodDeclaration
         && referenceExpression.getParent() instanceof HaxeCallExpression callExpression) {
@@ -290,7 +298,7 @@ public class HaxeExpressionUsageUtil {
       HaxeMethodModel methodModel = methodDeclaration.getModel();
 
       HaxeCallExpressionUtil.CallExpressionValidation validation =
-        HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod());
+        HaxeCallExpressionUtil.checkMethodCall(callExpression, methodModel.getMethod(), isFirstRef);
 
       HaxeGenericResolver resolverFromCallExpression = validation.getResolver();
       if (resolverFromCallExpression != null) {
@@ -323,9 +331,9 @@ public class HaxeExpressionUsageUtil {
     return null;
   }
 
-  private static @Nullable ResultHolder tryTypeFromParameterFromCallExpression(ResultHolder resultHolder,
-                                                  HaxeReferenceExpression referenceExpression,
-                                                  PsiElement parent) {
+  private static @Nullable ResultHolder tryFindTypeWhenUsedAsParameterInCallExpression(ResultHolder resultHolder,
+                                                                                       HaxeReferenceExpression referenceExpression,
+                                                                                       PsiElement parent) {
     if (parent != null && parent.getParent() instanceof HaxeCallExpression callExpression) {
       if (callExpression.getExpression() instanceof HaxeReference callExpressionReference) {
         final PsiElement resolved = callExpressionReference.resolve();

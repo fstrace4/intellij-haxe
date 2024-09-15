@@ -227,7 +227,7 @@ public class ResultHolder {
     SpecificTypeReference type = holder.getType();
     if (type instanceof  SpecificHaxeClassReference classReference) {
       for (ResultHolder specific : classReference.getSpecifics()) {
-        if (type.isUnknown() || containsUnknownTypeParameters(specific)) return  true;
+        if (specific.isUnknown() || containsUnknownTypeParameters(specific)) return  true;
       }
     }
     if (type instanceof SpecificFunctionReference  function) {

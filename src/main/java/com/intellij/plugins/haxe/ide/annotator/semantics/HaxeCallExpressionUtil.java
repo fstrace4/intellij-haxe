@@ -27,6 +27,9 @@ public class HaxeCallExpressionUtil {
   // (amongst the problem is mixed parameter classes and method needing reference for type resolve)
   @NotNull
   public static CallExpressionValidation checkMethodCall(@NotNull HaxeCallExpression callExpression, @NotNull HaxeMethod method) {
+    return checkMethodCall(callExpression, method, false);
+  }
+  public static CallExpressionValidation checkMethodCall(@NotNull HaxeCallExpression callExpression, @NotNull HaxeMethod method, boolean isFirstRef) {
     CallExpressionValidation validation  = new CallExpressionValidation();
     validation.isMethod = true;
 
@@ -99,6 +102,12 @@ public class HaxeCallExpressionUtil {
         }
       }
     }
+    if(callieType.isUnknown() && !validation.isStaticExtension && !isFirstRef ) {
+      //TODO hack?
+      // if callie is unknown we prohibit class TypeParameters  unless first reference flag
+      // reason: we need to prevent incorrect typeParameters when evaluating monomorphs and recursion guards can cause callie to be null
+      validation.unknownCallie = true;
+    }
     HaxeGenericResolver resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(callExpression, classTypeResolver);
 
     int parameterCounter = 0;
@@ -120,7 +129,7 @@ public class HaxeCallExpressionUtil {
     // when resolving parameters
     HaxeGenericResolver parameterResolver = resolver.withoutUnknowns();
 
-    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(method, resolver);
+    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(method, resolver, validation.unknownCallie);
 
     if (validation.isStaticExtension) {
       // this might not work for literals, need to handle those in a different way
@@ -519,7 +528,7 @@ public class HaxeCallExpressionUtil {
 
     resolver = HaxeGenericResolverUtil.appendCallExpressionGenericResolver(newExpression, resolver);
 
-    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(constructor.getMethod(), resolver);
+    TypeParameterTable typeParamTable = createTypeParameterConstraintTable(constructor.getMethod(), resolver, validation.unknownCallie);
 
 
     int parameterCounter = 0;
@@ -964,6 +973,7 @@ public class HaxeCallExpressionUtil {
 
   @Data
   public static class CallExpressionValidation {
+    public boolean unknownCallie = false;
     Map<Integer, Integer> argumentToParameterIndex = new HashMap<>();
     Map<Integer, ResultHolder> argumentIndexToType = new HashMap<>();
     Map<Integer, ResultHolder> parameterIndexToType = new HashMap<>();

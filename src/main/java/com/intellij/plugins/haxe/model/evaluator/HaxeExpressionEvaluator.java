@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import  static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorHandlers.*;
 import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionEvaluatorHandlers.handleWithRecursionGuard;
 import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.findUsageAsParameterInFunctionCall;
+import static com.intellij.plugins.haxe.model.evaluator.HaxeExpressionUsageUtil.searchReferencesForTypeParameters;
 import static com.intellij.plugins.haxe.model.type.HaxeMacroTypeUtil.getTypeDefinition;
 
 @CustomLog
@@ -114,7 +115,7 @@ public class HaxeExpressionEvaluator {
   // keep package protected, don't use this one outside code running from evaluate()
   // if used outside  it can mess up the result cache
   @NotNull
-  static ResultHolder handle(final PsiElement element,
+  static ResultHolder handle(@NotNull final PsiElement element,
                                      final HaxeExpressionEvaluatorContext context,
                                      final HaxeGenericResolver resolver) {
     try {
@@ -125,7 +126,7 @@ public class HaxeExpressionEvaluator {
     }
     catch (NullPointerException e) {
       // Make sure that these get into the log, because the GeneralHighlightingPass swallows them.
-      log.error("Error evaluating expression type for element " + element.toString(), e);
+      log.error("Error evaluating expression type for element " + element, e);
       throw e;
     }
     catch (ProcessCanceledException e) {
@@ -141,7 +142,9 @@ public class HaxeExpressionEvaluator {
     return createUnknown(element != null ? element : context.root);
   }
 
-  @NotNull
+  // if recursion guard is triggered value will be null
+  // this is intentional as providing an unknown result instead can break monomorphs
+  @Nullable
   static  ResultHolder _handle(final PsiElement element,
                                       final HaxeExpressionEvaluatorContext context,
                                       HaxeGenericResolver optionalResolver) {
@@ -246,7 +249,8 @@ public class HaxeExpressionEvaluator {
     if (element instanceof HaxeReference) {
 
       if (element instanceof HaxeNewExpression expression) {
-        return handleNewExpression(context, resolver, expression);
+        ResultHolder holder = handleNewExpression(context, resolver, expression);
+        return findMissingTypeParametersIfNecessary(context, resolver, expression, holder);
       }
 
       if (element instanceof HaxeThisExpression thisExpression) {
@@ -320,7 +324,7 @@ public class HaxeExpressionEvaluator {
       return handleVarInit(context, resolver, varInit);
     }
 
-    if(element instanceof HaxeObjectLiteralElement objectLiteralElement) {
+    if(element instanceof HaxeObjectLiteralElement objectLiteralElement && objectLiteralElement.getExpression() != null) {
       return handle(objectLiteralElement.getExpression(), context, resolver);
     }
 
@@ -426,6 +430,31 @@ public class HaxeExpressionEvaluator {
 
     if(log.isDebugEnabled()) log.debug("Unhandled " + element.getClass());
     return createUnknown(element);
+  }
+
+  private static @Nullable ResultHolder findMissingTypeParametersIfNecessary(HaxeExpressionEvaluatorContext context,
+                                                                             HaxeGenericResolver resolver,
+                                                                             HaxeNewExpression expression,
+                                                                             ResultHolder typeHolder) {
+    // if new expression is missing typeParameters try to resolve from usage
+    HaxeType type = expression.getType();
+    if (type.getTypeParam() == null && typeHolder.getClassType() != null && typeHolder.getClassType().getSpecifics().length > 0) {
+      HaxePsiField fieldDeclaration = PsiTreeUtil.getParentOfType(expression, HaxePsiField.class);
+      if (fieldDeclaration != null && fieldDeclaration.getTypeTag() == null) {
+        SpecificHaxeClassReference classType = typeHolder.getClassType();
+        // if class does not have any  generics there  no need to search for references
+        if (classType != null  && classType.getSpecifics().length > 0) {
+          HaxeComponentName componentName = fieldDeclaration.getComponentName();
+          if(componentName != null) {
+            ResultHolder searchResult = searchReferencesForTypeParameters(componentName, context, resolver, typeHolder);
+            if (!searchResult.isUnknown()) {
+              return searchResult;
+            }
+          }
+        }
+      }
+    }
+    return typeHolder;
   }
 
   private static ResultHolder handeTypeCheckExpr(PsiElement element, HaxeTypeCheckExpr expr, HaxeGenericResolver resolver) {
@@ -535,24 +564,34 @@ public class HaxeExpressionEvaluator {
   ) {
     List<PsiReference> references = referenceSearch(componentName, searchScopePsi);
     ResultHolder lastValue = null;
-    for (PsiReference reference : references) {
-      ResultHolder possibleType = checkSearchResult(context, resolver, reference, componentName, hint);
-      if(possibleType != null) {
+    int continueFrom = 0;
+    for (int i = 0, size = references.size(); i < size; i++) {
+      PsiReference reference = references.get(i);
+      ResultHolder possibleType = checkSearchResult(context, resolver, reference, componentName, hint, i == 0);
+      if (possibleType != null) {
         if (!possibleType.isUnknown()) {
           if (lastValue == null) {
             lastValue = possibleType;
+            continueFrom = i+1;
           }
           if (!lastValue.isDynamic()) {
             // monomorphs should only use the first real value found (right?)
             //NOTE: don't use unify here (will break function type from  usage)
             if (!lastValue.isFunctionType()) break;
             boolean canAssign = lastValue.canAssign(possibleType);
-            if (canAssign) lastValue = possibleType;
+            if (canAssign) {
+              lastValue = possibleType;
+              continueFrom = i+1;
+            }
           }
         }
       }
     }
     if (lastValue != null && !lastValue.isUnknown()) {
+      if(lastValue.containsTypeParameters()) {
+        ResultHolder holder = searchReferencesForTypeParameters(componentName, context, resolver, lastValue, continueFrom);
+        if (!holder.isUnknown()) return holder;
+      }
       return lastValue;
     }
 
@@ -581,15 +620,17 @@ public class HaxeExpressionEvaluator {
   @Nullable
   private static ResultHolder checkSearchResult(HaxeExpressionEvaluatorContext context, HaxeGenericResolver resolver, PsiReference reference,
                                                 HaxeComponentName originalComponent,
-                                               @Nullable ResultHolder hint) {
+                                                @Nullable ResultHolder hint, boolean firstReference) {
 
     if (originalComponent.getParent() == reference) return  null;
     if (reference instanceof HaxeExpression expression) {
       if (expression.getParent() instanceof HaxeAssignExpression assignExpression) {
         HaxeExpression rightExpression = assignExpression.getRightExpression();
-        ResultHolder result = handle(rightExpression, context, resolver);
-        if (!result.isUnknown()) {
-          return result;
+        if(rightExpression != null) {
+          ResultHolder result = handle(rightExpression, context, resolver);
+          if (!result.isUnknown()) {
+            return result;
+          }
         }
         HaxeExpression leftExpression = assignExpression.getLeftExpression();
         if (leftExpression instanceof HaxeReferenceExpression referenceExpression) {
@@ -676,7 +717,7 @@ public class HaxeExpressionEvaluator {
           final HaxeReference leftReference = PsiTreeUtil.getChildOfType(callExpression.getExpression(), HaxeReference.class);
           if (leftReference == reference) {
             if (resolved instanceof HaxeMethod method ) {
-              HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method);
+              HaxeCallExpressionUtil.CallExpressionValidation validation = HaxeCallExpressionUtil.checkMethodCall(callExpression, method, firstReference);
               ResultHolder hintResolved = validation.getResolver().resolve(hint);
               if (hintResolved != null && hintResolved.getType() != hintResolved.getType()) return hintResolved;
             }
