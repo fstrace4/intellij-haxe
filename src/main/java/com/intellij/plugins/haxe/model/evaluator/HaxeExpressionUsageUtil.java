@@ -92,8 +92,9 @@ public class HaxeExpressionUsageUtil {
                                                                final HaxeExpressionEvaluatorContext context,
                                                                final HaxeGenericResolver resolver, ResultHolder resultHolder, int continueFrom) {
     resultHolder = resultHolder.duplicate();
-    SpecificHaxeClassReference type = resultHolder.getClassType();
-    SpecificHaxeClassReference classType = type;
+    SpecificHaxeClassReference classType = resultHolder.getClassType();
+    // TODO should we support functions here ?
+    if (classType == null) return resultHolder;
 
     HaxeGenericResolver classResolver = classType.getGenericResolver();
     PsiSearchHelper searchHelper = PsiSearchHelper.getInstance(componentName.getProject());
@@ -128,11 +129,11 @@ public class HaxeExpressionUsageUtil {
         }
 
         if (parent instanceof HaxeArrayAccessExpression arrayAccessExpression) {
-          tryUpdateTypeParamFromArrayAccess(context, resolver, arrayAccessExpression, classType, classResolver, type);
+          tryUpdateTypeParamFromArrayAccess(context, resolver, arrayAccessExpression, classType, classResolver, classType);
         }
 
         if (parent instanceof HaxeObjectLiteralElement literalElement) {
-          tryUpdateTypePAramFromOjbectLiteral(context, resolver, literalElement, type);
+          tryUpdateTypePAramFromOjbectLiteral(context, resolver, literalElement, classType);
         }
       }
       isFirst = false;
